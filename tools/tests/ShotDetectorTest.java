@@ -33,5 +33,13 @@ public class ShotDetectorTest {
         for (int i=0;i<300;i++,t+=10) p.feed(frame(r.nextGaussian()*3,0,1,r.nextGaussian()*200,0,0), t);
         if (!shots.isEmpty()) throw new AssertionError("falsa flecha sin sostener");
         System.out.println("OK sin falsos positivos");
+        // 200 Hz real: 8 tramas por notificación de 160 bytes, cada una con su instante
+        List<Long> ts = new ArrayList<>();
+        WitParser b = new WitParser(x -> ts.add(x.tMs));
+        byte[] pk = new byte[160];
+        for (int k=0;k<8;k++) System.arraycopy(frame(0,0,1,0,0,0),0,pk,k*20,20);
+        b.feed(pk, 10_000); b.feed(pk, 10_040);
+        if (ts.size()!=16 || ts.get(7)!=10_000 || ts.get(0)!=9_965 || ts.get(8)!=10_005) throw new AssertionError("tiempos "+ts);
+        System.out.println("OK lotes de 8 tramas");
     }
 }

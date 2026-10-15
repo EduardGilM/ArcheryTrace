@@ -20,6 +20,12 @@ public final class WitParser {
     private final Sample serial = new Sample();
     private boolean serialAcc, serialGyro;
 
+    // A 200 Hz el sensor agrupa 8 tramas en una notificación de 160 bytes:
+    // se reparten hacia atrás desde la llegada con este periodo (ms).
+    public volatile double periodMs = 5;
+    private final java.util.ArrayList<Sample> batch = new java.util.ArrayList<>();
+    private long lastT = Long.MIN_VALUE;
+
     public WitParser(Sink sink) { this.sink = sink; }
 
     private static float i16(byte[] b, int o) { return (short) ((b[o] & 0xFF) | (b[o + 1] << 8)); }
@@ -46,7 +52,7 @@ public final class WitParser {
                 s.roll = i16(buf, i + 14) / 32768f * 180f;
                 s.pitch = i16(buf, i + 16) / 32768f * 180f;
                 s.yaw = i16(buf, i + 18) / 32768f * 180f;
-                sink.onSample(s);
+                batch.add(s);
                 i += 20;
             } else if (type >= 0x50 && type <= 0x5F) {
                 if (len - i < 11) break;
@@ -63,7 +69,7 @@ public final class WitParser {
                         s.tMs = tMs; s.ax = serial.ax; s.ay = serial.ay; s.az = serial.az;
                         s.gx = serial.gx; s.gy = serial.gy; s.gz = serial.gz;
                         s.roll = serial.roll; s.pitch = serial.pitch; s.yaw = serial.yaw;
-                        sink.onSample(s);
+                        batch.add(s);
                     }
                     serialAcc = serialGyro = false;
                 }
@@ -71,5 +77,14 @@ public final class WitParser {
             } else i++;
         }
         if (i > 0) { System.arraycopy(buf, i, buf, 0, len - i); len -= i; }
+        int n = batch.size();
+        for (int k = 0; k < n; k++) {
+            Sample s = batch.get(k);
+            long t = Math.round(tMs - (n - 1 - k) * periodMs);
+            if (lastT != Long.MIN_VALUE && t <= lastT) t = lastT + 1;
+            s.tMs = lastT = t;
+            sink.onSample(s);
+        }
+        batch.clear();
     }
 }

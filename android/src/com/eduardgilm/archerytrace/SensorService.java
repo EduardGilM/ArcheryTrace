@@ -81,7 +81,7 @@ public class SensorService extends Service {
             samples++;
             long now = s.tMs;
             if (rateWindow == 0) rateWindow = now;
-            if (now - rateWindow >= 2000) { rateHz = samples * 1000.0 / (now - rateWindow); samples = 0; rateWindow = now; }
+            if (now - rateWindow >= 2000) { rateHz = samples * 1000.0 / (now - rateWindow); samples = 0; rateWindow = now; if (rateHz > 5) parser.periodMs = 1000.0 / rateHz; }
             detector.onSample(s);
         });
         NotificationManager nm = getSystemService(NotificationManager.class);
@@ -139,12 +139,14 @@ public class SensorService extends Service {
         @Override public void onConnectionStateChange(BluetoothGatt g, int st, int state) {
             if (state == BluetoothProfile.STATE_CONNECTED) {
                 g.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
-                g.discoverServices();
+                // a 200 Hz llegan notificaciones de 160 bytes: hace falta MTU grande
+                if (!g.requestMtu(247)) g.discoverServices();
             } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
                 CONNECTED = false; writeChar = null;
                 status("Sensor sin conexión");
             }
         }
+        @Override public void onMtuChanged(BluetoothGatt g, int mtu, int st) { g.discoverServices(); }
         @Override public void onServicesDiscovered(BluetoothGatt g, int st) {
             BluetoothGattCharacteristic notify = null;
             for (BluetoothGattService s : g.getServices()) {
