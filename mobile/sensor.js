@@ -56,4 +56,28 @@
     sheet.hidden = false;
     if (d.paired) pairedView(d); else startScan();
   };
+
+  // ---- Grabar datos crudos (CSV nativo) ----
+  const css3 = document.createElement('style');
+  css3.textContent = `
+  #rawBtn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; height:40px; margin:8px 0 0; border:1px solid var(--line-2); border-radius:999px; background:transparent; color:var(--txt-2,#aaa); font-size:13px; font-weight:500; }
+  #rawBtn.on { border-color:transparent; background:var(--acc-soft); color:var(--acc); font-weight:600; }
+  #rawBtn i { display:none; width:7px; height:7px; border-radius:50%; background:#F0506E; }
+  #rawBtn.on.rec i { display:block; animation:snsP 1.2s ease-in-out infinite; }
+  #link.rec::after { content:""; width:6px; height:6px; border-radius:50%; background:#F0506E; margin-left:2px; }`;
+  document.head.appendChild(css3);
+  const anchor = document.getElementById('tandaBar') || document.getElementById('trainingStatus');
+  const btnHtml = '<button id="rawBtn" type="button"><i></i><span>Grabar datos</span></button>';
+  if (anchor) anchor.insertAdjacentHTML('afterend', btnHtml); else main.insertAdjacentHTML('afterbegin', btnHtml);
+  const rawBtn = document.getElementById('rawBtn');
+  function paintRaw() {
+    const d = diag(), on = !!d.rawLog, rec = !!d.recording;
+    rawBtn.hidden = !window.Native?.command;
+    rawBtn.className = (on ? 'on' : '') + (rec ? ' rec' : '');
+    rawBtn.querySelector('span').textContent = on ? (rec ? 'Grabando datos' : 'Grabar datos · espera sesión') : 'Grabar datos';
+    const link = document.getElementById('link'); if (link) link.classList.toggle('rec', rec);
+  }
+  rawBtn.onclick = () => { const d = diag(); cmd('rawlog', {value: !d.rawLog}); setTimeout(paintRaw, 300); };
+  paintRaw();
+  setInterval(() => { if (document.visibilityState === 'visible') paintRaw(); }, 3000);
 })();

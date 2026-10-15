@@ -47,6 +47,25 @@ public class SensorService extends Service {
     private BluetoothGattCharacteristic writeChar;
     private boolean scanning;
     private WitParser parser;
+    // Grabación cruda opcional (botón «Grabar datos»): un CSV nuevo al activarla o al empezar sesión.
+    final RawLogger raw = new RawLogger();
+    private final Runnable rawFlush = new Runnable() { public void run() { raw.flush(); handler.postDelayed(this, 1000); } };
+    private void rawEvent(String what) { raw.event(System.currentTimeMillis(), what); }
+    private boolean rawEnabled() { return prefs.getBoolean("rawLog", false); }
+    private void openRaw() {
+        if (!rawEnabled() || sid.isEmpty()) return;
+        java.io.File dir = getExternalFilesDir("rawlogs");
+        String stamp = new java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.ROOT).format(new java.util.Date());
+        if (dir != null && raw.open(dir, stamp + "_" + sid) != null) {
+            rawEvent("log_start sid=" + sid + " connected=" + CONNECTED + String.format(java.util.Locale.ROOT, " rate_hz=%.1f", rateHz));
+            handler.removeCallbacks(rawFlush); handler.post(rawFlush);
+        }
+    }
+    private void closeRaw(String why) {
+        if (!raw.isOpen()) return;
+        rawEvent("log_end " + why);
+        raw.close(); handler.removeCallbacks(rawFlush);
+    }
     private ShotDetector detector;
     private String sid = "";
     private long eid = 0, lastShotAt = 0, samples = 0, rateWindow = 0;
@@ -77,7 +96,9 @@ public class SensorService extends Service {
             samples++;
             long now = s.tMs;
             if (rateWindow == 0) rateWindow = now;
-            if (now - rateWindow >= 2000) { rateHz = samples * 1000.0 / (now - rateWindow); samples = 0; rateWindow = now; if (rateHz > 5) parser.periodMs = 1000.0 / rateHz; }
+            if (now - rateWindow >= 2000) { rateHz = samples * 1000.0 / (now - rateWindow); samples = 0; rateWindow = now; if (rateHz > 5) parser.periodMs = 1000.0 / rateHz;
+                raw.event(now, String.format(java.util.Locale.ROOT, "rate_hz=%.1f", rateHz)); }
+            raw.sample(s);
             detector.onSample(s);
         });
         NotificationManager nm = getSystemService(NotificationManager.class);
@@ -92,7 +113,7 @@ public class SensorService extends Service {
         BluetoothManager bm = getSystemService(BluetoothManager.class);
         adapter = bm == null ? null : bm.getAdapter();
         connect();
-        if (!sid.isEmpty()) handler.postDelayed(endAfterGrace, GRACE_MS);   // sesión abierta de antes de un reinicio
+        if (!sid.isEmpty()) { openRaw(); handler.postDelayed(endAfterGrace, GRACE_MS); }   // sesión abierta de antes de un reinicio
         if (ui != null) ui.drain();
     }
 
@@ -210,6 +231,7 @@ public class SensorService extends Service {
                 if (!g.requestMtu(247)) g.discoverServices();
             } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
                 CONNECTED = false; writeChar = null;
+                rawEvent("disconnect");
                 status("Sensor sin conexión");
                 handler.removeCallbacks(endAfterGrace);
                 handler.postDelayed(endAfterGrace, GRACE_MS);
@@ -230,7 +252,7 @@ public class SensorService extends Service {
                 else { d.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE); g.writeDescriptor(d); }
             }
             CONNECTED = true;
-            handler.post(() -> { handler.removeCallbacks(endAfterGrace); ensureSession(); status("Sensor listo"); });
+            handler.post(() -> { handler.removeCallbacks(endAfterGrace); ensureSession(); if (!raw.isOpen()) openRaw(); rawEvent("connect " + g.getDevice().getAddress()); status("Sensor listo"); });
         }
         // tras activar las notificaciones (y con el MTU ya negociado): 200 Hz volátil, nunca se guarda
         @Override public void onDescriptorWrite(BluetoothGatt g, BluetoothGattDescriptor d, int st) {
@@ -270,16 +292,21 @@ public class SensorService extends Service {
         long now = System.currentTimeMillis();
         sid = (now / 1000) + "-trace"; eid = -1;
         prefs.edit().putString("sid", sid).putLong("startedAt", now).apply();
+        openRaw();
+        rawEvent("session_start");
         Map<String, Object> m = new HashMap<>(); m.put("build", 1);
         event("start", m);
     }
     private void endSession() {
         if (sid.isEmpty()) return;
+        rawEvent("session_end");
+        closeRaw("session_end");
         event("end", new HashMap<>());
         sid = ""; prefs.edit().putString("sid", "").apply();
     }
     private void recordShot(Map<String, Object> shot) {
         ensureSession();
+        rawEvent("shot t=" + shot.get("t") + " peak_mg=" + shot.get("peak") + " score=" + shot.get("score") + " hold_ms=" + shot.get("drawms") + " settle_ms=" + shot.get("settle") + " end=" + shot.get("endIdx"));
         lastShotAt = System.currentTimeMillis();
         prefs.edit().putLong("lastShotAt", lastShotAt).apply();
         event("shot", shot);
@@ -329,6 +356,13 @@ public class SensorService extends Service {
                 }
                 case "rate": if (!setRate(c.optInt("value", 50))) status("Sensor sin conexión"); break;
                 case "end": endSession(); break;
+                case "mark": rawEvent(c.optString("value", "mark")); break;
+                case "rawlog": {
+                    boolean on = c.optBoolean("value", false);
+                    prefs.edit().putBoolean("rawLog", on).apply();
+                    if (on) openRaw(); else closeRaw("user_off");
+                    break;
+                }
                 case "scan": startScan(); break;
                 case "stopScan": stopScan(); break;
                 case "pair": pair(c.optString("value"), c.optString("name", "WIT")); break;
@@ -361,6 +395,10 @@ public class SensorService extends Service {
             v.put("paired", !instance.prefs.getString("address", "").isEmpty());
             v.put("session", !instance.sid.isEmpty());
             v.put("paused", instance.paused);
+            v.put("rawLog", instance.rawEnabled());
+            v.put("recording", instance.raw.isOpen());
+            java.io.File f = instance.raw.file();
+            if (f != null) v.put("rawFile", f.getAbsolutePath());
         }
         return MainActivity.toJson(v);
     }
@@ -370,6 +408,7 @@ public class SensorService extends Service {
         instance = null; CONNECTED = false;
         handler.removeCallbacksAndMessages(null);
         stopScan();
+        closeRaw("service_stop");
         if (gatt != null) { try { gatt.close(); } catch (Exception ignored) { } }
         super.onDestroy();
     }
