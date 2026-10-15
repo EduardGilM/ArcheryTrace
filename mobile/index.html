@@ -57,7 +57,7 @@
   #link { display:inline-flex; align-items:center; gap:6px; align-self:center; margin:0 0 0 auto; flex-shrink:0; overflow:hidden; text-overflow:ellipsis;
           height:30px; box-sizing:border-box; padding:0 11px 0 9px; border-radius:999px; border:1px solid var(--line-2); background:transparent;
           color:var(--txt-3); font-size:11px; font-weight:500; letter-spacing:0; text-transform:none; white-space:nowrap; }
-  #link::before { content:""; width:13px; height:13px; flex-shrink:0; background:currentColor; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='7'/%3E%3Cpath d='M12 2v5M12 17v5M2 12h5M17 12h5'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='7'/%3E%3Cpath d='M12 2v5M12 17v5M2 12h5M17 12h5'/%3E%3C/svg%3E") center/contain no-repeat; opacity:.8; }
+  #link::before { content:""; width:13px; height:13px; flex-shrink:0; background:currentColor; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='6.5' width='17' height='11' rx='5.5'/%3E%3Ccircle cx='12' cy='12' r='2.2'/%3E%3Cpath d='M7.5 3.5h9'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='6.5' width='17' height='11' rx='5.5'/%3E%3Ccircle cx='12' cy='12' r='2.2'/%3E%3Cpath d='M7.5 3.5h9'/%3E%3C/svg%3E") center/contain no-repeat; opacity:.8; }
   #link[data-state="on"] { color:var(--txt-2); }
   #link[data-state="on"]::before { background:var(--acc); opacity:1; filter:drop-shadow(0 0 4px var(--glow)); }
   #link[data-state="wait"] { color:var(--acc); }
@@ -549,7 +549,7 @@
   <div class="dateRow"><small id="subtitle"></small><button id="returnCurrent" onclick="backToCurrent()">Actual</button></div>
   <div class="headRow">
   <h1><span id="title">Sesión</span></h1>
-  <span id="link" data-state="off">Sin sensor</span>
+  <span id="link" data-state="off" role="button" onclick="window.openSensorScan&&openSensorScan()">Sin sensor</span>
   </div>
 </header>
 <span id="live">En vivo</span>
@@ -875,9 +875,7 @@ function linkLabel(d) {
   const connected = d.connected === true || /listo/i.test(String(d.status || ''));
   const pending = Number(d.pending), commands = Number(d.commands);
   const waiting = (Number.isFinite(pending) ? pending : 0) + (Number.isFinite(commands) ? commands : 0);
-  const at = Number(d.receivedAt);
-  const clock = Number.isFinite(at) && at > 0 ? new Date(at).toLocaleTimeString('es', {hour: '2-digit', minute: '2-digit'}) : '';
-  const text = (connected ? 'Sensor' : 'Desconectado') + (clock ? ' · ' + clock : '') + (waiting ? ' · ' + waiting + ' pend.' : '');
+  const text = (connected ? 'Sensor' : d.paired === false ? 'Vincular' : 'Desconectado') + (waiting ? ' · ' + waiting + ' pend.' : '');
   return {state: !connected ? 'off' : (waiting >= 15 ? 'wait' : 'on'), text};
 }
 function refreshLink() {

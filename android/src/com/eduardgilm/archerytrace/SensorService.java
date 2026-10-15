@@ -39,8 +39,7 @@ public class SensorService extends Service {
     static final UUID NOTIFY = UUID.fromString("0000ffe4-0000-1000-8000-00805f9a34fb");
     static final UUID WRITE = UUID.fromString("0000ffe9-0000-1000-8000-00805f9a34fb");
     static final UUID CCCD = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-    static final long SESSION_IDLE_MS = 20 * 60 * 1000;
-
+    
     private final Handler handler = new Handler(Looper.getMainLooper());
     private SharedPreferences prefs;
     private BluetoothAdapter adapter;
@@ -96,44 +95,115 @@ public class SensorService extends Service {
         BluetoothManager bm = getSystemService(BluetoothManager.class);
         adapter = bm == null ? null : bm.getAdapter();
         connect();
+        if (!sid.isEmpty()) handler.postDelayed(endAfterGrace, GRACE_MS);   // sesión abierta de antes de un reinicio
         if (ui != null) ui.drain();
     }
 
     // ---------- BLE ----------
+    // Con un sensor recordado, connectGatt(autoConnect=true) deja al sistema esperar a que
+    // aparezca (encendido = entrenando) sin escanear: bajo consumo y sin abrir la app.
     private void connect() {
         if (adapter == null || !adapter.isEnabled()) { status("Activa el Bluetooth"); handler.postDelayed(this::connect, 5000); return; }
         String addr = prefs.getString("address", "");
-        if (!addr.isEmpty()) {
-            status("Conectando con el sensor…");
-            BluetoothDevice d = adapter.getRemoteDevice(addr);
-            gatt = d.connectGatt(this, true, gattCallback, BluetoothDevice.TRANSPORT_LE);
-        } else startScan();
+        if (addr.isEmpty()) { status("Sin sensor"); return; }
+        if (gatt != null) { try { gatt.close(); } catch (Exception ignored) { } }
+        status("Esperando al sensor");
+        gatt = adapter.getRemoteDevice(addr).connectGatt(this, true, gattCallback, BluetoothDevice.TRANSPORT_LE);
     }
 
+    // Escáner de emparejado (solo a petición de la UI): sensores WIT, con RSSI medio.
+    private final Map<String, double[]> seen = new HashMap<>();   // addr -> [rssi medio, n]
+    private final Map<String, String> seenName = new HashMap<>();
+    private long lastScanPush = 0;
     private void startScan() {
-        if (scanning || adapter == null || adapter.getBluetoothLeScanner() == null) return;
-        scanning = true; status("Buscando sensor…");
+        if (scanning || adapter == null || !adapter.isEnabled() || adapter.getBluetoothLeScanner() == null) return;
+        scanning = true; seen.clear(); seenName.clear();
         adapter.getBluetoothLeScanner().startScan(null, new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), scanCallback);
-        handler.postDelayed(() -> { if (scanning) { stopScan(); status("Sensor no encontrado"); handler.postDelayed(this::startScan, 10000); } }, 20000);
+        handler.postDelayed(this::stopScan, 30000);
     }
     private void stopScan() {
+        if (!scanning) return;
         scanning = false;
         try { adapter.getBluetoothLeScanner().stopScan(scanCallback); } catch (Exception ignored) { }
+        pushScan(true);
     }
-    static boolean isWit(String name) {
+    static boolean isWit(String name, java.util.List<android.os.ParcelUuid> uuids) {
+        if (uuids != null) for (android.os.ParcelUuid u : uuids) if (u.getUuid().toString().startsWith("0000ffe5")) return true;
         if (name == null) return false;
         String n = name.toUpperCase(java.util.Locale.ROOT);
-        return n.startsWith("WT") || n.startsWith("BWT") || n.contains("WIT");
+        return n.startsWith("WT") || n.startsWith("BWT") || n.startsWith("WIT");
     }
     private final ScanCallback scanCallback = new ScanCallback() {
         @Override public void onScanResult(int type, ScanResult r) {
-            String name = r.getScanRecord() != null ? r.getScanRecord().getDeviceName() : null;
-            if (!scanning || !isWit(name)) return;
-            stopScan();
-            prefs.edit().putString("address", r.getDevice().getAddress()).putString("name", name).apply();
-            handler.post(SensorService.this::connect);
+            android.bluetooth.le.ScanRecord rec = r.getScanRecord();
+            String name = rec != null ? rec.getDeviceName() : null;
+            if (!scanning || !isWit(name, rec != null ? rec.getServiceUuids() : null)) return;
+            String a = r.getDevice().getAddress();
+            double[] v = seen.get(a);
+            if (v == null) seen.put(a, new double[]{r.getRssi(), 1});
+            else { v[0] += (r.getRssi() - v[0]) * 0.35; v[1]++; }   // media exponencial
+            if (name != null) seenName.put(a, name);
+            pushScan(false);
         }
     };
+    private void pushScan(boolean done) {
+        long now = System.currentTimeMillis();
+        if (!done && now - lastScanPush < 250) return;
+        lastScanPush = now;
+        org.json.JSONArray list = new org.json.JSONArray();
+        for (Map.Entry<String, double[]> e : seen.entrySet()) {
+            try {
+                list.put(new org.json.JSONObject().put("address", e.getKey()).put("name", seenName.getOrDefault(e.getKey(), "WIT"))
+                    .put("rssi", Math.round(e.getValue()[0])).put("n", (int) e.getValue()[1]));
+            } catch (Exception ignored) { }
+        }
+        MainActivity u = ui;
+        if (u != null) u.push("window.sensorScan&&sensorScan(" + list + "," + done + ")");
+    }
+    private void pair(String address, String name) {
+        stopScan();
+        if (paused) { paused = false; try { adapter.getBluetoothLeScanner().stopScan(pauseCallback); } catch (Exception ignored) { } }
+        prefs.edit().putString("address", address).putString("name", name == null ? "WIT" : name).apply();
+        connect();
+    }
+
+    // "Desconectar": corta y cierra la sesión, pero sin olvidar el sensor. No se reconecta
+    // mientras siga encendido (si no, volvería al instante); al apagarse, vuelve la conexión automática.
+    private boolean paused;
+    private long pausedSeen;
+    private final ScanCallback pauseCallback = new ScanCallback() {
+        @Override public void onScanResult(int type, ScanResult r) { pausedSeen = System.currentTimeMillis(); }
+    };
+    private final Runnable pauseCheck = new Runnable() {
+        public void run() {
+            if (!paused) return;
+            if (System.currentTimeMillis() - pausedSeen > 30000) { resumeAuto(); return; }
+            handler.postDelayed(this, 10000);
+        }
+    };
+    private void disconnectUntilOff() {
+        if (gatt != null) { try { gatt.disconnect(); gatt.close(); } catch (Exception ignored) { } gatt = null; }
+        CONNECTED = false; writeChar = null;
+        handler.removeCallbacks(endAfterGrace);
+        endSession();
+        String addr = prefs.getString("address", "");
+        if (addr.isEmpty() || adapter == null || adapter.getBluetoothLeScanner() == null) return;
+        paused = true; pausedSeen = System.currentTimeMillis();
+        try {
+            adapter.getBluetoothLeScanner().startScan(java.util.Collections.singletonList(new android.bluetooth.le.ScanFilter.Builder().setDeviceAddress(addr).build()),
+                new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build(), pauseCallback);
+        } catch (Exception ignored) { }
+        handler.postDelayed(pauseCheck, 10000);
+        status("Desconectado");
+    }
+    private void resumeAuto() {
+        if (paused) { paused = false; try { adapter.getBluetoothLeScanner().stopScan(pauseCallback); } catch (Exception ignored) { } }
+        connect();
+    }
+
+    // Sesiones automáticas: empieza al conectar; termina si el sensor sigue sin volver tras el margen.
+    static final long GRACE_MS = 5 * 60 * 1000;   // un corte breve no parte la sesión
+    private final Runnable endAfterGrace = () -> { if (!CONNECTED) { endSession(); status("Sensor apagado"); } };
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override public void onConnectionStateChange(BluetoothGatt g, int st, int state) {
@@ -144,6 +214,8 @@ public class SensorService extends Service {
             } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
                 CONNECTED = false; writeChar = null;
                 status("Sensor sin conexión");
+                handler.removeCallbacks(endAfterGrace);
+                handler.postDelayed(endAfterGrace, GRACE_MS);
             }
         }
         @Override public void onMtuChanged(BluetoothGatt g, int mtu, int st) { g.discoverServices(); }
@@ -161,7 +233,7 @@ public class SensorService extends Service {
                 else { d.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE); g.writeDescriptor(d); }
             }
             CONNECTED = true;
-            handler.post(() -> { ensureSession(); status("Sensor listo"); });
+            handler.post(() -> { handler.removeCallbacks(endAfterGrace); ensureSession(); status("Sensor listo"); });
         }
         // tras activar las notificaciones (y con el MTU ya negociado): 200 Hz volátil, nunca se guarda
         @Override public void onDescriptorWrite(BluetoothGatt g, BluetoothGattDescriptor d, int st) {
@@ -197,9 +269,8 @@ public class SensorService extends Service {
 
     // ---------- sesiones y eventos ----------
     private void ensureSession() {
+        if (!sid.isEmpty()) return;
         long now = System.currentTimeMillis();
-        if (!sid.isEmpty() && now - Math.max(lastShotAt, prefs.getLong("startedAt", 0)) < SESSION_IDLE_MS) return;
-        if (!sid.isEmpty()) event("end", new HashMap<>());
         sid = (now / 1000) + "-trace"; eid = -1;
         prefs.edit().putString("sid", sid).putLong("startedAt", now).apply();
         Map<String, Object> m = new HashMap<>(); m.put("build", 1);
@@ -261,10 +332,17 @@ public class SensorService extends Service {
                 }
                 case "rate": if (!setRate(c.optInt("value", 50))) status("Sensor sin conexión"); break;
                 case "end": endSession(); break;
-                case "rescan":
-                    prefs.edit().remove("address").apply();
+                case "scan": startScan(); break;
+                case "stopScan": stopScan(); break;
+                case "pair": pair(c.optString("value"), c.optString("name", "WIT")); break;
+                case "disconnect": disconnectUntilOff(); break;
+                case "connect": resumeAuto(); break;
+                case "forget":
+                    if (paused) { paused = false; try { adapter.getBluetoothLeScanner().stopScan(pauseCallback); } catch (Exception ignored) { } }
+                    handler.removeCallbacks(endAfterGrace); endSession();
+                    prefs.edit().remove("address").remove("name").apply();
                     if (gatt != null) { gatt.close(); gatt = null; }
-                    CONNECTED = false; startScan(); break;
+                    CONNECTED = false; status("Sin sensor"); break;
                 default: break; // modo, perfil, etc.: solo estado del móvil
             }
         } catch (Exception e) { status("Orden no válida"); }
@@ -283,6 +361,9 @@ public class SensorService extends Service {
         if (instance != null) {
             v.put("receivedAt", instance.lastShotAt); v.put("rate", Math.round(instance.rateHz));
             v.put("name", instance.prefs.getString("name", ""));
+            v.put("paired", !instance.prefs.getString("address", "").isEmpty());
+            v.put("session", !instance.sid.isEmpty());
+            v.put("paused", instance.paused);
         }
         return MainActivity.toJson(v);
     }
