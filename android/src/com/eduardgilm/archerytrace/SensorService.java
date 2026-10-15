@@ -91,7 +91,6 @@ public class SensorService extends Service {
         });
         detector.boreAxis = prefs.getInt("boreAxis", 0);
         detector.boreSign = prefs.getInt("boreSign", 1);
-        detector.thresholdMg = prefs.getFloat("thresholdMg", 2500f);
         parser = new WitParser(s -> {
             samples++;
             long now = s.tMs;

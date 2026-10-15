@@ -21,7 +21,7 @@ public class ShotDetectorTest {
         for (int i=0;i<200;i++,t+=10) p.feed(frame(0,0,1,r.nextGaussian()*40,r.nextGaussian()*40,r.nextGaussian()*40), t); // apertura
         for (int i=0;i<250;i++,t+=10) p.feed(frame(0,0,1, 0, Math.sin(i/20.0)*2, Math.cos(i/25.0)*2), t);              // apunte quieto
         for (int i=0;i<4;i++,t+=10) p.feed(frame(4,0.5,1.5,50,300,120), t);                                           // suelta
-        for (int i=0;i<200;i++,t+=10) p.feed(frame(0,0,1,30*Math.exp(-i/15.0),-20*Math.exp(-i/15.0),0), t);          // follow-through
+        for (int i=0;i<300;i++,t+=10) p.feed(frame(0,0,1,60*Math.cos(i/3.0)*Math.exp(-i/60.0),40*Math.sin(i/3.0)*Math.exp(-i/60.0),0), t);  // vibración
         if (shots.size()!=1) throw new AssertionError("esperaba 1 flecha, hay "+shots.size());
         Map<String,Object> s = shots.get(0);
         long hold = ((Number)s.get("drawms")).longValue();
@@ -38,7 +38,7 @@ public class ShotDetectorTest {
         for (int i=0;i<100;i++,t+=10) p.feed(frame(0,0,1,0,0,20), t);          // gira 20° (deriva/cambio de diana)
         for (int i=0;i<6000;i++,t+=10) p.feed(frame(0,0,1,0,0,0), t);           // 60 s sin tiros: nueva tanda
         for (int i=0;i<4;i++,t+=10) p.feed(frame(4,0.5,1.5,50,300,120), t);
-        for (int i=0;i<200;i++,t+=10) p.feed(frame(0,0,1,0,0,0), t);
+        for (int i=0;i<300;i++,t+=10) p.feed(frame(0,0,1,60*Math.cos(i/3.0)*Math.exp(-i/60.0),0,0), t);
         List<?> y2 = (List<?>) shots.get(0).get("yw2");
         double last = ((Number) y2.get(y2.size()-1)).doubleValue();
         if (Math.abs(last) > 0.5) throw new AssertionError("sin re-cero: "+last);
