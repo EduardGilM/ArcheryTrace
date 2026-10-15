@@ -14,8 +14,8 @@ import java.util.Map;
 //  - tras el tiro, vibración: |giro| medio ~50 °/s en el segundo siguiente.
 //  - golpes de manejo (bajar el arco, mover la mano) llegan con el arco ya moviéndose (50–170 °/s).
 //
-// Regla: SUELTA = golpe de acel (|a|-1g > SPIKE_G) justo al terminar un sostenimiento quieto
-// (|giro| < HOLD_DPS durante ≥ HOLD_MIN_MS), con orientación parecida a la de la tanda,
+// Regla: SUELTA = golpe de acel (|a|-1g > SPIKE_G) tras un sostenimiento quieto
+// (en el STILL_WINDOW_MS previo: |giro| medio < HOLD_DPS y máximo < HOLD_MAX_DPS), con orientación parecida a la de la tanda,
 // confirmada por vibración posterior (|giro| medio > RING_DPS en POST_CHECK_MS). Refractario REFRACTORY_MS.
 public final class ShotDetector {
     public interface Listener {
@@ -24,9 +24,12 @@ public final class ShotDetector {
     }
 
     // Umbrales con margen frente a lo medido (entre paréntesis):
-    public static final double HOLD_DPS = 6;          // quieto (tiros: máx 1,3 °/s antes de soltar) → ×4,5
-    public static final long HOLD_MIN_MS = 1500;      // (tiros: ≥4,8 s) → ×3; manejo: 0 s
-    public static final double SPIKE_G = 2.0;         // (tiros: >10 g con artefacto; 1ª trama ya 0,45 g) → ×5 sobre 1 g
+    public static final double HOLD_DPS = 8;          // media de |giro| en la ventana (tiros: 0,5 °/s; bajar arco: 50; manejo: 170)
+    public static final double HOLD_MAX_DPS = 30;     // pico permitido en la ventana: tolera temblores breves (tiros: máx 1,3)
+    public static final long STILL_WINDOW_MS = 1000;  // ventana de quietud antes del golpe (tiros: ≥4,8 s quietos)
+    public static final long HOLD_MIN_MS = 1500;      // sostenimiento medido con media móvil (tiros: 6,8–8,8 s)
+    public static final long HOLD_MAX_MS = 20000;     // más quieto que esto = arco apoyado, no apuntando (tiros: 5–7 s)
+    public static final double SPIKE_G = 1.5;         // |a|-1g (tiros: >10 g con artefacto); el manejo también da golpes, lo filtra la quietud
     public static final long SPIKE_WINDOW_MS = 80;    // el golpe ocupa ~4 tramas (≈40 ms)
     public static final double RING_DPS = 15;         // vibración tras soltar (tiros: ~50 °/s) → ÷3
     public static final long POST_CHECK_MS = 500;
@@ -46,10 +49,35 @@ public final class ShotDetector {
     private boolean boreLearned = false;
     private double yaw = 0, pitch = 0, yawZero = 0;
     private long lastT = -1, steadySince = -1, lastShot = -1, lastLive = 0, zeroAt = -1;
-    private boolean needZero = true;
+    private boolean needZero = true, tandaCounted = false;
+    private long zeroSeg = -2;
     public int endIndex = 0;
     private double[] tandaUp = null;
     private Cand cand;
+    private long lastReject = Long.MIN_VALUE / 2;
+    // golpes descartados (para diagnosticar en el CSV crudo / logcat)
+    public interface RejectSink { void onReject(long t, String why); }
+    public RejectSink rejectSink;
+    private void reject(long t, String why) { if (rejectSink != null) rejectSink.onReject(t, why); }
+
+    // Ventana de quietud antes del golpe: media y máximo de |giro| en STILL_WINDOW_MS.
+    private String stillBefore(long st) {
+        double sum = 0, max = 0; int n = 0; long first = Long.MAX_VALUE;
+        for (Pt q : hist) if (q.t < st - 30 && q.t >= st - 30 - STILL_WINDOW_MS) { sum += q.gyro; max = Math.max(max, q.gyro); n++; first = Math.min(first, q.t); }
+        if (n < 10 || st - 30 - first < STILL_WINDOW_MS * 0.8) return "poca historia";
+        double mean = sum / n;
+        if (mean >= HOLD_DPS) return String.format(java.util.Locale.ROOT, "giro medio %.1f°/s", mean);
+        if (max >= HOLD_MAX_DPS) return String.format(java.util.Locale.ROOT, "giro máx %.1f°/s", max);
+        return null;
+    }
+    // duración del sostenimiento: desde que la media móvil (~250 ms) de |giro| bajó de HOLD_DPS
+    private double gyroEma = 100;
+    private long stillSince = -1;
+    private long stillFrom = -1, stillEnd = Long.MIN_VALUE / 2;   // último tramo quieto ya cerrado
+    private long holdLength(long st) {
+        if (stillSince >= 0) return Math.max(0, st - stillSince);
+        return lastT - stillEnd <= SPIKE_WINDOW_MS + 100 && stillFrom >= 0 ? Math.max(0, st - stillFrom) : 0;
+    }
     private long brokenHold = 0, brokenAt = Long.MIN_VALUE / 2;
 
     static final class Pt { long t; double yaw, pitch, mag, gyro, ax, ay, az; }
@@ -78,35 +106,49 @@ public final class ShotDetector {
             double accPitch = Math.toDegrees(Math.asin(Math.max(-1, Math.min(1, bx * ux + by * uy + bz * uz))));
             pitch += 0.01 * (accPitch - pitch);
         }
+        gyroEma += (gyro - gyroEma) * Math.min(1, dt / 0.25);
+        if (gyroEma < HOLD_DPS) { if (stillSince < 0) stillSince = t; }
+        else { if (stillSince >= 0) { stillFrom = stillSince; stillEnd = t; } stillSince = -1; }
         Pt p = new Pt(); p.t = t; p.yaw = yaw; p.pitch = pitch; p.mag = mag * 1000; p.gyro = gyro; p.ax = s.ax; p.ay = s.ay; p.az = s.az;
         hist.add(p);
         while (!hist.isEmpty() && t - hist.get(0).t > PRE_MS + POST_MS + 1500) hist.remove(0);
 
-        if (lastShot >= 0 && t - lastShot > END_GAP_MS && zeroAt <= lastShot) { needZero = true; tandaUp = null; }
+        if (lastShot >= 0 && t - lastShot > END_GAP_MS && zeroAt <= lastShot) { needZero = true; tandaCounted = false; tandaUp = null; }
 
         long holdBefore = steadySince < 0 ? 0 : t - steadySince;
         double jump = Math.abs(mag - 1);
 
-        // el giro también salta en la suelta: vale el sostenimiento que acaba de romperse (≤ SPIKE_WINDOW_MS)
-        long held = holdBefore >= HOLD_MIN_MS ? holdBefore : (t - brokenAt <= SPIKE_WINDOW_MS ? brokenHold : 0);
-        if (cand == null && jump > SPIKE_G && held >= HOLD_MIN_MS && (lastShot < 0 || t - lastShot > REFRACTORY_MS)) {
-            cand = new Cand(); cand.t = startOfSpike(t); cand.holdMs = held; cand.peak = jump;
-            cand.up = new double[]{ux, uy, uz}; cand.holdAcc = holdMean(cand.t);
+        // Quietud en ventana (no continua): un temblor breve durante el apunte ya no reinicia el sostenimiento.
+        if (cand == null && jump > SPIKE_G && (lastShot < 0 || t - lastShot > REFRACTORY_MS)) {
+            long st = startOfSpike(t);
+            String why = stillBefore(st);
+            if (why == null && holdLength(st) < HOLD_MIN_MS) why = "sostenido solo " + holdLength(st) + " ms";
+            if (why == null && holdLength(st) > HOLD_MAX_MS) why = "arco en reposo " + holdLength(st) / 1000 + " s";
+            if (why == null) {
+                cand = new Cand(); cand.t = st; cand.holdMs = holdLength(st); cand.peak = jump;
+                cand.up = new double[]{ux, uy, uz}; cand.holdAcc = holdMean(cand.t);
+            } else if (t - lastReject > 1000) { lastReject = t; reject(st, "sin sostener: " + why); }
         }
         if (gyro < HOLD_DPS) { if (steadySince < 0) steadySince = t; }
         else { if (steadySince >= 0) { brokenHold = t - steadySince; brokenAt = t; } steadySince = -1; }
         if (cand != null) {
             if (t - cand.t <= SPIKE_WINDOW_MS) cand.peak = Math.max(cand.peak, jump);
             if (!cand.confirmed && t - cand.t >= POST_CHECK_MS) {
-                if (meanGyro(cand.t + SPIKE_WINDOW_MS, t) > RING_DPS && orientationOk(cand.up)) cand.confirmed = true;
-                else cand = null;
+                double ring = meanGyro(cand.t + SPIKE_WINDOW_MS, t);
+                boolean orient = orientationOk(cand.up);
+                if (ring > RING_DPS && orient) cand.confirmed = true;
+                else { reject(cand.t, ring <= RING_DPS ? String.format(java.util.Locale.ROOT, "sin vibración %.1f°/s", ring) : "orientación distinta a la tanda"); cand = null; }
             }
             if (cand != null && cand.confirmed && t - cand.t >= POST_MS) {
-                learnBore(cand); emit(cand); lastShot = cand.t; cand = null; steadySince = -1;
+                learnBore(cand); emit(cand); needZero = false; lastShot = cand.t; cand = null; steadySince = -1;
             }
         }
         long holdMs = steadySince < 0 ? 0 : t - steadySince;
-        if (needZero && cand == null && holdMs >= 500) { yawZero = yaw; needZero = false; zeroAt = t; endIndex++; }
+        // cero de la tanda: se rehace en cada sostenimiento hasta la primera flecha (manda el apunte justo antes de tirar)
+        if (needZero && cand == null && holdMs >= 500 && zeroSeg != steadySince) {
+            yawZero = yaw; zeroAt = t; zeroSeg = steadySince;
+            if (!tandaCounted) { endIndex++; tandaCounted = true; }
+        }
         if (t - lastLive >= 50) { lastLive = t; listener.onLive(yaw - yawZero, pitch, gyro < HOLD_DPS, holdMs); }
     }
 

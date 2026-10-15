@@ -67,6 +67,8 @@ public class SensorService extends Service {
         raw.close(); handler.removeCallbacks(rawFlush);
     }
     private ShotDetector detector;
+    private CandidateRecorder cands;
+    private long lastSampleT;
     private String sid = "";
     private long eid = 0, lastShotAt = 0, samples = 0, rateWindow = 0;
     private double rateHz = 0;
@@ -86,9 +88,11 @@ public class SensorService extends Service {
         });
         sid = prefs.getString("sid", ""); eid = prefs.getLong("eid", 0); lastShotAt = prefs.getLong("lastShotAt", 0);
         detector = new ShotDetector(new ShotDetector.Listener() {
-            public void onShot(Map<String, Object> shot) { handler.post(() -> recordShot(shot)); }
+            public void onShot(Map<String, Object> shot) { cands.mark(lastSampleT - ShotDetector.POST_MS, "shot hold=" + shot.get("drawms") + " score=" + shot.get("score")); handler.post(() -> recordShot(shot)); }
             public void onLive(double x, double y, boolean steady, long hold) { }
         });
+        cands = new CandidateRecorder(getExternalFilesDir("candidates"));
+        detector.rejectSink = (t, why) -> { raw.event(t, "reject " + why); cands.mark(t, "reject " + why); android.util.Log.i("ArcheryTraceShot", "descartado: " + why); };
         detector.boreAxis = prefs.getInt("boreAxis", 0);
         detector.boreSign = prefs.getInt("boreSign", 1);
         parser = new WitParser(s -> {
@@ -98,7 +102,9 @@ public class SensorService extends Service {
             if (now - rateWindow >= 2000) { rateHz = samples * 1000.0 / (now - rateWindow); samples = 0; rateWindow = now; if (rateHz > 5) parser.periodMs = 1000.0 / rateHz;
                 raw.event(now, String.format(java.util.Locale.ROOT, "rate_hz=%.1f", rateHz)); }
             raw.sample(s);
+            lastSampleT = s.tMs;
             detector.onSample(s);
+            cands.sample(s);
         });
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm.getNotificationChannel("live") == null)
@@ -304,6 +310,7 @@ public class SensorService extends Service {
         sid = ""; prefs.edit().putString("sid", "").apply();
     }
     private void recordShot(Map<String, Object> shot) {
+        android.util.Log.i("ArcheryTraceShot", "tiro hold=" + shot.get("drawms") + " score=" + shot.get("score") + " settle=" + shot.get("settle"));
         ensureSession();
         rawEvent("shot t=" + shot.get("t") + " peak_mg=" + shot.get("peak") + " score=" + shot.get("score") + " hold_ms=" + shot.get("drawms") + " settle_ms=" + shot.get("settle") + " end=" + shot.get("endIdx"));
         lastShotAt = System.currentTimeMillis();

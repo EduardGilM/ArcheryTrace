@@ -25,18 +25,24 @@ public class ShotDetectorTest {
         if (shots.size()!=1) throw new AssertionError("esperaba 1 flecha, hay "+shots.size());
         Map<String,Object> s = shots.get(0);
         long hold = ((Number)s.get("drawms")).longValue();
-        if (hold < 2000) throw new AssertionError("sostenimiento corto: "+hold);
+        if (hold < 1500) throw new AssertionError("sostenimiento corto: "+hold);
         if (((List<?>)s.get("yw2")).isEmpty() || ((List<?>)s.get("pyw")).isEmpty()) throw new AssertionError("sin traza");
         System.out.println("OK score="+s.get("score")+" hold="+hold+" peak="+s.get("peak")+" settle="+s.get("settle")+" rate="+s.get("rate")+" pre="+((List<?>)s.get("yw2")).size());
         // ruido de manejo sin sostener: ninguna flecha
         shots.clear();
+        for (int i=0;i<100;i++,t+=10) p.feed(frame(0,0,1,r.nextGaussian()*40,r.nextGaussian()*40,0), t); // bajar el arco
         for (int i=0;i<300;i++,t+=10) p.feed(frame(r.nextGaussian()*3,0,1,r.nextGaussian()*200,0,0), t);
-        if (!shots.isEmpty()) throw new AssertionError("falsa flecha sin sostener");
+        if (!shots.isEmpty()) throw new AssertionError("falsa flecha sin sostener: "+shots.get(0).get("drawms"));
         System.out.println("OK sin falsos positivos");
         // cero automático por tanda: un giro de 20° entre tandas no desplaza la traza
         shots.clear();
         for (int i=0;i<100;i++,t+=10) p.feed(frame(0,0,1,0,0,20), t);          // gira 20° (deriva/cambio de diana)
         for (int i=0;i<6000;i++,t+=10) p.feed(frame(0,0,1,0,0,0), t);           // 60 s sin tiros: nueva tanda
+        for (int i=0;i<4;i++,t+=10) p.feed(frame(4,0.5,1.5,50,300,120), t);    // golpe con el arco apoyado: no es tiro
+        for (int i=0;i<300;i++,t+=10) p.feed(frame(0,0,1,60*Math.cos(i/3.0)*Math.exp(-i/60.0),0,0), t);
+        if (!shots.isEmpty()) throw new AssertionError("tiro con el arco en reposo");
+        for (int i=0;i<100;i++,t+=10) p.feed(frame(0,0,1,0,0,-15), t);          // levanta y apunta (otro giro)
+        for (int i=0;i<300;i++,t+=10) p.feed(frame(0,0,1,0,0,0), t);            // apunte 3 s
         for (int i=0;i<4;i++,t+=10) p.feed(frame(4,0.5,1.5,50,300,120), t);
         for (int i=0;i<300;i++,t+=10) p.feed(frame(0,0,1,60*Math.cos(i/3.0)*Math.exp(-i/60.0),0,0), t);
         List<?> y2 = (List<?>) shots.get(0).get("yw2");
