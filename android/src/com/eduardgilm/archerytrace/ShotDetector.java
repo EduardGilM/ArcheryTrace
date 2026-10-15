@@ -24,15 +24,19 @@ public final class ShotDetector {
     }
 
     // Umbrales con margen frente a lo medido (entre paréntesis):
-    public static final double HOLD_DPS = 8;          // media de |giro| en la ventana (tiros: 0,5 °/s; bajar arco: 50; manejo: 170)
-    public static final double HOLD_MAX_DPS = 30;     // pico permitido en la ventana: tolera temblores breves (tiros: máx 1,3)
+    public static final double HOLD_DPS = 25;         // media de |giro| antes del golpe; tolera temblor de principiante (experto: 0,5; principiante: 10–25; manejo: 170–540)
+    public static final double HOLD_MAX_DPS = 80;     // pico permitido en la ventana (experto: 1,3)
     public static final long STILL_WINDOW_MS = 1000;  // ventana de quietud antes del golpe (tiros: ≥4,8 s quietos)
-    public static final long HOLD_MIN_MS = 1500;      // sostenimiento medido con media móvil (tiros: 6,8–8,8 s)
+    public static final long HOLD_MIN_MS = 1000;      // sostenimiento mínimo (media móvil < HOLD_DPS)
     public static final long HOLD_MAX_MS = 20000;     // más quieto que esto = arco apoyado, no apuntando (tiros: 5–7 s)
     public static final double SPIKE_G = 1.5;         // |a|-1g (tiros: >10 g con artefacto); el manejo también da golpes, lo filtra la quietud
     public static final long SPIKE_WINDOW_MS = 80;    // el golpe ocupa ~4 tramas (≈40 ms)
-    public static final double RING_DPS = 15;         // vibración tras soltar (tiros: ~50 °/s) → ÷3
-    public static final long POST_CHECK_MS = 500;
+    public static final double RING_DPS = 15;         // vibración tras soltar POR ENCIMA del temblor previo (tiros: ~50 °/s)
+    public static final double MAX_ELEV_DEG = 35;     // eje de puntería casi horizontal = arco levantado apuntando
+    public static final long POST_CHECK_MS = 1500;
+    public static final double HORIZ_FRAC = 0.6;      // golpe en el plano horizontal (hacia la diana): tiros 0,76–0,89; apoyar 0,11; manejo 0,45
+    public static final double TILT_AFTER_DEG = 20;   // vuelco del arco tras soltar: tiros 50–55°; apoyar 7°; manejo 24°
+    public static final int MIN_FEATURES = 3;         // de 4: golpe horizontal, vibración, vuelco, sostenimiento
     public static final double MAX_TILT_DEG = 30;     // giro de la vertical vs la tanda (tiros: <2°)
     public static final long REFRACTORY_MS = 3000;
     public static final double SETTLE_DPS = 25;       // fin de la vibración (tiros: pico ~70 °/s, cae a ~20 en ~1 s)
@@ -81,7 +85,7 @@ public final class ShotDetector {
     private long brokenHold = 0, brokenAt = Long.MIN_VALUE / 2;
 
     static final class Pt { long t; double yaw, pitch, mag, gyro, ax, ay, az; }
-    static final class Cand { long t; long holdMs; double peak; double[] up; double[] holdAcc; boolean confirmed; }
+    static final class Cand { long t; long holdMs; double peak; double[] up; double[] holdAcc; double preMean, horiz; boolean holdOk; String info = ""; boolean confirmed; }
 
     public ShotDetector(Listener l) { listener = l; }
 
@@ -118,29 +122,51 @@ public final class ShotDetector {
         long holdBefore = steadySince < 0 ? 0 : t - steadySince;
         double jump = Math.abs(mag - 1);
 
-        // Quietud en ventana (no continua): un temblor breve durante el apunte ya no reinicia el sostenimiento.
+        // Candidato = golpe de acel. Bloqueos duros: arco en reposo (>20 s quieto) y arco no levantado.
         if (cand == null && jump > SPIKE_G && (lastShot < 0 || t - lastShot > REFRACTORY_MS)) {
             long st = startOfSpike(t);
-            String why = stillBefore(st);
-            if (why == null && holdLength(st) < HOLD_MIN_MS) why = "sostenido solo " + holdLength(st) + " ms";
-            if (why == null && holdLength(st) > HOLD_MAX_MS) why = "arco en reposo " + holdLength(st) / 1000 + " s";
+            String why = null;
+            if (holdLength(st) > HOLD_MAX_MS) why = "arco en reposo " + holdLength(st) / 1000 + " s";
+            if (why == null && boreLearned) {
+                double elev = Math.toDegrees(Math.asin(Math.max(-1, Math.min(1, bx * ux + by * uy + bz * uz))));
+                if (Math.abs(elev) > MAX_ELEV_DEG) why = String.format(java.util.Locale.ROOT, "arco no levantado (puntería a %.0f°)", elev);
+            }
             if (why == null) {
                 cand = new Cand(); cand.t = st; cand.holdMs = holdLength(st); cand.peak = jump;
                 cand.up = new double[]{ux, uy, uz}; cand.holdAcc = holdMean(cand.t);
-            } else if (t - lastReject > 1000) { lastReject = t; reject(st, "sin sostener: " + why); }
+                cand.preMean = meanGyro(st - 30 - STILL_WINDOW_MS, st - 30);
+                String sb = stillBefore(st);
+                cand.holdOk = sb == null && cand.holdMs >= HOLD_MIN_MS;
+                double dx = s.ax - cand.holdAcc[0], dy = s.ay - cand.holdAcc[1], dz = s.az - cand.holdAcc[2];
+                double along = dx * ux + dy * uy + dz * uz, n = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                cand.horiz = n < 1e-6 ? 0 : Math.sqrt(Math.max(0, n * n - along * along)) / n;
+            } else if (t - lastReject > 1000) { lastReject = t; reject(st, why); }
         }
         if (gyro < HOLD_DPS) { if (steadySince < 0) steadySince = t; }
         else { if (steadySince >= 0) { brokenHold = t - steadySince; brokenAt = t; } steadySince = -1; }
         if (cand != null) {
             if (t - cand.t <= SPIKE_WINDOW_MS) cand.peak = Math.max(cand.peak, jump);
             if (!cand.confirmed && t - cand.t >= POST_CHECK_MS) {
-                double ring = meanGyro(cand.t + SPIKE_WINDOW_MS, t);
-                boolean orient = orientationOk(cand.up);
-                if (ring > RING_DPS && orient) cand.confirmed = true;
-                else { reject(cand.t, ring <= RING_DPS ? String.format(java.util.Locale.ROOT, "sin vibración %.1f°/s", ring) : "orientación distinta a la tanda"); cand = null; }
+                // Firma de la suelta: cuenta rasgos (hacen falta 3 de 4) + orientación de la tanda (obligatoria)
+                double ring = meanGyro(cand.t + SPIKE_WINDOW_MS, cand.t + 500);
+                double tilt = tiltAfter(cand);
+                boolean fHoriz = cand.horiz >= HORIZ_FRAC, fRing = ring > cand.preMean + RING_DPS, fTilt = tilt >= TILT_AFTER_DEG;
+                int score = (fHoriz ? 1 : 0) + (fRing ? 1 : 0) + (fTilt ? 1 : 0) + (cand.holdOk ? 1 : 0);
+                String info = String.format(java.util.Locale.ROOT, "golpe horizontal %.2f%s, vibración %.0f°/s sobre %.0f%s, vuelco %.0f°%s, sostenido %d ms%s",
+                    cand.horiz, fHoriz ? "✓" : "✗", ring, cand.preMean, fRing ? "✓" : "✗", tilt, fTilt ? "✓" : "✗", cand.holdMs, cand.holdOk ? "✓" : "✗");
+                cand.info = info;
+                if (score < MIN_FEATURES) { reject(cand.t, "firma insuficiente " + score + "/4: " + info); cand = null; }
+                else if (!orientationOk(cand.up)) { reject(cand.t, "orientación distinta a la tanda: " + info); cand = null; }
+                else cand.confirmed = true;
             }
             if (cand != null && cand.confirmed && t - cand.t >= POST_MS) {
-                learnBore(cand); emit(cand); needZero = false; lastShot = cand.t; cand = null; steadySince = -1;
+                learnBore(cand);
+                if (needZero) {   // primera flecha de la tanda: el cero es el apunte de los 500 ms antes de soltar
+                    double sy = 0; int n = 0;
+                    for (Pt q : hist) if (q.t >= cand.t - 530 && q.t < cand.t - 30) { sy += q.yaw; n++; }
+                    if (n > 0) yawZero = sy / n;
+                }
+                emit(cand); needZero = false; lastShot = cand.t; cand = null; steadySince = -1;
             }
         }
         long holdMs = steadySince < 0 ? 0 : t - steadySince;
@@ -170,6 +196,15 @@ public final class ShotDetector {
         double s = 0; int n = 0;
         for (Pt q : hist) if (q.t > from && q.t <= to) { s += q.gyro; n++; }
         return n == 0 ? 0 : s / n;
+    }
+    // cuánto vuelca el arco hacia delante tras soltar: vertical media 1,0–1,5 s después vs la del apunte
+    private double tiltAfter(Cand c) {
+        double sx = 0, sy = 0, sz = 0, dev = 0; int n = 0;
+        for (Pt q : hist) if (q.t >= c.t + 1000 && q.t <= c.t + 1500) { sx += q.ax; sy += q.ay; sz += q.az; dev += (q.mag / 1000 - 1) * (q.mag / 1000 - 1); n++; }
+        if (n == 0 || Math.sqrt(dev / n) > 0.3) return 0;   // aún agitándose: la vertical no es fiable
+        double m = Math.sqrt(sx * sx + sy * sy + sz * sz);
+        double d = (sx * c.up[0] + sy * c.up[1] + sz * c.up[2]) / m;
+        return Math.toDegrees(Math.acos(Math.max(-1, Math.min(1, d))));
     }
     private boolean orientationOk(double[] up) {
         if (tandaUp == null) { tandaUp = up; return true; }
@@ -227,7 +262,7 @@ public final class ShotDetector {
         double dtMs = tt.size() > 1 ? (tt.get(tt.size() - 1) - tt.get(0)) / (tt.size() - 1) : 50;
         Map<String, Object> m = new java.util.HashMap<>();
         m.put("kind", "shot"); m.put("t", e.t); m.put("score", Math.round(score)); m.put("peak", Math.round(e.peak * 1000));
-        m.put("instab", Math.round(sdM)); m.put("settle", settle); m.put("drawms", e.holdMs);
+        m.put("instab", Math.round(sdM)); m.put("settle", settle); m.put("drawms", e.holdMs); m.put("sig", e.info);
         m.put("aim_sd_deg", round(aimSd)); m.put("aim_dx_deg", round(ref.yaw - yawZero)); m.put("aim_dy_deg", round(ref.pitch));
         m.put("dt", Math.max(1, Math.round(dtMs))); m.put("rate", Math.round(1000 / Math.max(1, dtMs)));
         m.put("clock", "sensor"); m.put("metric", 3); m.put("endIdx", endIndex);
