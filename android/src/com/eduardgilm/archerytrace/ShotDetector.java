@@ -32,6 +32,7 @@ public final class ShotDetector {
     static final long END_GAP_MS = 45000, ZERO_HOLD_MS = 500;
     private double yawZero = 0;
     private boolean needZero = true;
+    private long zeroAt = -1;
     public int endIndex = 0;
 
     static final class Pt { long t; double yaw, pitch, mag, gyro; }
@@ -71,7 +72,7 @@ public final class ShotDetector {
         hist.add(p);
         while (!hist.isEmpty() && t - hist.get(0).t > PRE_MS + POST_MS + 1000) hist.remove(0);
 
-        if (lastShot >= 0 && t - lastShot > END_GAP_MS && !needZero && pending == null) needZero = true;
+        if (lastShot >= 0 && t - lastShot > END_GAP_MS && zeroAt <= lastShot && pending == null) needZero = true;
         long holdBefore = steadySince < 0 ? 0 : t - steadySince;   // sostenimiento hasta la muestra anterior
         if (pending == null) { if (gyro < STEADY_DPS) { if (steadySince < 0) steadySince = t; } else steadySince = -1; }
         long holdMs = steadySince < 0 ? 0 : t - steadySince;
@@ -86,7 +87,7 @@ public final class ShotDetector {
             pending.peak = Math.max(pending.peak, Math.abs(mag - 1) * 1000);
             if (t - pending.t >= POST_MS) { emit(pending); lastShot = pending.t; pending = null; steadySince = -1; }
         }
-        if (needZero && pending == null && holdMs >= ZERO_HOLD_MS) { yawZero = yaw; needZero = false; endIndex++; }
+        if (needZero && pending == null && holdMs >= ZERO_HOLD_MS) { yawZero = yaw; needZero = false; zeroAt = t; endIndex++; }
         if (t - lastLive >= 50) { lastLive = t; listener.onLive(yaw - yawZero, pitch, gyro < STEADY_DPS, holdMs); }
     }
 
