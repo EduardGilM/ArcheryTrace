@@ -33,6 +33,16 @@ public class ShotDetectorTest {
         for (int i=0;i<300;i++,t+=10) p.feed(frame(r.nextGaussian()*3,0,1,r.nextGaussian()*200,0,0), t);
         if (!shots.isEmpty()) throw new AssertionError("falsa flecha sin sostener");
         System.out.println("OK sin falsos positivos");
+        // cero automático por tanda: un giro de 20° entre tandas no desplaza la traza
+        shots.clear();
+        for (int i=0;i<100;i++,t+=10) p.feed(frame(0,0,1,0,0,20), t);          // gira 20° (deriva/cambio de diana)
+        for (int i=0;i<6000;i++,t+=10) p.feed(frame(0,0,1,0,0,0), t);           // 60 s sin tiros: nueva tanda
+        for (int i=0;i<4;i++,t+=10) p.feed(frame(4,0.5,1.5,50,300,120), t);
+        for (int i=0;i<200;i++,t+=10) p.feed(frame(0,0,1,0,0,0), t);
+        List<?> y2 = (List<?>) shots.get(0).get("yw2");
+        double last = ((Number) y2.get(y2.size()-1)).doubleValue();
+        if (Math.abs(last) > 0.5) throw new AssertionError("sin re-cero: "+last);
+        System.out.println("OK cero por tanda yaw="+last+" tanda="+shots.get(0).get("endIdx"));
         // 200 Hz real: 8 tramas por notificación de 160 bytes, cada una con su instante
         List<Long> ts = new ArrayList<>();
         WitParser b = new WitParser(x -> ts.add(x.tMs));

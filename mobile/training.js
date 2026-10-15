@@ -50,7 +50,7 @@ $('sessionHero').insertAdjacentHTML('afterend',`<section class="training" id="tr
 <button class="pickRow" id="arrowRow"><span>Flechas</span><b id="arrowVal">–</b></button>
 <div class="sheet" id="arrowSheet" hidden><div id="arrowList"></div>
 <div class="addItem"><input id="arrowName" placeholder="Nombre de las flechas" maxlength="24"><button id="arrowAdd">Añadir</button></div></div>
-</div><button class="btnSecondary" id="calibrationMode" onclick="sendCmd('calibrate',0)">Iniciar calibración</button></section>`);
+</div></section>`);
 $('vSet').querySelector('.deleteAction').insertAdjacentHTML('beforebegin',`<section class="training"><div id="setState"></div></section>`);
 $('vShot').querySelector('.deleteAction').insertAdjacentHTML('beforebegin',`<section class="training card"><div id="shotContext"></div></section>`);
 $('vProgress').insertAdjacentHTML('afterbegin',`<section class="training card"><label>Equipo <select id="progressProfile" onchange="renderProgress()"></select></label><div id="volume"></div></section>`);
@@ -65,7 +65,9 @@ function validCalibrationShot(s) { return !!s && !s.manual && Number.isFinite(s.
 function calibrationState() {
   try { const s = JSON.parse(localStorage.getItem('atCalibration')); return s && typeof s === 'object' ? s : null; } catch { return null; }
 }
+// Sin calibración manual: el cero de puntería es automático en cada tanda.
 function renderCalibration(s) {
+  const panel = $('calibrationPanel'); if (panel) panel.hidden = true; return;
   const valid = validCalibrationShot(s), session = displayedSession(), select = $('calibrationProfile');
   $('calibrationPanel').hidden = !valid;
   if (!valid) return;
@@ -204,8 +206,6 @@ render=function() {
     if(view==='Session' && data?.shots?.length) $('sSets').textContent=`${n}/${goal}`;
   } else $('trainingStatus').textContent=s?`${s.mode?s.mode+' · ':''}${s.paused?'Pausa':s.resting?'Descanso':'Set '+setNumber} · ${s.shots.filter(x=>x.set_id===(s.currentSet??1)).length}${s.target?'/'+s.target:''}`:'Equipo';
   if(!historyMode && s?.calibrating)$('trainingStatus').textContent=`Calibración · ${s.calibrationCount||0}`;
-  $('calibrationMode').hidden=historyMode||!s?.live||!s.sensorId||!window.Native?.command;
-  $('calibrationMode').textContent=s?.calibrating?'Salir de calibración':'Iniciar calibración';
   ['modePicker','bowPicker','arrowPicker'].forEach(id=>$(id).hidden=historyMode);
   $('modeVal').textContent=s?.mode||'–';
   const indoor=!!(s&&s.mode==='Indoor');

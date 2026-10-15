@@ -27,6 +27,12 @@ public final class ShotDetector {
     private double yaw = 0, pitch = 0;        // ángulo de apunte (°)
     private long lastT = -1, steadySince = -1, lastShot = -1, lastLive = 0;
     private Pending pending;
+    // Cero automático: el primer sostenimiento estable de cada tanda fija la referencia
+    // horizontal (yaw) y anula la deriva del giroscopio. Tanda nueva tras END_GAP_MS sin tiros.
+    static final long END_GAP_MS = 45000, ZERO_HOLD_MS = 500;
+    private double yawZero = 0;
+    private boolean needZero = true;
+    public int endIndex = 0;
 
     static final class Pt { long t; double yaw, pitch, mag, gyro; }
     static final class Pending { long t; int idx; double peak; long holdMs; }
@@ -65,6 +71,7 @@ public final class ShotDetector {
         hist.add(p);
         while (!hist.isEmpty() && t - hist.get(0).t > PRE_MS + POST_MS + 1000) hist.remove(0);
 
+        if (lastShot >= 0 && t - lastShot > END_GAP_MS && !needZero && pending == null) needZero = true;
         long holdBefore = steadySince < 0 ? 0 : t - steadySince;   // sostenimiento hasta la muestra anterior
         if (pending == null) { if (gyro < STEADY_DPS) { if (steadySince < 0) steadySince = t; } else steadySince = -1; }
         long holdMs = steadySince < 0 ? 0 : t - steadySince;
@@ -79,7 +86,8 @@ public final class ShotDetector {
             pending.peak = Math.max(pending.peak, Math.abs(mag - 1) * 1000);
             if (t - pending.t >= POST_MS) { emit(pending); lastShot = pending.t; pending = null; steadySince = -1; }
         }
-        if (t - lastLive >= 50) { lastLive = t; listener.onLive(yaw, pitch, gyro < STEADY_DPS, holdMs); }
+        if (needZero && pending == null && holdMs >= ZERO_HOLD_MS) { yawZero = yaw; needZero = false; endIndex++; }
+        if (t - lastLive >= 50) { lastLive = t; listener.onLive(yaw - yawZero, pitch, gyro < STEADY_DPS, holdMs); }
     }
 
     private void emit(Pending e) {
@@ -95,11 +103,11 @@ public final class ShotDetector {
             Pt q = hist.get(i); long d = q.t - e.t;
             if (d < -PRE_MS) continue;
             if (i < e.idx) {
-                yw.add(round(q.yaw)); pt.add(round(q.pitch)); mp.add((double) Math.round(q.mag)); tt.add((double) d);
+                yw.add(round(q.yaw - yawZero)); pt.add(round(q.pitch)); mp.add((double) Math.round(q.mag)); tt.add((double) d);
                 tx.add(round((q.yaw - ref.yaw) * 17.45)); ty.add(round((q.pitch - ref.pitch) * 17.45));
                 if (d >= -1000) { double x = q.yaw - ref.yaw, y = q.pitch - ref.pitch; sumX += x; sumY += y; sumX2 += x * x; sumY2 += y * y; sumM += q.mag; sumM2 += q.mag * q.mag; n++; }
             } else if (d > 0) {
-                pyw.add(round(q.yaw)); ppt.add(round(q.pitch)); mq.add((double) Math.round(q.mag)); postT.add((double) d);
+                pyw.add(round(q.yaw - yawZero)); ppt.add(round(q.pitch)); mq.add((double) Math.round(q.mag)); postT.add((double) d);
             }
         }
         double sdX = n > 1 ? Math.sqrt(Math.max(0, sumX2 / n - (sumX / n) * (sumX / n))) : 0;
@@ -120,7 +128,7 @@ public final class ShotDetector {
         m.put("kind", "shot"); m.put("t", e.t); m.put("score", Math.round(score)); m.put("peak", Math.round(e.peak));
         m.put("instab", Math.round(sdM)); m.put("settle", settle); m.put("drawms", e.holdMs);
         m.put("dt", Math.max(1, Math.round(dtMs))); m.put("rate", Math.round(1000 / Math.max(1, dtMs)));
-        m.put("clock", "sensor"); m.put("metric", 2);
+        m.put("clock", "sensor"); m.put("endIdx", endIndex); m.put("metric", 2);
         m.put("yw2", yw); m.put("pt", pt); m.put("tx", tx); m.put("ty", ty); m.put("trace_t", tt);
         m.put("mp", mp); m.put("pre_t", tt); m.put("mq", mq); m.put("post_t", postT); m.put("pyw", pyw); m.put("ppt", ppt);
         listener.onShot(m);
