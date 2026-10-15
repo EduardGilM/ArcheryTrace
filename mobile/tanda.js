@@ -17,7 +17,7 @@
 .statFilter{display:flex;padding:3px;margin:0 0 10px;border-radius:999px;background:rgba(255,255,255,.06);overflow-x:auto;scrollbar-width:none}
 .statFilter::-webkit-scrollbar{display:none}
 .statFilter button{flex:1;min-width:max-content;height:34px;padding:0 12px;border:0;border-radius:999px;background:none;color:var(--txt-2);font-size:13.5px;font-weight:500}
-.statFilter button.on{background:rgba(255,255,255,.1);color:var(--acc);font-weight:600}`;
+.statFilter button.on{background:var(--acc);color:#fff;font-weight:600}`;
   document.head.appendChild(css);
   $('trainingStatus').insertAdjacentHTML('afterend','<div class="tandaBar" id="tandaBar"><button class="tandaBtn" id="tandaBtn"></button><span class="tandaInfo" id="tandaInfo"></span></div>');
   $('sessionHero').insertAdjacentHTML('beforebegin','<div class="statFilter" data-scope="session"></div>');
