@@ -163,6 +163,11 @@ public class SensorService extends Service {
             CONNECTED = true;
             handler.post(() -> { ensureSession(); status("Sensor listo"); });
         }
+        // tras activar las notificaciones (y con el MTU ya negociado): 200 Hz volátil, nunca se guarda
+        @Override public void onDescriptorWrite(BluetoothGatt g, BluetoothGattDescriptor d, int st) {
+            if (CCCD.equals(d.getUuid()) && prefs.getBoolean("autoRate", true))
+                handler.postDelayed(() -> setRate(200), 300);
+        }
         @Override public void onCharacteristicChanged(BluetoothGatt g, BluetoothGattCharacteristic c, byte[] value) {
             parser.feed(value, android.os.SystemClock.elapsedRealtime() + bootOffset());
         }

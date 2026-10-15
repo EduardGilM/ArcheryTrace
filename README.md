@@ -15,7 +15,7 @@ Entrenador de tiro con arco con un inclinómetro **WitMotion (WIT) Bluetooth 5.0
 - WitMotion WT901BLE / BWT901 (BLE 5.0). Servicio `0000ffe5-…`, notificación `0000ffe4-…`, escritura `0000ffe9-…`.
 - Trama BLE de 20 bytes `0x55 0x61`: acelerómetro (±16 g), giroscopio (±2000 °/s) y ángulos (±180°), int16 little-endian.
 - También se decodifican las tramas serie de 11 bytes (`0x55 0x51/0x52/0x53` con checksum).
-- La app solo lee. El único comando que puede enviar es la frecuencia de salida, sin guardar en el sensor (vuelve al valor de fábrica al apagarlo), y solo si se pide desde la app.
+- Al conectar, la app envía siempre desbloqueo (`FF AA 69 88 B5`) y frecuencia 200 Hz (`FF AA 03 0B 00`) tras negociar el MTU y activar notificaciones. Nunca envía el comando de guardado: al apagar el sensor vuelve a su valor de fábrica. No escribe ningún otro ajuste ni calibración.
 
 ## Cómo analiza
 
