@@ -132,27 +132,36 @@ public class MainActivity extends Activity {
         @android.webkit.JavascriptInterface public String command(String json) {
             try { SensorService.command(json); return ""; } catch(Exception e) { return e.getMessage(); }
         }
+        // Copia: escritura nativa directa (sin selector de archivos, que dejaba documentos de 0 bytes si el
+        // resultado no llegaba a escribirse). Se guarda en Descargas vía MediaStore, se comprueba el tamaño y se ofrece compartir.
         @android.webkit.JavascriptInterface public void export(String json) {
-            if (json == null) { noticeExport("No se pudo preparar la copia"); return; }
+            if (json == null || json.isEmpty()) { noticeExport("No se pudo preparar la copia"); return; }
             synchronized (exportLock) {
-                try (java.io.Writer writer = new java.io.OutputStreamWriter(new java.io.FileOutputStream(exportFile()), java.nio.charset.StandardCharsets.UTF_8)) {
-                    final int step = 16384;
-                    for (int i = 0; i < json.length(); i += step) writer.write(json, i, Math.min(step, json.length() - i));
+                try {
+                    byte[] bytes = json.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                    java.io.File cache = new java.io.File(getCacheDir(), "backup.json");
+                    try (java.io.FileOutputStream out = new java.io.FileOutputStream(cache)) { out.write(bytes); out.getFD().sync(); }
+                    if (cache.length() != bytes.length) throw new java.io.IOException("copia incompleta");
+                    String name = "ArcheryTrace-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.ROOT).format(new java.util.Date()) + ".json";
+                    String where = saveToDownloads(name, bytes);
+                    final String msg = "Copia guardada en " + where + " (" + Math.max(1, bytes.length / 1024) + " KB)";
+                    runOnUiThread(() -> {
+                        push("notice(" + org.json.JSONObject.quote(msg) + ")");
+                        try {
+                            android.net.Uri uri = android.net.Uri.parse("content://com.eduardgilm.archerytrace.share/backup.json");
+                            Intent send = new Intent(Intent.ACTION_SEND).setType("application/json");
+                            send.putExtra(Intent.EXTRA_STREAM, uri);
+                            send.putExtra(Intent.EXTRA_TITLE, name);
+                            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            send.setClipData(android.content.ClipData.newRawUri(name, uri));
+                            startActivity(Intent.createChooser(send, "Compartir copia"));
+                        } catch (Exception ignored) { }
+                    });
                 } catch (Exception e) {
-                    discardExport();
-                    noticeExport("No se pudo preparar la copia");
-                    return;
+                    android.util.Log.w("ArcheryTraceJS", "export: " + e);
+                    noticeExport("No se pudo guardar la copia: " + e.getMessage());
                 }
             }
-            runOnUiThread(() -> {
-                try {
-                    if (isFinishing()) { synchronized (exportLock) { discardExport(); } return; }
-                    startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("application/json").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, "ArcheryTrace-backup.json"), 20);
-                } catch (Exception e) {
-                    synchronized (exportLock) { discardExport(); }
-                    noticeExport("No se pudo abrir el selector de archivos");
-                }
-            });
         }
         @android.webkit.JavascriptInterface public void restore() {
             runOnUiThread(() -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("application/json").addCategory(Intent.CATEGORY_OPENABLE), 21));
@@ -185,6 +194,38 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> push("notice(" + org.json.JSONObject.quote("No se pudo compartir") + ")"));
             }
         }
+    }
+    // Descargas: MediaStore en Android 10+; antes, la carpeta Descargas propia de la app (sin permisos).
+    private String saveToDownloads(String name, byte[] bytes) throws java.io.IOException {
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            android.content.ContentValues v = new android.content.ContentValues();
+            v.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name);
+            v.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/json");
+            v.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS);
+            v.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1);
+            android.content.ContentResolver cr = getContentResolver();
+            android.net.Uri uri = cr.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+            if (uri == null) throw new java.io.IOException("sin acceso a Descargas");
+            try {
+                try (java.io.OutputStream out = cr.openOutputStream(uri, "w")) {
+                    if (out == null) throw new java.io.IOException("sin destino");
+                    out.write(bytes); out.flush();
+                }
+                v.clear(); v.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0);
+                cr.update(uri, v, null, null);
+                long size = -1;
+                try (android.database.Cursor c = cr.query(uri, new String[]{android.provider.MediaStore.MediaColumns.SIZE}, null, null, null)) {
+                    if (c != null && c.moveToFirst()) size = c.getLong(0);
+                }
+                if (size >= 0 && size != bytes.length) throw new java.io.IOException("tamaño " + size + " de " + bytes.length);
+            } catch (java.io.IOException e) { try { cr.delete(uri, null, null); } catch (Exception ignored) {} throw e; }
+            return "Descargas/" + name;
+        }
+        java.io.File dir = getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS);
+        if (dir == null) throw new java.io.IOException("sin almacenamiento");
+        java.io.File f = new java.io.File(dir, name);
+        try (java.io.FileOutputStream out = new java.io.FileOutputStream(f)) { out.write(bytes); out.getFD().sync(); }
+        return f.getAbsolutePath();
     }
     private void finishExport(int result, Intent intent) {
         synchronized (exportLock) {

@@ -18,6 +18,7 @@ public class ShareProvider extends ContentProvider {
     private File fileFor(Uri uri) {
         String last = uri == null ? "" : uri.getLastPathSegment();
         if ("camera.jpg".equals(last)) return new File(getContext().getCacheDir(), "camera.jpg");
+        if ("backup.json".equals(last)) return new File(getContext().getCacheDir(), "backup.json");
         return image();
     }
 
@@ -39,15 +40,16 @@ public class ShareProvider extends ContentProvider {
     }
 
     @Override public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
-        File file = image();
-        boolean jpeg = jpeg(file);
+        File file = fileFor(uri);
         MatrixCursor cursor = new MatrixCursor(new String[]{OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE});
-        cursor.addRow(new Object[]{jpeg ? "archerytrace.jpg" : "archerytrace.png", file.length()});
+        String name = file.getName().equals("backup.json") ? "ArcheryTrace-backup.json" : jpeg(file) ? "archerytrace.jpg" : "archerytrace.png";
+        cursor.addRow(new Object[]{name, file.length()});
         return cursor;
     }
 
     @Override public String getType(Uri uri) {
         if (uri != null && "camera.jpg".equals(uri.getLastPathSegment())) return "image/jpeg";
+        if (uri != null && "backup.json".equals(uri.getLastPathSegment())) return "application/json";
         return jpeg(image()) ? "image/jpeg" : "image/png";
     }
     @Override public Uri insert(Uri uri, ContentValues values) { return null; }
