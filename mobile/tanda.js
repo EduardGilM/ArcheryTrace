@@ -14,7 +14,7 @@
 .tandaBtn{display:flex;align-items:center;justify-content:center;width:100%;height:44px;padding:0 16px;border-radius:999px;border:0;background:#fff;color:#111;font-size:14px;font-weight:600}
 .tandaBtn.on{background:#2a2a2e;color:#fff}
 .tandaInfo{font-size:12px;color:var(--txt-2,#aaa)}
-.statFilter{display:flex;gap:2px;padding:3px;margin:0 0 10px;border-radius:999px;background:var(--surface);overflow-x:auto;scrollbar-width:none}
+.statFilter{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface);overflow-x:auto;scrollbar-width:none}
 .statFilter::-webkit-scrollbar{display:none}
 .statFilter[hidden]{display:none}
 .statFilter button{flex:1 0 auto;height:32px;padding:0 14px;border:0;border-radius:999px;background:none;color:var(--txt-2,#aaa);font-size:13px;font-weight:500;white-space:nowrap}
@@ -42,11 +42,11 @@
   }
   function paintFilters(){
     document.querySelectorAll('.statFilter').forEach(el=>{
-      const opts=[['all','Todas'],['score','Solo puntuables'],...tandaNums(el.dataset.scope).map(n=>['t'+n,'Tanda '+n])];
+      const opts=[['all','Todas'],['score','Puntuables'],...tandaNums(el.dataset.scope).map(n=>['t'+n,'Tanda '+n])];
       el.innerHTML=opts.map(([v,l])=>`<button data-v="${v}" class="${v===statFilter?'on':''}">${l}</button>`).join('');
       el.querySelectorAll('button').forEach(b=>b.onclick=()=>{ statFilter=b.dataset.v; localStorage.setItem('atStatFilter',statFilter); render(); });
     });
-    const pc=$('pfChip'); if(pc){ const o=[['all','Todas'],['score','Solo puntuables'],...tandaNums('all').map(n=>['t'+n,'Tanda '+n])];
+    const pc=$('pfChip'); if(pc){ const o=[['all','Todas'],['score','Puntuables'],...tandaNums('all').map(n=>['t'+n,'Tanda '+n])];
       pc.setAttribute('aria-label','Filtrar estadísticas'); pc.innerHTML=o.map(([v,l])=>`<option value="${v}"${v===statFilter?' selected':''}>${l}</option>`).join('');
       pc.onchange=()=>{ statFilter=pc.value; localStorage.setItem('atStatFilter',statFilter); render(); }; }
     const s=sessRef(), bar=$('tandaBar'); bar.hidden=!s;
