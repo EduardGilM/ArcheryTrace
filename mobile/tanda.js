@@ -10,11 +10,9 @@
     if(ch) store.save(L);
   })();
   const css=document.createElement('style');
-  css.textContent=`.tandaBar{display:flex;align-items:center;gap:10px;margin:10px 0 2px}
-.tandaBtn{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 16px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--txt);font-size:13px;font-weight:500}
-.tandaBtn.on{background:var(--acc);border-color:var(--acc);color:#111}
-.tandaBtn i{width:8px;height:8px;border-radius:2px;background:currentColor}
-.tandaBtn:not(.on) i{border-radius:50%;background:var(--acc)}
+  css.textContent=`.tandaBar{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin:10px 0 2px}
+.tandaBtn{display:flex;align-items:center;justify-content:center;width:100%;height:44px;padding:0 16px;border-radius:999px;border:0;background:var(--acc);color:#111;font-size:14px;font-weight:600}
+.tandaBtn.on{background:#2a2a2e;color:#fff}
 .tandaInfo{font-size:12px;color:var(--txt-2,#aaa)}
 .statFilter{display:flex;gap:6px;overflow-x:auto;margin:0 0 10px;scrollbar-width:none}
 .statFilter::-webkit-scrollbar{display:none}
@@ -52,7 +50,7 @@
       pc.onchange=()=>{ statFilter=pc.value; localStorage.setItem('atStatFilter',statFilter); render(); }; }
     const s=sessRef(), bar=$('tandaBar'); bar.hidden=!s;
     if(s){ const a=s.activeTanda; $('tandaBtn').className='tandaBtn'+(a?' on':'');
-      $('tandaBtn').innerHTML=a?`<i></i>Terminar tanda ${a}`:`<i></i>Empezar tanda ${(s.tandas?.length||0)+1}`;
+      $('tandaBtn').innerHTML=a?`Terminar tanda ${a}`:`Empezar tanda ${(s.tandas?.length||0)+1}`;
       $('tandaInfo').textContent=a?tandaStats(s,a):(s.tandas?.length?`${s.tandas.length} tanda${s.tandas.length>1?'s':''} en la sesión`:''); }
   }
   const base=render; render=function(){ const r=base.apply(this,arguments); try{paintFilters();}catch(e){console.error(e);} return r; };

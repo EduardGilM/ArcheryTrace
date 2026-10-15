@@ -23,6 +23,12 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);  // sin esto localStorage es null y el historial/live revientan
         wv.setWebChromeClient(new android.webkit.WebChromeClient() {
+            // errores reales de JS a logcat (window.onerror solo ve "Script error." en file://)
+            @Override public boolean onConsoleMessage(android.webkit.ConsoleMessage m) {
+                if (m.messageLevel() == android.webkit.ConsoleMessage.MessageLevel.ERROR || m.messageLevel() == android.webkit.ConsoleMessage.MessageLevel.WARNING)
+                    android.util.Log.w("ArcheryTraceJS", m.message() + " @" + m.sourceId() + ":" + m.lineNumber());
+                return false;
+            }
             @Override public boolean onJsConfirm(WebView view, String url, String message, android.webkit.JsResult result) {
                 new android.app.AlertDialog.Builder(MainActivity.this).setMessage(message)
                     .setNegativeButton("Cancelar", (dialog, which) -> result.cancel())

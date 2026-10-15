@@ -68,10 +68,7 @@ public class SensorService extends Service {
         sid = prefs.getString("sid", ""); eid = prefs.getLong("eid", 0); lastShotAt = prefs.getLong("lastShotAt", 0);
         detector = new ShotDetector(new ShotDetector.Listener() {
             public void onShot(Map<String, Object> shot) { handler.post(() -> recordShot(shot)); }
-            public void onLive(double x, double y, boolean steady, long hold) {
-                MainActivity u = ui;
-                if (u != null) u.push(String.format(java.util.Locale.ROOT, "window.sensorLive&&sensorLive(%.3f,%.3f,%b,%d,%.0f)", x, y, steady, hold, rateHz));
-            }
+            public void onLive(double x, double y, boolean steady, long hold) { }
         });
         detector.boreAxis = prefs.getInt("boreAxis", 0);
         detector.boreSign = prefs.getInt("boreSign", 1);
