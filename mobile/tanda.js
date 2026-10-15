@@ -11,13 +11,14 @@
   })();
   const css=document.createElement('style');
   css.textContent=`.tandaBar{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin:10px 0 2px}
-.tandaBtn{display:flex;align-items:center;justify-content:center;width:100%;height:44px;padding:0 16px;border-radius:999px;border:0;background:var(--acc);color:#111;font-size:14px;font-weight:600}
+.tandaBtn{display:flex;align-items:center;justify-content:center;width:100%;height:44px;padding:0 16px;border-radius:999px;border:0;background:#fff;color:#111;font-size:14px;font-weight:600}
 .tandaBtn.on{background:#2a2a2e;color:#fff}
 .tandaInfo{font-size:12px;color:var(--txt-2,#aaa)}
-.statFilter{display:flex;padding:3px;margin:0 0 10px;border-radius:999px;background:rgba(255,255,255,.06);overflow-x:auto;scrollbar-width:none}
+.statFilter{display:flex;gap:2px;padding:3px;margin:0 0 10px;border-radius:999px;background:var(--surface);overflow-x:auto;scrollbar-width:none}
 .statFilter::-webkit-scrollbar{display:none}
-.statFilter button{flex:1;min-width:max-content;height:34px;padding:0 12px;border:0;border-radius:999px;background:none;color:var(--txt-2);font-size:13.5px;font-weight:500}
-.statFilter button.on{background:var(--acc);color:#fff;font-weight:600}`;
+.statFilter[hidden]{display:none}
+.statFilter button{flex:1 0 auto;height:32px;padding:0 14px;border:0;border-radius:999px;background:none;color:var(--txt-2,#aaa);font-size:13px;font-weight:500;white-space:nowrap}
+.statFilter button.on{background:var(--acc-soft);color:var(--acc);font-weight:600}`;
   document.head.appendChild(css);
   $('trainingStatus').insertAdjacentHTML('afterend','<div class="tandaBar" id="tandaBar"><button class="tandaBtn" id="tandaBtn"></button><span class="tandaInfo" id="tandaInfo"></span></div>');
   $('sessionHero').insertAdjacentHTML('beforebegin','<div class="statFilter" data-scope="session"></div>');
