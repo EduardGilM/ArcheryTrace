@@ -2976,24 +2976,26 @@ function studioWidgets(ctx, style, view, theme) {
   return layout;
 }
 
-function studioGrain(ctx, x, y, w, h, alpha, mode) {
+// Grano: motas claras y oscuras con transparencia, pintadas en modo normal. Antes era ruido gris en
+// 'overlay'/'multiply' al 5–7 %: sobre fondo negro esas mezclas no cambian nada, y con granos de 1 px
+// la vista previa (≈3× más pequeña) y la compresión JPEG lo borraban del todo.
+function studioGrain(ctx, x, y, w, h, alpha) {
   if (!Studio.card.grain) {
-    const t = document.createElement('canvas');
-    t.width = t.height = 256;
+    const N = 192, cell = 3, t = document.createElement('canvas');
+    t.width = t.height = N * cell;
     const g = t.getContext('2d');
-    const img = g.createImageData(256, 256);
     const rnd = studioRandom(9157);
-    for (let i = 0; i < img.data.length; i += 4) {
-      const v = 48 + Math.floor(rnd() * 160);
-      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
-      img.data[i + 3] = 255;
+    for (let yy = 0; yy < N; yy++) for (let xx = 0; xx < N; xx++) {
+      const v = rnd() * 2 - 1, a = Math.min(1, Math.abs(v) * 1.15);
+      if (a < 0.08) continue;
+      g.fillStyle = v > 0 ? `rgba(255,255,255,${a.toFixed(3)})` : `rgba(0,0,0,${a.toFixed(3)})`;
+      g.fillRect(xx * cell, yy * cell, cell, cell);
     }
-    g.putImageData(img, 0, 0);
     Studio.card.grain = t;
   }
   ctx.save();
-  ctx.globalCompositeOperation = mode || 'overlay';
-  ctx.globalAlpha = alpha;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = Math.min(0.35, alpha * 2.6);
   ctx.fillStyle = ctx.createPattern(Studio.card.grain, 'repeat');
   ctx.fillRect(x, y, w, h);
   ctx.restore();
