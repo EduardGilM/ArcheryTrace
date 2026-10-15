@@ -27,8 +27,8 @@ public final class ShotDetector {
     public static final double HOLD_DPS = 25;         // media de |giro| antes del golpe; tolera temblor de principiante (experto: 0,5; principiante: 10–25; manejo: 170–540)
     public static final double HOLD_MAX_DPS = 80;     // pico permitido en la ventana (experto: 1,3)
     public static final long STILL_WINDOW_MS = 1000;  // ventana de quietud antes del golpe (tiros: ≥4,8 s quietos)
-    public static final long HOLD_MIN_MS = 1000;      // sostenimiento mínimo (media móvil < HOLD_DPS)
-    public static final long HOLD_MAX_MS = 20000;     // más quieto que esto = arco apoyado, no apuntando (tiros: 5–7 s)
+    public static final long HOLD_MIN_MS = 500;       // sostenimiento mínimo (media móvil < HOLD_DPS)
+    public static final long HOLD_MAX_MS = 30000;     // más quieto que esto = arco apoyado, no apuntando (tiros: 5–7 s)
     public static final double SPIKE_G = 1.5;         // |a|-1g (tiros: >10 g con artefacto); el manejo también da golpes, lo filtra la quietud
     public static final long SPIKE_WINDOW_MS = 80;    // el golpe ocupa ~4 tramas (≈40 ms)
     public static final double RING_DPS = 15;         // vibración tras soltar POR ENCIMA del temblor previo (tiros: ~50 °/s)
@@ -36,7 +36,7 @@ public final class ShotDetector {
     public static final long POST_CHECK_MS = 1500;
     public static final double HORIZ_FRAC = 0.6;      // golpe en el plano horizontal (hacia la diana): tiros 0,76–0,89; apoyar 0,11; manejo 0,45
     public static final double TILT_AFTER_DEG = 20;   // vuelco del arco tras soltar: tiros 50–55°; apoyar 7°; manejo 24°
-    public static final int MIN_FEATURES = 3;         // de 4: golpe horizontal, vibración, vuelco, sostenimiento
+    public static final double BORE_COS = 0.7;        // golpe alineado con el eje de tiro aprendido en la sesión (≈45°)
     public static final double MAX_TILT_DEG = 30;     // giro de la vertical vs la tanda (tiros: <2°)
     public static final long REFRACTORY_MS = 3000;
     public static final double SETTLE_DPS = 25;       // fin de la vibración (tiros: pico ~70 °/s, cae a ~20 en ~1 s)
@@ -134,7 +134,7 @@ public final class ShotDetector {
             if (why == null) {
                 cand = new Cand(); cand.t = st; cand.holdMs = holdLength(st); cand.peak = jump;
                 cand.up = new double[]{ux, uy, uz}; cand.holdAcc = holdMean(cand.t);
-                cand.preMean = meanGyro(st - 30 - STILL_WINDOW_MS, st - 30);
+                cand.preMean = meanGyro(st - 280, st - 30);   // justo antes: en tiro instintivo la tensión aún se mueve
                 String sb = stillBefore(st);
                 cand.holdOk = sb == null && cand.holdMs >= HOLD_MIN_MS;
                 double dx = s.ax - cand.holdAcc[0], dy = s.ay - cand.holdAcc[1], dz = s.az - cand.holdAcc[2];
@@ -151,11 +151,18 @@ public final class ShotDetector {
                 double ring = meanGyro(cand.t + SPIKE_WINDOW_MS, cand.t + 500);
                 double tilt = tiltAfter(cand);
                 boolean fHoriz = cand.horiz >= HORIZ_FRAC, fRing = ring > cand.preMean + RING_DPS, fTilt = tilt >= TILT_AFTER_DEG;
-                int score = (fHoriz ? 1 : 0) + (fRing ? 1 : 0) + (fTilt ? 1 : 0) + (cand.holdOk ? 1 : 0);
+                // golpe en la línea ya aprendida de esta sesión (vale para cualquier montaje del sensor)
+                boolean fBore = false; double boreCos = 0;
+                if (boreLearned) { boreCos = joltBoreCos(cand); fBore = boreCos >= BORE_COS; }
+                boolean fStrong = ring >= 3 * cand.preMean + 10;   // arranque brusco: la vibración triplica el movimiento justo anterior
+                int support = (fTilt ? 1 : 0) + (cand.holdOk ? 1 : 0) + (fBore ? 1 : 0) + (fStrong ? 1 : 0);
+                int score = (fHoriz ? 1 : 0) + (fRing ? 1 : 0) + support;
                 String info = String.format(java.util.Locale.ROOT, "golpe horizontal %.2f%s, vibración %.0f°/s sobre %.0f%s, vuelco %.0f°%s, sostenido %d ms%s",
-                    cand.horiz, fHoriz ? "✓" : "✗", ring, cand.preMean, fRing ? "✓" : "✗", tilt, fTilt ? "✓" : "✗", cand.holdMs, cand.holdOk ? "✓" : "✗");
+                    cand.horiz, fHoriz ? "✓" : "✗", ring, cand.preMean, fRing ? (fStrong ? "✓✓" : "✓") : "✗", tilt, fTilt ? "✓" : "✗", cand.holdMs, cand.holdOk ? "✓" : "✗")
+                    + (boreLearned ? String.format(java.util.Locale.ROOT, ", línea de tiro %.2f%s", boreCos, fBore ? "✓" : "✗") : "");
                 cand.info = info;
-                if (score < MIN_FEATURES) { reject(cand.t, "firma insuficiente " + score + "/4: " + info); cand = null; }
+                // obligatorio: golpe horizontal + vibración (lo común a todo arco); y al menos un apoyo
+                if (!fHoriz || !fRing || support < 1) { reject(cand.t, "firma insuficiente: " + info); cand = null; }
                 else if (!orientationOk(cand.up)) { reject(cand.t, "orientación distinta a la tanda: " + info); cand = null; }
                 else cand.confirmed = true;
             }
@@ -205,6 +212,17 @@ public final class ShotDetector {
         double m = Math.sqrt(sx * sx + sy * sy + sz * sz);
         double d = (sx * c.up[0] + sy * c.up[1] + sz * c.up[2]) / m;
         return Math.toDegrees(Math.acos(Math.max(-1, Math.min(1, d))));
+    }
+    // coseno entre la parte horizontal del golpe y el eje de tiro aprendido (signo incluido: hacia la diana)
+    private double joltBoreCos(Cand c) {
+        Pt first = null;
+        for (Pt q : hist) if (q.t >= c.t && Math.abs(q.mag / 1000 - 1) > SPIKE_G) { first = q; break; }
+        if (first == null) return 0;
+        double dx = first.ax - c.holdAcc[0], dy = first.ay - c.holdAcc[1], dz = first.az - c.holdAcc[2];
+        double along = dx * c.up[0] + dy * c.up[1] + dz * c.up[2];
+        dx -= along * c.up[0]; dy -= along * c.up[1]; dz -= along * c.up[2];
+        double n = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return n < 1e-6 ? 0 : (dx * bx + dy * by + dz * bz) / n;
     }
     private boolean orientationOk(double[] up) {
         if (tandaUp == null) { tandaUp = up; return true; }

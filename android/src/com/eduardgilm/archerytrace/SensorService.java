@@ -51,10 +51,11 @@ public class SensorService extends Service {
     final RawLogger raw = new RawLogger();
     private final Runnable rawFlush = new Runnable() { public void run() { raw.flush(); handler.postDelayed(this, 1000); } };
     private void rawEvent(String what) { raw.event(System.currentTimeMillis(), what); }
-    private boolean rawEnabled() { return prefs.getBoolean("rawLog", false); }
+    // registro ligero de eventos por sesión (sin datos crudos: esos sólo en candidates/ alrededor de cada candidato)
     private void openRaw() {
-        if (!rawEnabled() || sid.isEmpty()) return;
-        java.io.File dir = getExternalFilesDir("rawlogs");
+        if (sid.isEmpty()) return;
+        java.io.File dir = getExternalFilesDir("sessionlogs");
+        RawLogger.prune(dir, 50);
         String stamp = new java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.ROOT).format(new java.util.Date());
         if (dir != null && raw.open(dir, stamp + "_" + sid) != null) {
             rawEvent("log_start sid=" + sid + " connected=" + CONNECTED + String.format(java.util.Locale.ROOT, " rate_hz=%.1f", rateHz));
@@ -101,7 +102,6 @@ public class SensorService extends Service {
             if (rateWindow == 0) rateWindow = now;
             if (now - rateWindow >= 2000) { rateHz = samples * 1000.0 / (now - rateWindow); samples = 0; rateWindow = now; if (rateHz > 5) parser.periodMs = 1000.0 / rateHz;
                 raw.event(now, String.format(java.util.Locale.ROOT, "rate_hz=%.1f", rateHz)); }
-            raw.sample(s);
             lastSampleT = s.tMs;
             detector.onSample(s);
             cands.sample(s);
@@ -363,12 +363,6 @@ public class SensorService extends Service {
                 case "rate": if (!setRate(c.optInt("value", 50))) status("Sensor sin conexión"); break;
                 case "end": endSession(); break;
                 case "mark": rawEvent(c.optString("value", "mark")); break;
-                case "rawlog": {
-                    boolean on = c.optBoolean("value", false);
-                    prefs.edit().putBoolean("rawLog", on).apply();
-                    if (on) openRaw(); else closeRaw("user_off");
-                    break;
-                }
                 case "scan": startScan(); break;
                 case "stopScan": stopScan(); break;
                 case "pair": pair(c.optString("value"), c.optString("name", "WIT")); break;
@@ -401,10 +395,8 @@ public class SensorService extends Service {
             v.put("paired", !instance.prefs.getString("address", "").isEmpty());
             v.put("session", !instance.sid.isEmpty());
             v.put("paused", instance.paused);
-            v.put("rawLog", instance.rawEnabled());
-            v.put("recording", instance.raw.isOpen());
             java.io.File f = instance.raw.file();
-            if (f != null) v.put("rawFile", f.getAbsolutePath());
+            if (f != null) v.put("sessionLog", f.getAbsolutePath());
         }
         return MainActivity.toJson(v);
     }

@@ -11,7 +11,7 @@ public class ScenariosTest {
         d.onSample(s);
     }
     static void fresh() { shots.clear(); d = new ShotDetector(new ShotDetector.Listener() {
-        public void onShot(Map<String,Object> s) { shots.add(s); } public void onLive(double x, double y, boolean st, long h) {} }); }
+        public void onShot(Map<String,Object> s) { shots.add(s); } public void onLive(double x, double y, boolean st, long h) {} }); d.rejectSink = (tt, w) -> { if (System.getenv("DBG") != null) System.out.println("  descartado: " + w); }; }
     static void idle(int n, double trem) { for (int i = 0; i < n; i++) f(0, 0, 1, r.nextGaussian() * trem, r.nextGaussian() * trem, r.nextGaussian() * trem); }
     static void check(String name) { System.out.println(name + " -> " + shots.size()); if (!shots.isEmpty()) throw new AssertionError(name); }
     public static void main(String[] a) {
@@ -36,5 +36,31 @@ public class ScenariosTest {
         for (int i = 0; i < 400; i++) f(0, 0, 1, 60 * Math.cos(i / 3.0) * Math.exp(-i / 60.0), 0, 0);
         check("golpe en reposo");
         System.out.println("OK escenarios sin tiro");
+        // TIROS de otros arcos (sintéticos, sin verificar con datos reales):
+        double cy = Math.sin(Math.toRadians(20)), cz = Math.cos(Math.toRadians(20));   // arco inclinado 20° (cant)
+        // longbow: sostiene 0,6 s, sin vuelco (sin sling), mucha vibración; luego tiros instintivos sin pausa
+        fresh();
+        for (int k = 0; k < 3; k++) {
+            for (int i = 0; i < 400; i++) f(0, cy, cz, 60 * Math.sin(i / 15.0), 40, 30);                 // tensa (giro fuerte)
+            int hold = k == 0 ? 120 : 20;                                                                 // 0,6 s y luego 0,1 s
+            for (int i = 0; i < hold; i++) f(0, cy, cz, r.nextGaussian() * 12, r.nextGaussian() * 12, r.nextGaussian() * 12);
+            for (int i = 0; i < 6; i++) f(5, cy, cz, 300, 200, 100);                                      // suelta: golpe hacia +X
+            for (int i = 0; i < 600; i++) f(0, cy, cz, 150 * Math.cos(i / 2.0) * Math.exp(-i / 80.0), 100 * Math.sin(i / 2.0) * Math.exp(-i / 80.0), 0);
+            idle(1000, 20);
+        }
+        System.out.println("longbow instintivo -> " + shots.size());
+        if (shots.size() != 3) throw new AssertionError("longbow: " + shots.size());
+        // recurvo olímpico: clicker, suelta con dedos, el arco vuelca 60° adelante con el sling
+        fresh();
+        for (int k = 0; k < 2; k++) {
+            idle(800, 4);
+            for (int i = 0; i < 4; i++) f(4, 1, 1.5, 100, 300, 50);
+            for (int i = 0; i < 200; i++) f(0, 0, 1, 80 * Math.cos(i / 3.0) * Math.exp(-i / 60.0), 80, 0);
+            for (int i = 0; i < 400; i++) f(0.87, 0, 0.5, 20 * r.nextGaussian(), 0, 0);   // volcado
+            idle(1500, 10);
+        }
+        System.out.println("recurvo olímpico -> " + shots.size());
+        if (shots.size() != 2) throw new AssertionError("olímpico: " + shots.size());
+        System.out.println("OK tiros de otros arcos");
     }
 }

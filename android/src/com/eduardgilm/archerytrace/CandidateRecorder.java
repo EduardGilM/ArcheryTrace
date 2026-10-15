@@ -14,6 +14,7 @@ import java.util.Locale;
 public final class CandidateRecorder {
     public static final long BEFORE_MS = 10000, AFTER_MS = 3000, KEEP_MS = BEFORE_MS + AFTER_MS + 1000;
     public static final int MAX_FILES = 150;
+    public static final long MAX_BYTES = 50L * 1024 * 1024;   // lo que llegue antes: 150 archivos o 50 MB
     private final ArrayDeque<float[]> ring = new ArrayDeque<>();
     private final ArrayDeque<Long> times = new ArrayDeque<>();
     private final List<String> labels = new ArrayList<>();
@@ -58,9 +59,13 @@ public final class CandidateRecorder {
                 dir.mkdirs();
                 try (FileWriter w = new FileWriter(new File(dir, name))) { w.write(body); }
                 File[] fs = dir.listFiles();
-                if (fs != null && fs.length > MAX_FILES) {
-                    Arrays.sort(fs, (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
-                    for (int i = 0; i < fs.length - MAX_FILES; i++) fs[i].delete();
+                if (fs != null) {
+                    Arrays.sort(fs, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));   // nuevos primero
+                    long total = 0;
+                    for (int i = 0; i < fs.length; i++) {
+                        total += fs[i].length();
+                        if (i >= MAX_FILES || total > MAX_BYTES) fs[i].delete();
+                    }
                 }
             } catch (Exception ignored) { }
         }).start();

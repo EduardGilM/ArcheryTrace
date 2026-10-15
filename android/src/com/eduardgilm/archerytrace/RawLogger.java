@@ -47,4 +47,13 @@ public final class RawLogger {
         try { if (out != null) { out.flush(); out.close(); } } catch (Exception ignored) { }
         out = null;
     }
+
+    // deja sólo los n archivos más nuevos de la carpeta (sólo archivos propios de la app)
+    public static void prune(File dir, int n) {
+        if (dir == null) return;
+        File[] fs = dir.listFiles();
+        if (fs == null || fs.length <= n) return;
+        java.util.Arrays.sort(fs, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
+        for (int i = n; i < fs.length; i++) fs[i].delete();
+    }
 }
