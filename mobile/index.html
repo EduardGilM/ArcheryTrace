@@ -1,0 +1,2442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="at-version" content="0.1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<title>ArcheryTrace</title>
+<style>
+[hidden] { display:none !important; }
+  /* Tokens. Radios: tarjetas 16, controles 12, chips en pastilla. Un solo acento (naranja de marca). */
+  @font-face { font-family:'Geist'; src:url('fonts/Geist-Variable.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
+  @font-face { font-family:'Geist Mono'; src:url('fonts/GeistMono-Variable.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
+  @font-face { font-family:'Barlow Condensed'; src:url('fonts/BarlowCondensed-600.woff2') format('woff2'); font-weight:600; font-style:normal; font-display:swap; }
+  :root {
+    --bg:#000; --surface:#0b0b0d; --surface-2:#131316; --surface-3:#1a1a1e;
+    --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.12);
+    --txt:#fff; --txt-2:#9a9aa2; --txt-3:#5c5c64;
+    --acc:#FF8A1F; --acc2:#FFC15E; --glow:rgba(255,138,31,.28); --acc-ink:#1b0f05; --acc-soft:rgba(255,138,31,.12); --acc-line:rgba(255,138,31,.45);
+    --low:#F0506E; --danger:#F0506E;
+    --font:'Geist',system-ui,-apple-system,sans-serif; --mono:'Geist Mono',ui-monospace,monospace; --num:'Barlow Condensed',sans-serif;
+    --panel:var(--surface); --panel2:var(--surface-2); --dim:var(--txt-2);
+    --i-play:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z'/%3E%3C/svg%3E");
+    --i-stop:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M200,40H56A16,16,0,0,0,40,56V200a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,160H56V56H200V200Z'/%3E%3C/svg%3E");
+    --i-info:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z'/%3E%3C/svg%3E");
+    --i-back:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M232,144a64.07,64.07,0,0,1-64,64H80a8,8,0,0,1,0-16h88a48,48,0,0,0,0-96H51.31l34.35,34.34a8,8,0,0,1-11.32,11.32l-48-48a8,8,0,0,1,0-11.32l48-48A8,8,0,0,1,85.66,45.66L51.31,80H168A64.07,64.07,0,0,1,232,144Z'/%3E%3C/svg%3E");
+    --i-caret:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z'/%3E%3C/svg%3E");
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overscroll-behavior-x:none; }
+  body { background:var(--bg); color:var(--txt); font-family:var(--font); font-size:14px; line-height:1.45;
+         height:100dvh; display:flex; flex-direction:column; overflow:hidden; user-select:none;
+         -webkit-font-smoothing:antialiased; font-feature-settings:'tnum' 1; }
+  button, select, input { font:inherit; color:inherit; }
+  button { cursor:pointer; transition:transform .12s ease, background-color .15s ease, color .15s ease, border-color .15s ease; }
+  button:active:not(:disabled) { transform:scale(.98); }
+  button:disabled { opacity:.35; cursor:default; }
+  :focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .ico { width:20px; height:20px; flex-shrink:0; }
+  [class*="mask-"]::before, .mask::before { content:""; width:16px; height:16px; flex-shrink:0; background:currentColor;
+    -webkit-mask:var(--icon) center/contain no-repeat; mask:var(--icon) center/contain no-repeat; }
+
+  /* Cabecera */
+  header { display:flex; flex-direction:column; align-items:stretch; gap:0; padding:8px 18px 6px; flex-shrink:0; }
+  .dateRow { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 6px; }
+  .dateRow:has(> small:empty):has(> #returnCurrent[style*="none"]) { display:none; }
+  .dateRow small { display:block; font-size:11px; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color:var(--txt-2); line-height:1.2; }
+  .dateRow small:empty { display:none; }
+  .headRow { display:flex; align-items:center; gap:10px; min-height:30px; }
+  header h1 { flex:0 1 auto; min-width:0; margin:0; font-size:43px; font-weight:400; letter-spacing:-.03em; line-height:30px; height:30px; display:flex; align-items:center; }
+  header h1 span { display:block; line-height:30px; height:30px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  header .btn { width:30px; height:30px; border-radius:50%; background:transparent; border:1px solid var(--line-2);
+                color:var(--txt); display:grid; place-items:center; }
+  header .btn .ico { width:14px; height:14px; }
+  #link { display:inline-flex; align-items:center; gap:6px; align-self:center; margin:0 0 0 auto; flex-shrink:0; overflow:hidden; text-overflow:ellipsis;
+          height:30px; box-sizing:border-box; padding:0 11px 0 9px; border-radius:999px; border:1px solid var(--line-2); background:transparent;
+          color:var(--txt-3); font-size:11px; font-weight:500; letter-spacing:0; text-transform:none; white-space:nowrap; }
+  #link::before { content:""; width:13px; height:13px; flex-shrink:0; background:currentColor; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='7'/%3E%3Cpath d='M12 2v5M12 17v5M2 12h5M17 12h5'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='7'/%3E%3Cpath d='M12 2v5M12 17v5M2 12h5M17 12h5'/%3E%3C/svg%3E") center/contain no-repeat; opacity:.8; }
+  #link[data-state="on"] { color:var(--txt-2); }
+  #link[data-state="on"]::before { background:var(--acc); opacity:1; filter:drop-shadow(0 0 4px var(--glow)); }
+  #link[data-state="wait"] { color:var(--acc); }
+  body.noHead > header h1 { display:none; }
+  #live { display:none; align-self:flex-start; margin:0 16px 10px; padding:4px 10px 4px 8px; border-radius:999px;
+          background:var(--acc-soft); color:var(--txt-2); font-size:12px; font-weight:500; }
+  #live::before { content:""; display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--acc); box-shadow:0 0 8px var(--glow);
+                  margin-right:7px; vertical-align:1px; }
+  @media (prefers-reduced-motion:no-preference) { #live::before { animation:pulse 2s ease-in-out infinite; } }
+  @keyframes pulse { 50% { opacity:.35; } }
+  #returnCurrent { display:none; align-items:center; flex-shrink:0; height:30px; box-sizing:border-box; margin:0; background:transparent; border:1px solid var(--line-2);
+                   border-radius:999px; color:var(--txt); font-size:11px; font-weight:500; line-height:1; padding:0 11px 0 9px; white-space:nowrap; }
+  #returnCurrent { --icon:var(--i-back); }
+  #returnCurrent::before { content:""; display:inline-block; width:13px; height:13px; margin-right:6px; vertical-align:-2px; background:var(--acc);
+    -webkit-mask:var(--icon) center/contain no-repeat; mask:var(--icon) center/contain no-repeat; }
+
+  /* Contenido */
+  main { flex:1; min-height:0; display:flex; flex-direction:column; gap:10px; padding:4px 18px 24px; overflow:auto; }
+  main > * { flex-shrink:0; min-width:0; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:16px; }
+  .lbl { font:500 10.5px/1.2 var(--font); letter-spacing:.13em; text-transform:uppercase; color:var(--txt-2); }
+  .num { font-family:var(--num); font-weight:600; letter-spacing:-.005em; line-height:.9; font-variant-numeric:tabular-nums; }
+  .lowDot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--low); margin-left:6px; vertical-align:1px; }
+  .lowDot[hidden] { display:none; }
+  .cardTitle { display:flex; align-items:baseline; justify-content:space-between; gap:8px; font-size:14px; font-weight:600; margin-bottom:10px; }
+  .cardTitle small { font-size:12px; font-weight:400; color:var(--txt-3); }
+  .aimwrap { display:flex; justify-content:center; align-items:center; width:100%; position:relative; }
+  #aim, #aimSet, #cmpAim, .face, #sessionGroup { width:min(100%,340px); max-width:100%; height:auto; aspect-ratio:1/1; display:block; flex:0 0 auto; }
+  .face { touch-action:none; overscroll-behavior:none; user-select:none; -webkit-user-select:none; margin:0 auto 10px; cursor:crosshair; }
+  .target { position:relative; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:8px 8px 4px; }
+  .tclock { position:absolute; left:16px; top:12px; font:500 11px/1 var(--font); letter-spacing:.12em; text-transform:uppercase; color:var(--txt-2); }
+  .tlClock { position:absolute; right:16px; top:10px; font:600 15px/1 var(--num); color:var(--acc); letter-spacing:.02em; }
+  .tlClock:empty { display:none; }
+  .tl { position:relative; height:32px; margin:2px 8px 6px; }
+  .tl .track { position:absolute; left:0; right:0; top:8px; height:3px; background:rgba(255,255,255,.1); border-radius:2px; }
+  .tl .fill { position:absolute; left:0; top:8px; height:3px; width:0; background:var(--acc); border-radius:2px; box-shadow:0 0 10px var(--glow); }
+  .tl .rel { position:absolute; top:3px; left:83.33%; width:1.5px; height:13px; background:#fff; }
+  .tl span { position:absolute; top:18px; font:500 9.5px/1 var(--font); letter-spacing:.08em; text-transform:uppercase; color:var(--txt-3); transform:translateX(-50%); white-space:nowrap; }
+  .tl .tlA { left:0; transform:none; }
+  .tl .tlB { left:41.67%; }
+  .tl .tlC { left:83.33%; }
+  .tl .tlD { left:auto; right:0; transform:none; }
+  .caption { text-align:center; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--txt-3); margin-top:8px; }
+  .scoreSlots { display:flex; gap:6px; margin-bottom:8px; }
+  .scoreSlots button { flex:1; min-width:0; min-height:48px; border-radius:12px; background:var(--surface-2); border:1px solid var(--line); color:var(--txt-2); font-size:11px; font-weight:500; }
+  .scoreSlots button b { display:block; font-family:var(--mono); font-size:16px; color:var(--txt); font-weight:600; margin-top:1px; }
+  .scoreSlots button.on { border-color:var(--acc-line); background:var(--acc-soft); color:var(--acc); }
+  .scoreSlots button.on b { color:var(--acc); }
+  .scorepad { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:4px; }
+  .scorepad button { min-height:44px; border-radius:12px; background:var(--surface-2); border:1px solid var(--line); color:var(--txt); font-family:var(--mono); font-size:16px; font-weight:600; padding:0; }
+  .scorepad button.on { background:transparent; color:var(--acc); border-color:var(--acc-line); }
+  .scorepad button.clear { grid-column:1 / -1; font-family:var(--font); font-size:13px; font-weight:500; color:var(--txt-2); }
+  .scoreNote { margin-top:8px; font-size:12.5px; color:var(--txt-2); line-height:1.45; }
+  .scoreNote:empty { display:none; }
+  .scoreGroups { display:grid; gap:6px; margin-top:8px; }
+  .scoreGroups div { font-size:12.5px; color:var(--txt-2); line-height:1.4; }
+  .splitPair { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .splitPair .lbl { display:block; }
+  .splitPair .num { font-family:var(--num); font-weight:600; font-size:clamp(34px,10vw,46px); line-height:.85; display:block; margin-top:4px; }
+  .splitPair .sub { font-family:var(--num); font-weight:600; font-size:clamp(18px,5vw,22px); color:var(--txt-2); display:block; margin-top:6px; line-height:1; }
+  #splitHighAim { color:var(--acc); }
+  #splitPlot { width:100%; height:150px; display:block; margin-top:12px; }
+  #splitNeed { margin:0; font-size:14px; color:var(--txt-2); }
+  .tracebar { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:10px; }
+  .tracebar button { background:var(--surface-2); color:var(--txt-2); border:1px solid var(--line); border-radius:999px; font-size:12.5px; padding:6px 12px; }
+  .tracebar button.sel { background:var(--acc-soft); color:var(--acc); border-color:var(--acc-line); font-weight:600; }
+
+  /* Botones */
+  .btnPrimary, #play { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:52px;
+    background:#fff; color:#000; border:none; border-radius:26px; font-size:15px; font-weight:500; letter-spacing:-.005em; }
+  #play { --icon:var(--i-play); }
+  #play.playing { --icon:var(--i-stop); background:var(--surface-2); color:var(--acc); border:1px solid var(--line-2); box-shadow:none; }
+  #play::before { content:""; width:15px; height:15px; background:currentColor; -webkit-mask:var(--icon) center/contain no-repeat; mask:var(--icon) center/contain no-repeat; }
+  .btnSecondary, #calib { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:52px; background:#1c1c1e;
+    color:#fff; border:none; border-radius:26px; font-size:15px; font-weight:500; letter-spacing:-.005em; box-shadow:none; }
+  .btnSecondary:active, #calib:active { background:#2a2a2d; }
+  .deleteAction { background:none; color:var(--txt-3); border:1px solid var(--line); border-radius:26px; min-height:52px; padding:0 18px; font-size:14px; font-weight:500; }
+  .deleteAction:active { color:var(--danger); border-color:rgba(239,90,90,.4); }
+  .deleteSession { flex-shrink:0; width:36px; height:36px; min-height:0; border-radius:50%; padding:0; display:grid; place-items:center; border-color:transparent; }
+  .deleteSession svg { width:18px; height:18px; }
+
+  /* Métricas */
+  .metrics { display:grid; grid-template-columns:1fr 1fr; background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .metric { display:flex; flex-direction:column-reverse; justify-content:flex-end; gap:4px; padding:13px 14px 14px; min-width:0; }
+  .metric:nth-child(odd) { border-right:1px solid var(--line); }
+  .metric:nth-child(-n+2) { border-bottom:1px solid var(--line); }
+  .metric span { font-size:12px; color:var(--txt-2); }
+  .metric b, .top3 .num, .mrow .num, .kv .num, .gauge .num { font-family:var(--num); font-weight:600; letter-spacing:-.005em; line-height:.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .metric b { font-size:28px; }
+  .metric b small, .top3 .num small, .mrow .num small, .kv .num small, .gauge .num small { font-family:var(--font); font-size:12px; font-weight:500; color:var(--txt-3); margin-left:3px; letter-spacing:0; }
+  .heroS { display:grid; grid-template-columns:minmax(108px,42vw) minmax(0,1fr); gap:12px; align-items:center; }
+  .gauge { position:relative; width:100%; aspect-ratio:1; max-width:150px; }
+  .gauge svg { width:100%; height:100%; display:block; }
+  .gauge .c { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .gauge .num { font-size:clamp(40px,12vw,64px); }
+  .gauge .lbl { margin-top:6px; }
+  .kv { display:grid; grid-template-columns:1fr 1fr; gap:14px 8px; min-width:0; }
+  .kv .num { font-size:clamp(26px,8vw,34px); display:block; margin-top:5px; }
+  .mrow, .top3 { display:grid; background:var(--surface); border:1px solid var(--line); border-radius:18px; min-width:0; }
+  .mrow { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .mrow.quad { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .top3 { grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr); }
+  .mrow > div, .top3 > div { padding:12px 12px; min-width:0; }
+  .mrow > div + div, .top3 > div + div { border-left:1px solid var(--line); }
+  .mrow .num { font-size:clamp(22px,6.5vw,27px); display:block; margin-top:6px; }
+  .top3 .num { font-size:clamp(24px,7vw,30px); display:block; margin-top:7px; }
+  .top3 .big { font-size:clamp(40px,13vw,52px); }
+
+  /* Calibración */
+  #calibrationPanel[hidden] { display:none; }
+  #calibrationPanel { display:grid; gap:10px; }
+  #calibrationPanel label { font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  #calibrationProfile, .training select { appearance:none; -webkit-appearance:none; background:var(--surface-2) var(--i-caret) no-repeat; background-image:none;
+    border:1px solid var(--line-2); border-radius:12px; padding:9px 34px 9px 12px; font-size:13.5px; color:var(--txt); min-height:40px;
+    background-image:linear-gradient(45deg,transparent 50%,var(--txt-2) 50%),linear-gradient(135deg,var(--txt-2) 50%,transparent 50%);
+    background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%; background-size:5px 5px,5px 5px; background-repeat:no-repeat; }
+
+
+  /* Traza */
+  #trace { width:100%; height:150px; display:block; }
+  #tLegend, #legend, #legend2, #cmpLegend { display:flex; gap:6px 14px; flex-wrap:wrap; font-size:12px; color:var(--txt-2); margin-top:10px; }
+  #tLegend span, #legend span, #legend2 span, #cmpLegend span { display:inline-flex; align-items:center; gap:6px; }
+  #tLegend i, #legend i, #legend2 i, #cmpLegend i { display:inline-block; width:8px; height:8px; border-radius:50%; }
+  .cmpPick { display:grid; gap:8px; }
+  .cmpPick select { width:100%; min-height:44px; border-radius:12px; border:1px solid var(--line-2); background:var(--surface-2); padding:0 12px; }
+  .cmpTable { display:grid; grid-template-columns:minmax(76px,1.2fr) repeat(3,minmax(0,1fr)); margin-top:12px; }
+  .cmpTable span, .cmpTable b { padding:7px 4px; border-bottom:1px solid var(--line); font-size:12.5px; min-width:0; }
+  .cmpTable b { font-family:var(--mono); font-weight:500; text-align:right; }
+  .cmpTable .cmpH { color:var(--txt-3); font-size:11px; font-weight:500; text-align:right; }
+  .cmpGear { margin-top:8px; display:grid; gap:4px; font-size:12.5px; color:var(--txt-2); }
+  .cmpGear b { color:var(--txt); font-weight:600; }
+  #cmpAim { width:min(82vw,330px); height:min(82vw,330px); }
+  #cmpSets { width:100%; height:160px; }
+  #goalForm { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+  #goalForm label { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13px; font-weight:600; background:rgba(0,0,0,.28); border:1px solid var(--line); border-radius:14px; padding:8px 10px; }
+  #goalForm .btnSecondary { grid-column:1 / -1; }
+  #goalForm input { width:72px; min-height:40px; border-radius:10px; border:1px solid var(--line-2); background:var(--surface-2); text-align:center; font-family:var(--mono); font-size:16px; }
+  .goalRow { margin:0; padding:12px 0 0; }
+  .goalRow > span { display:flex; justify-content:space-between; gap:8px; font-size:14px; align-items:baseline; }
+  .goalRow > span b:first-child { font-weight:600; }
+  .goalRow > span b:last-child { font-family:var(--num); font-weight:600; font-size:20px; color:var(--txt); }
+  .goalBar { height:8px; border-radius:999px; background:var(--surface-3); margin-top:7px; overflow:hidden; }
+  .goalEdit { margin-top:12px; border-top:1px solid var(--line); }
+  .goalEdit summary { list-style:none; cursor:pointer; display:flex; justify-content:center; align-items:center; min-height:44px; color:var(--acc); font-size:13px; font-weight:600; }
+  .goalEdit summary::-webkit-details-marker { display:none; }
+  .goalEdit[open] summary { color:var(--txt-2); }
+  .goalEdit #goalForm { margin-top:0; }
+  #goalHint { font-size:12px; color:var(--txt-3); margin-top:10px; text-align:center; }
+  .streakBox { display:grid; grid-template-columns:auto minmax(0,1fr); gap:16px; align-items:center; padding:6px 0 14px; }
+  .streakBox b { display:block; font:600 56px/.8 var(--num); color:var(--acc); }
+  .streakBox span { display:block; margin-top:6px; font-size:13px; font-weight:500; }
+  .weekPills { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:5px; }
+  .weekPills i { aspect-ratio:1; border-radius:9px; display:grid; place-items:center; font:600 11px/1 var(--font); font-style:normal; color:var(--txt-2); box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14); }
+  .weekPills i.on { background:rgba(255,255,255,.14); box-shadow:none; color:var(--txt); }
+  .weekPills i.run { background:var(--acc); box-shadow:none; color:var(--acc-ink); }
+  .weekPills i.today:not(.run) { box-shadow:inset 0 0 0 1.5px var(--acc-line); }
+  .goalBar i { display:block; height:100%; width:0; background:rgba(255,255,255,.85); border-radius:999px; }
+  .goalBar.met i { background:var(--acc); box-shadow:0 0 12px var(--glow); }
+  #tLegend .hr { margin-left:auto; color:var(--txt); font-family:var(--mono); font-size:12px; }
+  #tLegend .hr svg { width:13px; height:13px; color:var(--danger); }
+  #tip { display:flex; gap:10px; align-items:flex-start; background:var(--surface); border:1px solid var(--line); border-radius:12px;
+         padding:11px 12px; font-size:13px; color:var(--txt-2); --icon:var(--i-info); }
+  #tip::before { content:""; width:16px; height:16px; margin-top:1px; flex-shrink:0; background:var(--txt-3); -webkit-mask:var(--icon) center/contain no-repeat; mask:var(--icon) center/contain no-repeat; }
+  #tip:empty { display:none; }
+
+  /* Listas */
+  .list { padding:4px 14px; }
+  .setline, .arrowline { display:flex; gap:12px; align-items:center; min-height:52px; padding:8px 0; border-bottom:1px solid var(--line); font-size:14.5px; }
+  .setline:last-child, .arrowline:last-child { border-bottom:none; }
+  .setline b, .arrowline b { font-weight:600; }
+  .setline .r, .arrowline .r { margin-left:auto; color:var(--txt-3); font-size:12.5px; white-space:nowrap; display:flex; align-items:center; gap:4px; }
+  .setline[data-jump] .r::after, .setline[data-sess] .r::after, #setList summary .r::after, .arrowline .r::after { content:""; width:13px; height:13px; background:var(--txt-3);
+    -webkit-mask:var(--i-caret) center/contain no-repeat; mask:var(--i-caret) center/contain no-repeat; }
+  .rowMain { display:flex; flex-direction:column; min-width:0; flex:1; }
+  .rowMain b { font-size:14.5px; }
+  .rowMain .m { font-size:12px; color:var(--txt-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .setline[data-sess] .r { margin-left:0; }
+  .chip { --c:var(--txt-2); min-width:38px; text-align:center; border-radius:999px; padding:3px 9px; font-family:var(--mono); font-weight:600; font-size:12.5px;
+          color:var(--c); background:color-mix(in srgb, var(--c) 15%, transparent); }
+  .dotChip { width:26px; height:26px; min-width:26px; padding:0; display:grid; place-items:center; border-radius:50%; font-size:11px; font-family:var(--font); }
+  .arrowline b { font-family:var(--mono); font-size:16px; font-weight:500; }
+
+  /* Set */
+  .setbar { display:flex; gap:6px; padding:0 0 2px; overflow-x:auto; flex-shrink:0; }
+  .setbar:empty { display:none; }
+  .setbar button { background:var(--surface); color:var(--txt-2); border:1px solid var(--line); border-radius:999px; font-size:13px; padding:7px 14px; white-space:nowrap; }
+  .setbar button.sel { background:var(--acc-soft); color:var(--acc); border-color:var(--acc-line); font-weight:600; }
+  .setHead { display:flex; align-items:center; gap:12px; flex-shrink:0; }
+  .setHead { flex-direction:column; align-items:flex-end; gap:4px; margin-left:auto; }
+  .setHead .setPts { font-size:26px; color:var(--txt); }
+  .setHead .setPts.on { color:var(--acc); }
+  .setStab { display:flex; align-items:baseline; gap:5px; font:500 11px/1 var(--font); letter-spacing:.04em; color:var(--txt-3); }
+  .setStab b { font:600 14px/1 var(--num); color:var(--txt-2); letter-spacing:0; }
+
+  /* Sesión */
+  .hero { display:flex; align-items:center; gap:16px; }
+  #setList { display:grid; gap:7px; padding:0; background:none; border:0; }
+  #setList details { background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden; position:relative; }
+  #setList details[open] { border-color:var(--line-2); }
+  #setList details[open]::before { content:""; position:absolute; left:0; top:14px; width:2px; height:28px; border-radius:0 2px 2px 0; background:var(--acc); }
+  #setList summary { list-style:none; cursor:pointer; border:0; display:grid; grid-template-columns:minmax(46px,.7fr) minmax(28px,1fr) 70px 42px 14px; align-items:center; gap:8px; padding:8px 14px 10px; min-height:56px; }
+  .setPts { display:flex; align-items:baseline; justify-content:flex-end; gap:3px; font:600 22px/1 var(--num); color:var(--txt-3); }
+  .setPts b { font:inherit; }
+  .setPts small { font:500 11px/1 var(--font); letter-spacing:.04em; color:var(--txt-3); }
+  .setPts.on { color:var(--acc); }
+  .setPts.on small { color:var(--txt-2); }
+  #setList summary::-webkit-details-marker { display:none; }
+  #setList summary .r::after { transform:rotate(90deg); }
+  #setList details[open] summary .r::after { transform:rotate(-90deg); }
+  .mini { display:flex; gap:3px; align-items:flex-end; height:22px; min-width:0; }
+  .mini i { width:7px; border-radius:2px; background:rgba(255,255,255,.28); }
+  .setVal { font:600 28px/1 var(--num); text-align:right; }
+  .trendRow { width:100%; display:grid; grid-template-columns:minmax(52px,max-content) minmax(0,1fr) auto 44px; gap:8px; align-items:center; min-height:44px; padding:8px 14px; background:none; border:0; border-top:1px solid var(--line); text-align:left; }
+  .trendRow:last-child { border-bottom:0; }
+  .trendLabel { display:flex; align-items:center; gap:8px; font:500 12px/1 var(--font); color:var(--txt-3); font-variant-numeric:tabular-nums; }
+  .trendLabel .trendScore { width:24px; height:24px; box-sizing:border-box; border-radius:50%; border:1px solid var(--line-2); display:grid; place-items:center; font:600 13px/1 var(--num); color:var(--txt-2); }
+  .trendLabel .trendScore.hi { color:var(--acc); border-color:color-mix(in srgb, var(--acc) 45%, transparent); }
+  .trendScore { font-family:var(--num); font-size:16px; font-weight:600; color:var(--acc); }
+  .trendMeta { font:400 11.5px var(--font); color:var(--txt-3); text-align:right; white-space:nowrap; }
+  .trendRow[aria-current="true"] .trendLabel { color:var(--txt); }
+  .trendBar { height:4px; overflow:hidden; border-radius:2px; background:rgba(255,255,255,.08); }
+  .trendBar span { display:block; height:100%; border-radius:inherit; background:var(--c); }
+  .trendValue { text-align:right; font:600 26px/1 var(--num); color:var(--n, var(--txt)); }
+  #progress { width:100%; height:140px; display:block; }
+  #progSum { font-size:13px; color:var(--txt-2); margin-bottom:10px; }
+  #progSum b { font-family:var(--mono); color:var(--txt); font-weight:500; }
+
+  /* Navegación */
+  nav { display:flex; flex-shrink:0; border-top:1px solid var(--line); background:#000; padding:8px 4px max(10px,env(safe-area-inset-bottom)); }
+  nav button { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none;
+               color:var(--txt-3); font-size:9.5px; font-weight:500; padding:6px 0 2px; min-height:52px; position:relative; }
+  nav button svg { width:20px; height:20px; }
+  nav button.sel { color:var(--txt); }
+  nav button.sel::before { content:""; position:absolute; top:0; left:28%; right:28%; height:2px; border-radius:0 0 2px 2px; background:var(--acc); }
+
+  /* Estados */
+  .empty { padding:36px 12px; text-align:center; color:var(--txt-2); font-size:13.5px; line-height:1.6; }
+  .empty svg { display:block; width:34px; height:34px; margin:0 auto 12px; color:var(--txt-3); }
+  .empty b { display:block; color:var(--txt); font-size:15px; font-weight:600; margin-bottom:4px; }
+  .emptyState { display:none; }
+  main[data-empty="true"] > :not(.emptyState) { display:none !important; }
+  main[data-empty="true"] > .emptyState { display:block; }
+
+  input, textarea { user-select:text; }
+  .modeSeg button.on, .pickScope button.on { background:var(--acc-soft); color:var(--acc); border-color:var(--acc-line); }
+  #openShare[hidden] { display:none !important; }
+  .modeSeg { display:flex; gap:4px; grid-column:1 / -1; }
+  .modeSeg button { flex:1; min-width:0; min-height:40px; padding:8px 4px; border-radius:8px; background:var(--surface-2); color:var(--txt-2); border:1px solid var(--line); font-size:13px; font-weight:600; }
+  .setModes { display:grid; gap:8px; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:16px; }
+  .setModesTop { display:flex; align-items:center; justify-content:space-between; color:var(--txt-2); font-size:13px; }
+  .setModesTop button { background:none; border:none; color:var(--acc); font-weight:600; min-height:36px; padding:0 2px; }
+  .pickBar { position:fixed; left:0; right:0; z-index:25; background:var(--bg); border-bottom:1px solid var(--line); padding:8px 18px 12px;
+    transform:translateY(calc(-100% - 16px)); opacity:0; pointer-events:none; transition:transform .32s cubic-bezier(.2,.7,.2,1), opacity .2s ease; }
+  .pickBar.on { transform:translateY(0); opacity:1; pointer-events:auto; }
+  .pickBarOn { display:grid; gap:8px; }
+  .pickScope { display:flex; gap:6px; }
+  .pickScope button { flex:1; min-height:40px; border-radius:10px; background:var(--surface-2); color:var(--txt-2); border:1px solid var(--line); font-size:13px; font-weight:600; }
+  #setList details.picked { border-color:var(--acc); box-shadow:0 0 0 1px var(--acc-line); }
+  .trendRow.picked { background:var(--acc-soft); }
+  @keyframes atJig { 0%,100% { transform:rotate(-.8deg); } 50% { transform:rotate(.8deg); } }
+  #setList details.picked, #setList .trendRow.picked { animation:atJig .34s ease-in-out infinite; transform-origin:50% 50%; will-change:transform; }
+  #setList details.picked:nth-of-type(2n), #setList .trendRow.picked:nth-child(2n) { animation-delay:-.12s; animation-duration:.31s; }
+  #setList details.picked:nth-of-type(3n), #setList .trendRow.picked:nth-child(3n) { animation-delay:-.21s; animation-duration:.37s; }
+  #setList details.picked .trendRow.picked { animation:none; }
+  #setList details.picked { box-shadow:inset 0 0 0 1.5px var(--acc) !important; }
+  @media (prefers-reduced-motion: reduce) { #setList details.picked, #setList .trendRow.picked { animation:none; } }
+  @keyframes atWiggle {
+    0%, 100% { transform:translateX(0); }
+    18% { transform:translateX(-5px) rotate(-.6deg); }
+    36% { transform:translateX(5px) rotate(.6deg); }
+    54% { transform:translateX(-3px) rotate(-.3deg); }
+    72% { transform:translateX(3px) rotate(.3deg); }
+  }
+  #setList details.wiggle > summary, .trendRow.wiggle { animation:atWiggle .42s ease; }
+  #profileCard { padding:0 0 16px; overflow:hidden; }
+  .pBanner { position:relative; height:118px; background:var(--surface-2); }
+  .pBanner i { position:absolute; inset:0; background:center/cover no-repeat; filter:grayscale(1) brightness(.72) contrast(1.05); }
+  .pBanner.none { height:52px; background:transparent; }
+  .pBanner.none i { display:none; }
+  .pBannerEdit { position:absolute; right:10px; top:10px; width:36px; height:36px; padding:0; border:1px solid rgba(255,255,255,.18); border-radius:50%; display:grid; place-items:center; background:rgba(0,0,0,.66); color:#fff; }
+  .pBannerEdit svg { width:17px; height:17px; }
+  .profileTop { position:relative; display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px; align-items:start; padding:0 16px; margin-top:-36px; }
+  .pBanner.none + .profileTop { align-items:center; }
+  .profilePhoto { width:80px; height:80px; border-radius:50%; border:0; background:var(--surface-2); overflow:hidden; padding:0; color:var(--txt-2); font-size:28px; box-shadow:0 0 0 4px var(--surface); }
+  .profilePhoto img { width:100%; height:100%; object-fit:cover; display:block; }
+  .profileFields { display:grid; min-width:0; padding-top:44px; }
+  .pBanner.none + .profileTop .profileFields { padding-top:0; }
+  .profileFields input { width:100%; min-height:28px; padding:0; background:transparent; border:0; border-bottom:1px solid transparent; }
+  .profileFields input:focus { border-bottom-color:var(--line-2); outline:none; }
+  #profileName { font-size:24px; font-weight:500; letter-spacing:-.02em; }
+  #profileClub { min-height:22px; font-size:13.5px; font-weight:500; color:var(--txt-2); }
+  #profileGear { display:flex; flex-wrap:wrap; gap:6px; margin:14px 16px 0; }
+  #profileGear span { display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line); font-size:12.5px; font-weight:500; }
+  .bannerPick { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px 8px; margin:14px 16px 0; }
+  .bannerPick button { display:grid; gap:6px; min-width:0; padding:0; border:0; background:none; color:var(--txt-3); font-size:11px; font-weight:500; }
+  .bannerPick span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bannerPick i { position:relative; overflow:hidden; height:44px; border-radius:10px; display:grid; place-items:center; background:var(--surface-2); box-shadow:0 0 0 1px var(--line-2); color:var(--txt-2); font-style:normal; font-size:18px; }
+  .bannerPick i svg { width:20px; height:20px; }
+  .bannerPick i b { position:absolute; inset:0; background:center/cover no-repeat; filter:grayscale(1) brightness(.8); }
+  .bannerPick button.on { color:#fff; }
+  .bannerPick button.on i { box-shadow:0 0 0 2px var(--surface), 0 0 0 3.5px var(--acc); }
+  #radarCard .cardTitle small .dash { color:var(--txt-2); letter-spacing:.1em; }
+  #vProgress { display:flex; flex-direction:column; gap:10px; }
+  #progressRadar { width:100%; display:block; }
+  #progressRadar { height:280px; }
+  .swatches { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:14px 12px; }
+  .swatches button { min-width:0; display:flex; flex-direction:column; align-items:stretch; gap:7px; padding:0; border:0; background:none; color:var(--txt-3); font-size:11px; font-weight:500; }
+  .swatches button i { display:block; aspect-ratio:1; border-radius:14px; background:var(--sw); }
+  .swatches button small { font-size:inherit; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .swatches button.on { color:#fff; }
+  .swatches button.on i { box-shadow:0 0 0 2px var(--surface), 0 0 0 4px #fff; }
+  #progressEmpty:empty { display:none; }
+  .heatWrap { display:flex; gap:6px; align-items:flex-start; overflow:hidden; }
+  .heatDays { display:flex; flex-direction:column; gap:3px; font-size:9px; color:var(--txt-3); width:12px; }
+  .heatDays span { height:11px; line-height:11px; }
+  .heat { display:flex; gap:3px; }
+  .heatCol { display:flex; flex-direction:column; gap:3px; }
+  .heat i, .heatLegend i { width:11px; height:11px; border-radius:2px; display:block; background:rgba(255,255,255,.06); }
+  .heat i.l1, .heatLegend i.l1 { background:color-mix(in srgb, var(--acc) 48%, #3a2a18); }
+  .heat i.l2, .heatLegend i.l2 { background:color-mix(in srgb, var(--acc) 68%, #2a1c10); }
+  .heat i.l3, .heatLegend i.l3 { background:color-mix(in srgb, var(--acc) 86%, #1a1008); }
+  .heat i.l4, .heatLegend i.l4 { background:var(--acc); }
+  .heat i.future { background:transparent; box-shadow:inset 0 0 0 1px rgba(255,255,255,.05); }
+  .heatLegend { display:flex; gap:4px; align-items:center; margin-top:8px; font-size:11px; color:var(--txt-3); }
+  #shareSheet:not([hidden]) { display:flex; position:fixed; inset:0; z-index:60; background:#000; justify-content:center; }
+  .sharePanel { width:min(100%, 480px); height:100%; display:flex; flex-direction:column;
+    padding:max(10px, env(safe-area-inset-top)) 20px max(18px, env(safe-area-inset-bottom)); }
+  .shareTop { display:flex; align-items:center; justify-content:space-between; gap:8px; height:52px; flex-shrink:0; }
+  .shareIcon { width:38px; height:38px; flex-shrink:0; border-radius:50%; border:0; background:rgba(255,255,255,.07); color:rgba(255,255,255,.86); display:grid; place-items:center; padding:0; }
+  .shareIcon svg { width:18px; height:18px; }
+  .shareIcon[hidden] { display:grid; visibility:hidden; }
+  .shareTabs { display:flex; gap:20px; justify-content:center; }
+  .shareTabs button { border:0; background:none; padding:6px 0 0; color:var(--txt-3); font-size:14px; font-weight:500; letter-spacing:-.005em; }
+  .shareTabs button::after { content:""; display:block; width:4px; height:4px; margin:5px auto 0; border-radius:50%; background:transparent; }
+  .shareTabs button.on { color:#fff; }
+  .shareTabs button.on::after { background:var(--acc); }
+  .shareStage { flex:1; min-height:0; display:grid; place-items:center; padding:10px 0 22px; }
+  .holoStage { perspective:1100px; width:min(100%, calc((100dvh - 320px) * .8), 400px); margin:0 auto; touch-action:none; }
+  .shareDock { display:grid; gap:18px; flex-shrink:0; }
+  .shareSeg { display:flex; padding:3px; border-radius:999px; background:rgba(255,255,255,.06); }
+  .shareSeg button { flex:1; height:34px; border:0; border-radius:999px; background:none; color:var(--txt-2); font-size:13.5px; font-weight:500; }
+  .shareSeg button.sel { background:rgba(255,255,255,.1); color:var(--acc); font-weight:600; }
+  .photoRow { display:flex; gap:14px; justify-content:center; overflow-x:auto; scrollbar-width:none; padding:3px 4px 0; }
+  .photoRow::-webkit-scrollbar { display:none; }
+  .presetSet { display:contents; }
+  .photoRow button { flex:0 0 auto; width:54px; border:0; background:none; padding:0; display:grid; justify-items:center; gap:7px; color:var(--txt-3); font-size:11px; font-weight:500; }
+  .photoRow button[hidden] { display:none; }
+  .photoRow i { position:relative; width:50px; height:50px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.07); color:rgba(255,255,255,.86); box-shadow:0 0 0 2px #000, 0 0 0 3.5px transparent; transition:box-shadow .15s ease; }
+  .photoRow i img { width:100%; height:100%; border-radius:50%; object-fit:cover; display:block; filter:grayscale(1) brightness(.85); }
+  .photoRow i svg { width:22px; height:22px; }
+  .photoRow i b { position:absolute; right:-3px; top:-3px; width:18px; height:18px; border-radius:50%; background:#fff; color:#000; font-size:13px; line-height:18px; text-align:center; font-weight:600; }
+  .photoRow button.on { color:#fff; }
+  .photoRow button.on i { box-shadow:0 0 0 2px #000, 0 0 0 3.5px var(--acc); }
+  .photoRow button.on i img { filter:none; }
+  .photoSep { flex:0 0 1px; height:26px; margin-top:12px; background:rgba(255,255,255,.1); }
+  .holoTilt { position:relative; transform-style:preserve-3d; transition:transform .08s linear, box-shadow .08s linear; border-radius:18px; }
+  .holoSheen { position:absolute; inset:0; border-radius:18px; pointer-events:none; mix-blend-mode:soft-light;
+    background:linear-gradient(115deg, transparent 42%, rgba(255,255,255,.45) 50%, transparent 58%);
+    background-size:220% 220%; background-position:40% 40%; opacity:0; }
+  #cropSheet:not([hidden]) { display:flex; position:fixed; inset:0; z-index:70; background:rgba(0,0,0,.88); align-items:flex-end; justify-content:center; }
+  .cropPanel { width:min(100%, 460px); background:#0b0b0d; border-radius:20px 20px 0 0; padding:16px 16px 22px; display:grid; gap:12px; }
+  .cropPanel p { font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--txt-2); }
+  #cropCanvas { width:100%; height:auto; border-radius:14px; background:#111; touch-action:none; display:block; }
+  #cropZoom { width:100%; }
+  #shareCanvas { width:100%; height:auto; border-radius:18px; display:block; background:transparent; }
+  .shareStage { grid-template-rows:1fr auto; gap:12px; }
+  .holoStage { width:min(100%, calc((100dvh - 368px) * .8), 400px); align-self:center; }
+  .shareGhost { justify-self:center; display:inline-flex; align-items:center; gap:7px; height:32px; padding:0 14px; border:0; border-radius:999px; background:rgba(255,255,255,.06); color:var(--txt-2); font-size:13px; font-weight:500; }
+  .shareGhost svg { width:15px; height:15px; }
+  .editBar, .widgetDock { display:none; }
+  .shareText { border:0; background:none; padding:8px 2px; color:var(--txt-2); font-size:14px; font-weight:500; min-width:84px; text-align:left; }
+  .shareText.done { color:var(--acc); font-weight:600; text-align:right; }
+  .editTitle { font-size:15px; font-weight:600; color:#fff; }
+  .editTitle span { color:var(--txt-3); font-weight:500; }
+  #shareSheet.editing .shareTop:not(.editBar), #shareSheet.editing .shareDock, #shareSheet.editing .shareGhost { display:none; }
+  #shareSheet.editing .editBar { display:flex; }
+  #shareSheet.editing .widgetDock { display:grid; }
+  #shareSheet.editing .shareStage { grid-template-rows:1fr; padding-bottom:16px; }
+  #shareSheet.editing .holoStage { width:min(100%, calc((100dvh - 500px) * .8), 330px); }
+  .widgetDock { gap:12px; flex-shrink:0; }
+  .widgetList { list-style:none; margin:0; padding:0; display:grid; gap:2px; max-height:min(236px, 30dvh); overflow-y:auto; scrollbar-width:none; touch-action:pan-y; }
+  .widgetList::-webkit-scrollbar { display:none; }
+  .wRow { display:flex; align-items:center; gap:8px; height:44px; padding:0 4px 0 2px; border-radius:12px; transition:background .15s ease; }
+  .wRow.sel { background:rgba(255,255,255,.05); }
+  .wRow.drag { background:rgba(255,255,255,.09); box-shadow:0 8px 24px rgba(0,0,0,.5); position:relative; z-index:1; }
+  .wDel { width:26px; height:26px; flex-shrink:0; border:0; border-radius:50%; background:rgba(255,255,255,.1); color:#fff; display:grid; place-items:center; padding:0; }
+  .wDel svg, .widgetAdd svg { width:12px; height:12px; }
+  .wName { flex:1; min-width:0; font-size:14px; font-weight:500; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wChip { flex-shrink:0; height:28px; padding:0 11px; border:0; border-radius:999px; background:rgba(255,255,255,.06); color:var(--txt-2); font-size:12.5px; font-weight:500; }
+  .wChip.variant { color:var(--acc); }
+  .wGrip { width:30px; height:36px; flex-shrink:0; display:grid; place-items:center; color:var(--txt-3); touch-action:none; cursor:grab; }
+  .wGrip svg { width:18px; height:18px; }
+  .widgetFx { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; }
+  .widgetFx::-webkit-scrollbar { display:none; }
+  .widgetFx button { flex:0 0 auto; height:32px; padding:0 13px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:none; color:var(--txt-2); font-size:13px; font-weight:500; }
+  .widgetFx button.on { background:var(--acc-soft); border-color:var(--acc-line); color:var(--acc); }
+  .widgetAdd { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; }
+  .widgetAdd::-webkit-scrollbar { display:none; }
+  .widgetAdd button { flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 13px; border:1px dashed rgba(255,255,255,.18); border-radius:999px; background:none; color:var(--txt-2); font-size:13px; font-weight:500; }
+  .widgetAdd small { color:var(--txt-3); font-size:12.5px; padding:7px 2px; }
+  .widgetLayer { position:absolute; inset:0; pointer-events:none; }
+  #shareSheet.editing .widgetLayer { pointer-events:auto; touch-action:none; }
+  .wBox { position:absolute; border-radius:12px; box-shadow:0 0 0 1.5px rgba(255,255,255,.6), 0 0 0 3px rgba(0,0,0,.22); animation:wiggle .3s ease-in-out infinite alternate; }
+  .wBox:nth-child(2n) { animation-delay:-.15s; animation-direction:alternate-reverse; }
+  .wBox.sel { box-shadow:0 0 0 2px var(--acc), 0 0 0 4px rgba(0,0,0,.25); }
+  .wBox.drag { animation:none; transform:scale(1.03); box-shadow:0 0 0 2px var(--acc), 0 14px 30px rgba(0,0,0,.55); }
+  .wBox b { position:absolute; left:8px; top:8px; width:22px; height:22px; border-radius:50%; background:#3b3b40; color:#fff; display:grid; place-items:center; box-shadow:0 1px 5px rgba(0,0,0,.45); }
+  .wBox b svg { width:10px; height:10px; }
+  @keyframes wiggle { from { transform:rotate(-.55deg); } to { transform:rotate(.55deg); } }
+  @media (prefers-reduced-motion:reduce) { .wBox { animation:none; } }
+  body #notice { z-index:90; }
+
+  /* Diálogo */
+  #askModal:not([hidden]) { display:flex; position:fixed; inset:0; background:rgba(6,7,9,.72); z-index:40; align-items:flex-end; justify-content:center; padding:16px; }
+  #askModal .ask { background:var(--surface); border:1px solid var(--line-2); border-radius:20px; padding:20px; max-width:420px; width:100%;
+                   box-shadow:0 24px 60px rgba(0,0,0,.5); }
+  #askMsg { font-size:14.5px; line-height:1.55; color:var(--txt); margin:0 0 18px; }
+  .askBtns { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  #askNo { background:var(--surface-2); border:1px solid var(--line-2); color:var(--txt); border-radius:12px; min-height:46px; font-size:14px; font-weight:500; }
+  #askYes { background:#fff; border:none; color:#000; border-radius:12px; min-height:46px; font-size:14px; font-weight:600; }
+  .info { margin-top:8px; }
+  .info summary { list-style:none; cursor:pointer; width:28px; height:28px; display:grid; place-items:center; color:var(--txt-3); font-size:13px; border-radius:50%; }
+  #sessionScoreMore summary { width:auto; height:auto; display:inline-flex; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+  #sessionScore .cardTitle { margin-bottom:0; }
+  #sessionScoreFace { margin-top:12px; background:none; border:0; border-radius:0; }
+  #sessionScoreFace > div { padding:2px 8px 0; }
+  #sessionScoreFace > div + div { border-left:1px solid var(--line); }
+  .info summary::-webkit-details-marker { display:none; }
+  .info p { font-size:12px; color:var(--txt-3); line-height:1.4; margin-top:4px; }
+  .sessbars { display:grid; grid-template-columns:repeat(auto-fit,minmax(36px,1fr)); gap:6px; align-items:end; min-height:132px; margin-top:12px; }
+  .sessbars div { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:0; }
+  .sessbars b { font:600 18px/1 var(--num); margin-bottom:6px; }
+  .sessbars i { width:100%; background:rgba(255,255,255,.1); border-radius:6px 6px 2px 2px; }
+  .sessbars i.last { background:var(--acc); box-shadow:0 0 18px var(--glow); }
+  .sessbars small { font:500 9.5px/1.25 var(--font); letter-spacing:.02em; color:var(--txt-3); margin-top:6px; text-transform:uppercase; text-align:center; max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  @media (max-width:340px) {
+    main { padding-left:12px; padding-right:12px; }
+    header { padding-left:12px; padding-right:12px; }
+    header h1 { font-size:37px; }
+    .mrow > div, .top3 > div { padding:10px 8px; }
+  }
+
+  /* ===== Restyle: superficies planas, acento solo en datos clave ===== */
+  :root { --surface:#141416; --surface-2:#1c1c1e; --surface-3:#242427; --line:transparent; --line-2:rgba(255,255,255,.08);
+          --glow:transparent; --acc-line:transparent; --acc-soft:rgba(255,138,31,.14); }
+  .card, .target, .metrics, .mrow, .top3, #tip, #setList details, .setModes, #askModal .ask { border:none !important; border-radius:20px !important; box-shadow:none !important; }
+  main { gap:14px; }
+  .card, .target { padding:18px; }
+  .mrow > div, .top3 > div { border:none !important; padding:16px 14px; }
+  .lbl, .caption, .tclock, .tl span, .sessbars small, #sessionScoreMore summary, .cropPanel p { text-transform:none !important; letter-spacing:0 !important; font-size:12px !important; color:var(--txt-2); }
+  .dateRow small { text-transform:none; letter-spacing:0; font-size:12px; }
+  #setList { gap:10px; }
+  #setList details[open]::before { display:none; }
+  #setList details[open] { background:var(--surface); }
+  .trendRow { border-top:none; }
+  .setbar button, .tracebar button, .modeSeg button, .pickScope button, .scoreSlots button { border-radius:999px; border-color:transparent !important; background:var(--surface-2); }
+  .setbar button.sel, .tracebar button.sel, .modeSeg button.on, .pickScope button.on, .scoreSlots button.on { background:var(--acc-soft); color:var(--acc); }
+  #link, #returnCurrent { border-color:transparent; background:var(--surface-2); }
+  #live { box-shadow:none; }
+  #live::before { box-shadow:none; }
+  .sessbars i.last { box-shadow:none; }
+  nav { border-top:none; background:#141416; border:1px solid var(--line); border-radius:24px; padding:6px 8px;
+    margin:6px 12px max(12px,env(safe-area-inset-bottom)); box-shadow:0 8px 24px rgba(0,0,0,.45); }
+  nav button { position:relative; gap:4px; padding:6px 0; border-radius:16px; font-size:10px; color:var(--txt-3); }
+  nav button svg { width:21px; height:21px; }
+  nav button svg path { stroke:currentColor; stroke-width:0; }
+  nav button.sel { color:var(--txt); background:var(--surface-2); }
+  nav button.sel svg { color:var(--acc); }
+  nav button.sel::before { display:none; }
+  .scorepad { gap:6px; }
+  .scorepad button { border:none; border-radius:14px; }
+  .scorepad button.on { background:var(--acc-soft); }
+  .scoreSlots button { border:none; border-radius:14px; }
+  #profileNums + .heatWrap { margin-top:6px; }
+  .heatWrap + .heatLegend { margin:10px 0 16px; }
+  /* Botones y selectores en pastilla gris (#1c1c1e), texto normal */
+  .addItem button { background:#1c1c1e !important; color:#fff !important; border:none !important; border-radius:999px !important; padding:0 18px !important; font-weight:500 !important; }
+  .addItem input { border-radius:999px !important; padding:10px 16px !important; }
+  .sheet button { border-radius:999px !important; background:#1c1c1e !important; border:1px solid transparent !important; padding:12px 16px !important; }
+  .sheet button.on { border-color:var(--acc-line) !important; background:#1c1c1e !important; }
+  .sheet .deleteGear { border-radius:999px !important; }
+  .modeSeg button, .pickScope button { border-radius:999px !important; background:#1c1c1e !important; border:1px solid transparent !important; font-weight:500 !important; }
+  .modeSeg button.on, .pickScope button.on, .modeSeg button[aria-pressed="true"], .pickScope button[aria-pressed="true"] { border-color:var(--acc-line) !important; color:var(--acc) !important; }
+  #calibrationProfile, .training select, .cmpPick select { background-color:#1c1c1e !important; border:none !important; border-radius:999px !important; padding-left:16px !important; font-weight:500; }
+</style>
+</head>
+<body>
+<header>
+  <div class="dateRow"><small id="subtitle"></small><button id="returnCurrent" onclick="backToCurrent()">Actual</button></div>
+  <div class="headRow">
+  <h1><span id="title">Sesión</span></h1>
+  <span id="link" data-state="off">Sin sensor</span>
+  </div>
+</header>
+<span id="live">En vivo</span>
+<main id="vShot">
+  <div class="empty emptyState"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M232,120h-8.34A96.14,96.14,0,0,0,136,32.34V24a8,8,0,0,0-16,0v8.34A96.14,96.14,0,0,0,32.34,120H24a8,8,0,0,0,0,16h8.34A96.14,96.14,0,0,0,120,223.66V232a8,8,0,0,0,16,0v-8.34A96.14,96.14,0,0,0,223.66,136H232a8,8,0,0,0,0-16Zm-96,87.6V200a8,8,0,0,0-16,0v7.6A80.15,80.15,0,0,1,48.4,136H56a8,8,0,0,0,0-16H48.4A80.15,80.15,0,0,1,120,48.4V56a8,8,0,0,0,16,0V48.4A80.15,80.15,0,0,1,207.6,120H200a8,8,0,0,0,0,16h7.6A80.15,80.15,0,0,1,136,207.6ZM128,88a40,40,0,1,0,40,40A40,40,0,0,0,128,88Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,152Z"/></svg><b>Sin flechas</b></div>
+  <div class="top3">
+    <div><span class="lbl">Estabilidad<i id="mScoreDot" class="lowDot" hidden></i></span><b id="mScore" class="num big">–</b></div>
+    <div><span class="lbl">Tiro</span><b id="mPeak" class="num">–</b></div>
+    <div><span class="lbl">Radio</span><b id="mInstab" class="num">–</b></div>
+  </div>
+  <div class="target">
+    <div class="aimwrap"><canvas id="aim"></canvas></div>
+    <span class="tclock" id="aimCaption">Grados</span>
+    <span class="tlClock" id="aimClock"></span>
+    <div class="tl" id="timeline">
+      <div class="track"></div><div class="fill" id="tlFill"></div><div class="rel"></div>
+      <span class="tlA">−6 s</span><span class="tlB">−3 s</span><span class="tlC">Suelta</span><span class="tlD">+1,2</span>
+    </div>
+  </div>
+  <button id="play">Reproducir</button>
+  <div class="mrow">
+    <div><span class="lbl">Estabiliz.</span><b id="mSettle" class="num">–</b></div>
+    <div><span class="lbl">Pulso</span><b id="mHr" class="num">–</b></div>
+    <div><span class="lbl">Impulso</span><b id="mG" class="num">–</b></div>
+  </div>
+  <section class="card" id="shotScore"></section>
+  <div class="card">
+    <div class="cardTitle">Señal</div>
+    <canvas id="trace"></canvas>
+    <div id="tLegend" hidden></div>
+  </div>
+  <div id="tip"></div>
+  <section id="calibrationPanel" class="card" hidden>
+    <p id="calibrationInfo" class="muted"></p>
+    <label for="calibrationProfile">Arco
+      <select id="calibrationProfile" onchange="renderCalibration(data.shots[cur])"></select></label>
+    <button id="calib" onclick="calibrateFromShot()">Calibrar</button>
+  </section>
+  <button class="deleteAction" onclick="removeSelection('shot')">Eliminar flecha</button>
+</main>
+<main id="vSession" style="display:none">
+  <section class="card heroS" id="sessionHero">
+    <div class="gauge"><div id="stabGauge"></div><div class="c"><b class="num" id="sAvg">–</b><span class="lbl">Estabilidad<i id="sAvgDot" class="lowDot" hidden></i></span></div></div>
+    <div class="kv">
+      <div><span class="lbl">Flechas</span><b class="num" id="sTotal">–</b></div>
+      <div><span class="lbl">Sets</span><b class="num" id="sSets">–</b></div>
+      <div><span class="lbl">Radio</span><b class="num" id="sSd">–</b></div>
+      <div><span class="lbl">Tiro</span><b class="num" id="sShot">–</b></div>
+    </div>
+  </section>
+  <div class="mrow">
+    <div><span class="lbl">Mejor</span><b class="num" id="sBest">–</b></div>
+    <div><span class="lbl">Pulso</span><b class="num" id="sHr">–</b></div>
+    <div><span class="lbl">Estabiliz.</span><b class="num" id="sSettle">–</b></div>
+  </div>
+  <section class="card" id="sessionScore" hidden>
+    <div class="cardTitle">Valor<small id="sessionScoreCount"></small></div>
+    <div class="mrow quad" id="sessionScoreFace">
+      <div><span class="lbl">Total</span><b class="num" id="scoreTotal">–</b></div>
+      <div><span class="lbl">Media</span><b class="num" id="scoreAvg">–</b></div>
+      <div><span class="lbl" id="scoreXLbl">X</span><b class="num" id="scoreX">–</b></div>
+      <div><span class="lbl">10</span><b class="num" id="scoreTen">–</b></div>
+    </div>
+    <div class="aimwrap" id="sessionGroupWrap" hidden><canvas id="sessionGroup" aria-label="Agrupación"></canvas></div>
+    <details class="info" id="sessionScoreMore"><summary>Detalle</summary><div id="sessionScoreGroups" class="scoreGroups"></div><p id="sessionScoreInsight"></p></details>
+  </section>
+  <div id="pickBar" class="pickBar" hidden></div>
+  <div id="setList"></div>
+  <button type="button" class="btnSecondary" id="openShare">Compartir sesión</button>
+  <div id="trend" hidden></div>
+  <button class="deleteAction" id="deleteCurrent" onclick="removeSelection('session')">Eliminar sesión</button>
+</main>
+<main id="vHistory" style="display:none">
+  <div class="card list" id="histList"></div>
+  <button type="button" class="btnSecondary" id="openCompare" onclick="openCompare()">Comparar</button>
+  <section class="card" id="compareCard" hidden>
+    <div class="cardTitle">Comparar<small>Δ</small></div>
+    <div class="cmpPick">
+      <select id="cmpA" aria-label="Primera sesión" onchange="cmpSide('A', this.value)"></select>
+      <select id="cmpB" aria-label="Segunda sesión" onchange="cmpSide('B', this.value)"></select>
+    </div>
+    <div class="tracebar" id="cmpQuick">
+      <button type="button" onclick="cmpQuick('today')">Hoy</button>
+      <button type="button" onclick="cmpQuick('score')">Mejor valor</button>
+      <button type="button" onclick="cmpQuick('aim')">Mejor estabilidad</button>
+      <button type="button" onclick="cmpQuick('tanda')">Tandas</button>
+    </div>
+    <div class="cmpTable" id="cmpTable"></div>
+    <div class="cmpGear" id="cmpGear"></div>
+    <div class="cardTitle" style="margin-top:14px">Por set</div>
+    <div class="tracebar" id="cmpMetricBar">
+      <button type="button" id="cmpMetricAim" onclick="cmpMetricSet('aim')">Estabilidad</button>
+      <button type="button" id="cmpMetricScore" onclick="cmpMetricSet('score')">Puntuación</button>
+    </div>
+    <canvas id="cmpSets"></canvas>
+    <div id="cmpLegend"></div>
+    <div class="cardTitle" style="margin-top:14px">Grados</div>
+    <div class="cmpPick"><select id="cmpArrow" aria-label="Flecha a comparar" onchange="cmpArrowSet(this.value)"></select></div>
+    <div class="aimwrap"><canvas id="cmpAim"></canvas></div>
+    <p class="caption" id="cmpAimCap"></p>
+  </section>
+  <button type="button" class="btnSecondary" id="exportData" onclick="exportBackup()">Exportar</button>
+</main>
+<main id="vSet" style="display:none">
+  <div class="empty emptyState"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M172,76a44,44,0,1,0-44,44A44.05,44.05,0,0,0,172,76Zm-44,28a28,28,0,1,1,28-28A28,28,0,0,1,128,104Zm60,24a44,44,0,1,0,44,44A44.05,44.05,0,0,0,188,128Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,188,200ZM68,128a44,44,0,1,0,44,44A44.05,44.05,0,0,0,68,128Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,68,200Z"/></svg><b>Sin sets</b></div>
+  <div class="setbar" id="setbar"></div>
+  <section class="card" id="setScore"></section>
+  <div class="card"><div class="aimwrap"><canvas id="aimSet"></canvas></div><div id="legend"></div></div>
+  <div class="card list" id="setArrows"></div>
+  <button class="deleteAction" onclick="removeSelection('set')">Eliminar set</button>
+</main>
+<main id="vProfile" style="display:none">
+  <section class="card" id="profileCard">
+    <div class="pBanner" id="profileBanner"><i id="profileBannerImg"></i>
+      <button type="button" class="pBannerEdit" id="profileBannerEdit" aria-label="Cambiar banner" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M4 16.5l4.5-4.5 3.5 3.5 2.5-2.5 5 5"/><circle cx="15.5" cy="9.5" r="1.4"/></svg></button>
+    </div>
+    <div class="profileTop">
+      <button type="button" class="profilePhoto" id="profilePhotoBtn" aria-label="Foto de perfil"><img id="profilePhoto" alt="" hidden><span id="profilePhotoPh">+</span></button>
+      <input id="profileFile" type="file" accept="image/*" hidden>
+      <div class="profileFields">
+        <input id="profileName" maxlength="32" placeholder="Nombre" aria-label="Nombre">
+        <input id="profileClub" maxlength="40" placeholder="Club" aria-label="Club">
+      </div>
+    </div>
+    <div id="profileGear"></div>
+    <div class="bannerPick" id="bannerPick" role="group" aria-label="Banner" hidden></div>
+    <input id="bannerFile" type="file" accept="image/*" hidden>
+    <input id="bannerCamFile" type="file" accept="image/*" capture="environment" hidden>
+  </section>
+  <section class="card">
+    <div class="cardTitle">Global</div>
+    <div class="mrow quad" id="profileNums"></div>
+    <div class="heatWrap"><div class="heatDays" aria-hidden="true"><span>L</span><span></span><span>X</span><span></span><span>V</span><span></span><span>D</span></div><div class="heat" id="heatmap"></div></div>
+    <div class="heatLegend"><span>Menos</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><span>Más</span></div>
+    <button type="button" class="btnSecondary" id="shareProfile">Compartir perfil</button>
+  </section>
+  <div id="vProgress">
+  <section class="card og" id="goalCard"></section>
+  <section class="card og" id="metaCard"></section>
+  <section class="card" id="radarCard">
+    <div class="cardTitle">Rendimiento<small><span class="dash">- - -</span> antes</small></div>
+    <canvas id="progressRadar" aria-label="Rendimiento"></canvas>
+  </section>
+  <section class="card" id="splitCard">
+    <div class="cardTitle">Estabilidad vs puntos</div>
+    <p id="splitNeed"></p>
+    <div id="splitBody" hidden>
+      <div class="splitPair">
+        <div><span class="lbl">10/X</span><b class="num" id="splitHighAim">–</b><span class="sub" id="splitHighTime"></span></div>
+        <div><span class="lbl">≤9</span><b class="num" id="splitLowAim">–</b><span class="sub" id="splitLowTime"></span></div>
+      </div>
+      <canvas id="splitPlot" aria-label="Estabilidad y valor"></canvas>
+    </div>
+  </section>
+  <div class="card">
+    <div class="cardTitle">Evolución</div>
+    <div id="progSum"></div>
+    <div id="sessBars" class="sessbars"></div>
+    <canvas id="progress" hidden></canvas>
+    <div id="legend2" hidden></div>
+  </div>
+  <div class="empty" id="progressEmpty"></div>
+  </div>
+  <section class="card" id="themeCard">
+    <div class="cardTitle">Tema<small id="themeName"></small></div>
+    <div class="swatches" id="themeSwatches"></div>
+  </section>
+</main>
+<nav>
+  <button id="nSession"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M80,64a8,8,0,0,1,8-8H216a8,8,0,0,1,0,16H88A8,8,0,0,1,80,64Zm136,56H88a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Zm0,64H88a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16ZM44,52A12,12,0,1,0,56,64,12,12,0,0,0,44,52Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,116Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,180Z"/></svg>Sesión</button>
+  <button id="nShot" class="sel"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M232,120h-8.34A96.14,96.14,0,0,0,136,32.34V24a8,8,0,0,0-16,0v8.34A96.14,96.14,0,0,0,32.34,120H24a8,8,0,0,0,0,16h8.34A96.14,96.14,0,0,0,120,223.66V232a8,8,0,0,0,16,0v-8.34A96.14,96.14,0,0,0,223.66,136H232a8,8,0,0,0,0-16Zm-96,87.6V200a8,8,0,0,0-16,0v7.6A80.15,80.15,0,0,1,48.4,136H56a8,8,0,0,0,0-16H48.4A80.15,80.15,0,0,1,120,48.4V56a8,8,0,0,0,16,0V48.4A80.15,80.15,0,0,1,207.6,120H200a8,8,0,0,0,0,16h7.6A80.15,80.15,0,0,1,136,207.6ZM128,88a40,40,0,1,0,40,40A40,40,0,0,0,128,88Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,152Z"/></svg>Tiro</button>
+  <button id="nSet"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M172,76a44,44,0,1,0-44,44A44.05,44.05,0,0,0,172,76Zm-44,28a28,28,0,1,1,28-28A28,28,0,0,1,128,104Zm60,24a44,44,0,1,0,44,44A44.05,44.05,0,0,0,188,128Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,188,200ZM68,128a44,44,0,1,0,44,44A44.05,44.05,0,0,0,68,128Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,68,200Z"/></svg>Set</button>
+  <button id="nHistory"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M136,80v43.47l36.12,21.67a8,8,0,0,1-8.24,13.72l-40-24A8,8,0,0,1,120,128V80a8,8,0,0,1,16,0Zm-8-48A95.44,95.44,0,0,0,60.08,60.15C52.81,67.51,46.350,74.59,40,82V64a8,8,0,0,0-16,0v40a8,8,0,0,0,8,8H72a8,8,0,0,0,0-16H49c7.15-8.420,14.27-16.35,22.39-24.57a80,80,0,1,1,1.66,114.75,8,8,0,1,0-11,11.64A96,96,0,1,0,128,32Z"/></svg>Historial</button>
+  <button id="nProfile"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24ZM74.08,197.5a64,64,0,0,1,107.84,0,87.83,87.83,0,0,1-107.84,0ZM96,120a32,32,0,1,1,32,32A32,32,0,0,1,96,120Zm97.76,66.41a79.66,79.66,0,0,0-36.06-28.75,48,48,0,1,0-59.4,0,79.66,79.66,0,0,0-36.06,28.75,88,88,0,1,1,131.52,0Z"/></svg>Perfil</button>
+</nav>
+<div id="shareSheet" hidden>
+  <div class="sharePanel">
+    <div class="shareTop">
+      <button type="button" class="shareIcon" id="shareClose" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <div class="shareTabs" id="shareThumbs" role="tablist" aria-label="Contenido"></div>
+      <button type="button" class="shareIcon" id="shareGyro" aria-label="Inclinar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg></button>
+    </div>
+    <div class="shareTop editBar">
+      <button type="button" class="shareText" id="widgetReset">Restablecer</button>
+      <p class="editTitle">Widgets <span id="widgetStyle"></span></p>
+      <button type="button" class="shareText done" id="widgetDone">Listo</button>
+    </div>
+    <div class="shareStage">
+      <div class="holoStage" id="holoStage" data-tone="dark">
+        <div class="holoTilt" id="holoTilt">
+          <canvas id="shareCanvas" width="1080" height="1350" aria-label="Tarjeta para compartir"></canvas>
+          <div class="holoSheen" id="holoSheen"></div>
+          <div class="widgetLayer" id="widgetLayer"></div>
+        </div>
+      </div>
+      <button type="button" class="shareGhost" id="shareEdit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="16" height="7" rx="2"/></svg>Editar widgets</button>
+    </div>
+    <div class="widgetDock" id="widgetDock">
+      <div class="shareSeg" id="widgetPhoto" role="group" aria-label="Foto de cabecera">
+        <button type="button" data-photo="tall">Foto alta</button>
+        <button type="button" data-photo="short">Foto baja</button>
+        <button type="button" data-photo="none">Sin foto</button>
+      </div>
+      <div class="widgetFx" id="widgetFx" role="group" aria-label="Detalles"></div>
+      <ul class="widgetList" id="widgetList" aria-label="Widgets de la tarjeta"></ul>
+      <div class="widgetAdd" id="widgetAdd" aria-label="Añadir widget"></div>
+    </div>
+    <div class="shareDock">
+      <div class="shareSeg" id="shareFinish" role="group" aria-label="Estilo">
+        <button type="button" data-finish="glass" class="sel">Cristal</button>
+        <button type="button" data-finish="editorial">Editorial</button>
+        <button type="button" data-finish="obsidian">Obsidiana</button>
+      </div>
+      <div class="photoRow" id="sharePhotos" role="group" aria-label="Foto">
+        <button type="button" id="shareCam"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3v10H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg></i><small>Cámara</small></button>
+        <button type="button" id="shareLib"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2.5"/><path d="M4.5 16.5l4.5-4.5 3.5 3.5 2.5-2.5 4.5 4.5"/><circle cx="15.5" cy="9.5" r="1.4"/></svg></i><small>Galería</small></button>
+        <span class="photoSep" aria-hidden="true"></span>
+        <button type="button" id="sharePhotoClear" class="on" hidden aria-label="Quitar tu foto"><i><img id="shareUserThumb" alt=""><b aria-hidden="true">×</b></i><small>Tu foto</small></button>
+        <div id="sharePresets" class="presetSet"></div>
+      </div>
+      <input id="shareCamFile" type="file" accept="image/*" capture="environment" hidden>
+      <input id="shareLibFile" type="file" accept="image/*" hidden>
+      <button type="button" class="btnPrimary" id="shareExport">Compartir</button>
+    </div>
+  </div>
+</div>
+<div id="cropSheet" hidden>
+  <div class="cropPanel">
+    <p id="cropTitle">Encuadra la foto</p>
+    <canvas id="cropCanvas" width="900" height="634" aria-label="Recorte"></canvas>
+    <input id="cropZoom" type="range" min="1" max="3" step="0.01" value="1" aria-label="Zoom">
+    <button type="button" class="btnPrimary" id="cropUse">Usar foto</button>
+    <button type="button" class="btnSecondary" id="cropCancel">Cancelar</button>
+  </div>
+</div>
+<div id="askModal" hidden role="dialog" aria-modal="true"><div class="ask"><p id="askMsg"></p>
+<div class="askBtns"><button id="askNo">Cancelar</button><button id="askYes">Confirmar</button></div></div></div>
+<script>
+let statFilter = localStorage.getItem('atStatFilter') || 'all';
+function statShots(shots) {
+  shots = shots || [];
+  if (statFilter === 'score') return shots.filter(s => s.phase === 'score');
+  if (/^t\d+$/.test(statFilter)) { const n = +statFilter.slice(1); return shots.filter(s => s.tanda === n); }
+  return shots;
+}
+</script>
+<script src="session-model.js"></script>
+<script src="trace-geom.js"></script>
+<script src="backup.js"></script>
+<script src="score.js"></script>
+<script src="compare.js"></script>
+<script src="goals.js"></script>
+<script>
+const GAP_MS = 60000, ACOLORS = ['#FF8A1F', 'rgba(255,255,255,.9)', 'rgba(255,255,255,.62)', 'rgba(255,255,255,.4)', 'rgba(255,255,255,.24)', 'rgba(255,255,255,.16)'];
+const C = {txt:'#fff', txt2:'#9a9aa2', txt3:'#5c5c64', grid:'rgba(255,255,255,.07)', acc:'#ffffff', mark:'#FF8A1F', prev:'rgba(255,255,255,.32)', aim:'#fff', rel:'#FF8A1F', low:'#F0506E', ref:'rgba(255,255,255,.45)'};
+const FONT = "'Geist', system-ui, sans-serif", MONO = "'Barlow Condensed', sans-serif";
+const HEART = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M178,40c-20.65,0-38.73,8.88-50,23.89C116.73,48.88,98.65,40,78,40a62.07,62.07,0,0,0-62,62c0,70,103.790,126.66,108.21,129a8,8,0,0,0,7.58,0C136.21,228.66,240,172,240,102A62.07,62.07,0,0,0,178,40Z"/></svg>';
+const TRASH = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/></svg>';
+function esNum(n, digits) {
+  if (!Number.isFinite(n)) return '–';
+  const q = Math.round(n * 10 ** digits) / 10 ** digits;
+  return (digits ? q.toFixed(digits) : String(q)).replace('.', ',');
+}
+function setMetric(id, value, unit = '') {
+  const el = document.getElementById(id); el.textContent = value;
+  if (unit && value !== '–') { const u = document.createElement('small'); u.textContent = unit.trim(); el.appendChild(u); }
+}
+let data = null, cur = 0, view = 'Shot', anim = null, live = false, historyMode = false, histId = 0;
+window.onerror = (m, s, l) => {  // superficie de errores JS: sin esto un fallo es invisible en la WebView
+  let d = document.getElementById('jserr');
+  if (!d) { d = document.createElement('div'); d.id = 'jserr';
+    d.style.cssText = 'position:fixed;bottom:70px;left:14px;right:14px;background:#b71c1c;color:#fff;font-size:11px;padding:8px 10px;border-radius:8px;z-index:99';
+    (document.body || document.documentElement).appendChild(d); }
+  d.textContent = 'JS: ' + m + ' @' + (l || '?');
+  return false;
+};
+
+// archivo de sesiones (localStorage); la viva caduca a los 10 min sin tiros
+const store = {
+  list: () => { try { const l = JSON.parse(localStorage.getItem('atSessions') || '[]'); return Array.isArray(l) ? l.filter(s => s && Number.isFinite(s.id) && Array.isArray(s.shots)).map(s => ({...s, shots: identifySets(s.shots)})) : []; } catch (e) { return []; } },
+  save: l => localStorage.setItem('atSessions', JSON.stringify(l))
+};
+let curSess = null;
+window.receiveNative = (id, apply) => {
+  try {
+    if (id <= +(localStorage.getItem('atReceipt') || 0)) return true;
+    apply(); localStorage.setItem('atReceipt', String(id)); return true;
+  } catch (e) {
+    const b = document.getElementById('live'); b.style.display = 'block';
+    b.textContent = 'No se pudo guardar. Libera espacio y vuelve a abrir.';
+    return false;
+  }
+};
+function liveSession(sid = '') {
+  const now = Date.now();
+  if (sid) {
+    if (curSess?.sensorId === sid) return curSess;
+    const L = store.list();
+    curSess = L.find(s => s.sensorId === sid);
+    if (!curSess) { curSess = {id:Math.max(now,...L.map(s=>s.id+1)),sensorId:sid,live:true,lastWt:now,shots:[]}; L.push(curSess); store.save(L); }
+    return curSess;
+  }
+  if (curSess) {
+    if (curSess.live && now - curSess.lastWt < 600000) return curSess;
+    curSess.live = false; persist(); curSess = null;
+  }
+  const L = store.list();
+  curSess = L.find(x => x.live && now - x.lastWt < 600000)  // restaurar tras recargar
+        || (L.push({ id: now, live: true, lastWt: now, shots: [] }), L[L.length - 1]);
+  store.save(L);
+  return curSess;
+}
+function persist() {
+  const L = store.list();
+  const i = L.findIndex(x => x.id === curSess.id);
+  if (i >= 0) L[i] = curSess; else L.push(curSess);
+  store.save(L);
+}
+
+// puente desde el APK: el servicio BLE inyecta las flechas del sensor en tiempo real
+function linkLabel(d) {
+  if (!d || typeof d !== 'object') return {state: 'off', text: 'Sin sensor'};
+  const connected = d.connected === true || /listo/i.test(String(d.status || ''));
+  const pending = Number(d.pending), commands = Number(d.commands);
+  const waiting = (Number.isFinite(pending) ? pending : 0) + (Number.isFinite(commands) ? commands : 0);
+  const at = Number(d.receivedAt);
+  const clock = Number.isFinite(at) && at > 0 ? new Date(at).toLocaleTimeString('es', {hour: '2-digit', minute: '2-digit'}) : '';
+  const text = (connected ? 'Sensor' : 'Desconectado') + (clock ? ' · ' + clock : '') + (waiting ? ' · ' + waiting + ' pend.' : '');
+  return {state: !connected ? 'off' : (waiting >= 15 ? 'wait' : 'on'), text};
+}
+function refreshLink() {
+  const el = document.getElementById('link');
+  if (!el) return;
+  let d = null;
+  try { if (window.Native && typeof Native.diagnostics === 'function') d = JSON.parse(Native.diagnostics() || 'null'); } catch (e) { d = null; }
+  const view = linkLabel(d);
+  el.dataset.state = view.state;
+  el.textContent = view.text;
+}
+window.liveStatus = s => {
+  const b = document.getElementById('live');
+  if (/error|activa el bluetooth|no encontrado|sin conexi|pendiente|guardar|confirmar/i.test(s)) {
+    b.style.display = 'block';
+    b.textContent = s;
+  } else {
+    b.style.display = live && !historyMode ? 'block' : 'none';
+    b.textContent = 'En vivo' + (data?.shots.length ? ' · ' + data.shots.length : '');
+  }
+  refreshLink();
+};
+// El buffer nativo se consume una vez: conservar las sesiones anteriores.
+window.liveStart = (sid = '') => {
+  refreshLink();
+  if (sid && store.list().some(s => s.sensorId === sid)) return;
+  historyMode = false; histId = 0; cur = 0;
+  const L = store.list();
+  L.forEach(s => s.live = false);
+  store.save(L);
+  curSess = null;
+  if (sid) liveSession(sid);
+  data = { shots: [] };
+  live = true;
+  const b = document.getElementById('live');
+  b.style.display = 'block';
+  b.textContent = 'En vivo';
+  if (document.visibilityState === 'visible') show('Session'); else render();
+};
+// fin de sesión -> archivar y dejar de estar en vivo
+window.liveEnd = (sid = '') => {
+  if (sid) curSess = store.list().find(s => s.sensorId === sid) || null;
+  if (curSess) { curSess.live = false; persist(); }
+  live = false;
+  curSess = null;
+  data = { shots: [] };
+  cur = 0;
+  historyMode = false; histId = 0;
+  document.getElementById('live').style.display = 'none';
+  show('Session');
+  refreshLink();
+};
+window.liveShot = ev => {
+  if (!ev || !['t', 'score', 'peak', 'instab'].every(k => Number.isFinite(ev[k]))) return;
+  const followLatest = !data?.shots.length || cur === data.shots.length - 1;
+  const sess = liveSession(ev.sid || '');
+  if (sess.shots.some(s => Math.abs(s.t_ms - ev.t) < 800) || (sess.removed || []).some(t => Math.abs(t - ev.t) < 800)) { persist(); return; }
+  sess.shots.push({
+    t_ms: Math.round(ev.t), hr_bpm: Number.isFinite(ev.hr) && ev.hr > 0 ? Math.round(ev.hr) : null,
+    peak_mg: Math.round(ev.peak), instab_mg: Math.round(ev.instab),
+    settle_ms: ev.settle == null || ev.settle < 0 ? null : Math.round(ev.settle), hr_bpm: ev.hr > 0 ? ev.hr : null,
+    aim_score: Math.max(0, Math.min(100, Math.round(ev.score))), tilt_x: Array.isArray(ev.tx) ? ev.tx : [], tilt_y: Array.isArray(ev.ty) ? ev.ty : [],
+    yaw_c: Array.isArray(ev.yw2) ? ev.yw2 : [], pitch_deg: Array.isArray(ev.pt) ? ev.pt : [],
+    pos_x: Array.isArray(ev.qx) ? ev.qx : [], pos_y: Array.isArray(ev.qy) ? ev.qy : [], pos_z: Array.isArray(ev.qz) ? ev.qz : [],
+    posp_x: Array.isArray(ev.qx2) ? ev.qx2 : [], posp_y: Array.isArray(ev.qy2) ? ev.qy2 : [], posp_z: Array.isArray(ev.qz2) ? ev.qz2 : [],
+    traj_x: Array.isArray(ev.px) ? ev.px : [], traj_y: Array.isArray(ev.py) ? ev.py : [],
+    mag_b: Array.isArray(ev.bm) ? ev.bm : [], post_yaw: Array.isArray(ev.pyw) ? ev.pyw : [], post_pitch: Array.isArray(ev.ppt) ? ev.ppt : [],
+    dt: Number.isFinite(ev.dt) && ev.dt > 0 ? ev.dt : 50, trace_t: Array.isArray(ev.trace_t) ? ev.trace_t : [],
+    window: Array.isArray(ev.mp) && Array.isArray(ev.mq) ? {
+      pre: ev.mp.map((_, i) => -(ev.mp.length - i) * (ev.dt || 50)), mag_pre: ev.mp,
+      post: ev.mq.map((_, i) => (i + 1) * (ev.dt || 50)), mag_post: ev.mq
+    } : null, wt: Date.now(), ...(sess.activeTanda ? { tanda: sess.activeTanda } : {})
+  });
+  sess.shots.sort((a, b) => a.t_ms - b.t_ms);
+  identifySets(sess.shots);
+  sess.lastWt = Date.now();
+  persist();
+  if (historyMode) { render(); return; }
+  data = { shots: sess.shots }; live = true;
+  if (followLatest) cur = sess.shots.length - 1;
+  const b = document.getElementById('live');
+  b.style.display = 'block';
+  b.textContent = 'En vivo · ' + data.shots.length;
+  render();
+};
+
+function identifySets(shots) {
+  let count=0, previous;
+  shots.forEach(s => { s.set_id ??= count && count<3 ? previous : s.t_ms; count=s.set_id===previous?count+1:1;previous=s.set_id; });
+  return shots;
+}
+const sets = shots => {
+  if (!shots.length) return [];
+  identifySets(shots);
+  const out = [[]];
+  shots.forEach((s, i) => { if (i && s.set_id !== shots[i - 1].set_id) out.push([]); out[out.length - 1].push(i); });
+  return out;
+};
+const setLabel = (S,i) => S[i].every(j=>data.shots[j].candidate) ? 'Calibración' : 'Set '+S.slice(0,i+1).filter(g=>g.some(j=>!data.shots[j].candidate)).length;
+let themeAcc = '#FF8A1F';
+const grade = v => !Number.isFinite(v) ? ['#5c5c64','–'] : v >= 80 ? [themeAcc, 'A'] : v < 70 ? ['#F0506E', 'E'] : ['#E8E8EE', 'C'];
+const avg = a => { a=a.filter(Number.isFinite); return a.length ? a.reduce((x,y)=>x+y,0)/a.length : NaN; };
+const sd = a => { const m = avg(a); return Math.sqrt(avg(a.map(x => (x - m) ** 2))); };
+// radio de apuntado: con brujula en GRADOS reales (yaw + inclinacion); sin ella, estimacion MOA
+const aimRadius = s => {
+  if (s.manual || !s.tilt_x?.length || !s.tilt_y?.length) return null;
+  if (hasCompass(s)) {
+    const sy = sd(yawOf(s)), sv = s.pitch_deg?.length ? sd(s.pitch_deg) : sd(s.tilt_y) / 17.45;
+    return Math.sqrt(sy * sy + sv * sv);
+  }
+  const sx = sd(s.tilt_x), sy = sd(s.tilt_y);
+  return Math.sqrt(sx * sx + sy * sy) / 1000 * 57.2958 * 60;
+};
+const aimUnit = s => hasCompass(s) ? '°' : ' MOA';
+// tiempo de apuntado: ms consecutivos con el arco quieto justo antes de soltar
+const aimTime = s => {
+  if(s.trace_t?.length && s.trace_t.length===s.tilt_x?.length) {
+    let i=s.trace_t.length-1;const x=s.tilt_x[i],y=s.tilt_y[i];
+    while(i>=0 && Math.hypot(s.tilt_x[i]-x,s.tilt_y[i]-y)<80)i--;
+    return Math.max(0,-s.trace_t[i+1]);
+  }
+  const w = s.window;
+  if (s.manual || !w?.mag_pre?.length) return null;
+  let i = w.mag_pre.length - 1, n = 0;
+  while (i >= 0 && Math.abs(w.mag_pre[i] - 1000) < 150) { n++; i--; }
+  return n ? Math.max(0,-w.pre[i+1]) : 0;
+};
+
+async function boot() {
+  const L = store.list();
+  const fresh = L.find(x => x.live && (x.metric===2 || Date.now() - x.lastWt < 600000) && (x.metric===2 || x.shots.length));
+  if (fresh) { data = { shots: fresh.shots }; live = true; curSess = fresh; }
+  if (!data) data = { shots: [] };  // en vacío: esperando flechas; las viejas, en HISTORIAL
+  document.getElementById('nSession').onclick = () => historyMode ? backToCurrent() : show('Session');
+  ['Shot', 'Set', 'History'].forEach(v => document.getElementById('n' + v).onclick = () => show(v));
+  document.getElementById('play').onclick = play;
+  // swipe izquierda/derecha en la vista de tiro: gesto claramente horizontal, rápido y fuera de controles/gráficas interactivas
+  let tx0 = null, ty0 = 0, tt0 = 0;
+  const noSwipe = el => el && el.closest && el.closest('input, select, textarea, #trace, #timeline, .scorepad, .scoreSlots, #shareSheet, nav, header');
+  addEventListener('touchstart', e => {
+    if (view !== 'Shot' || e.touches.length !== 1 || noSwipe(e.target)) { tx0 = null; return; }
+    tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY; tt0 = Date.now();
+  }, { passive: true });
+  addEventListener('touchend', e => {
+    if (view !== 'Shot' || tx0 == null) return;
+    const dx = e.changedTouches[0].clientX - tx0, dy = e.changedTouches[0].clientY - ty0;
+    if (Math.abs(dx) >= 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - tt0 < 800) step(dx < 0 ? 1 : -1);
+    tx0 = null;
+  }, { passive: true });
+  addEventListener('touchcancel', () => tx0 = null, { passive: true });
+  if (location.protocol.startsWith('http') && location.hostname!=='127.0.0.1' && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  show('Session');
+  refreshLink();
+  setInterval(() => { if (document.visibilityState === 'visible') refreshLink(); }, 5000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshLink(); });
+  document.fonts?.ready.then(() => { aimDrawnKey = ''; render(); });
+}
+function step(d) { const n = data?.shots.length || 0; if (!n) return; cur = (cur + d + n) % n; scoreFocus = data.shots[cur]?.t_ms ?? null; render(); }
+function show(v) {
+  if (v === 'Progress') v = 'Profile';
+  view = v;
+  ['Session', 'Shot', 'Set', 'History', 'Profile'].forEach(x => {
+    const page = document.getElementById('v' + x);
+    const tab = document.getElementById('n' + x);
+    if (page) page.style.display = x === v ? 'flex' : 'none';
+    if (tab) {
+      tab.className = x === v ? 'sel' : '';
+      tab.setAttribute('aria-current', x === v ? 'page' : 'false');
+    }
+  });
+  render();
+}
+
+function render() {
+  if (anim != null && (view !== 'Shot' || playbackKey !== shotViewKey())) stopPlayback();
+  ['Shot', 'Set'].forEach(v => document.getElementById('v' + v).dataset.empty = !data?.shots.length);
+  document.getElementById('deleteCurrent').hidden = !data?.shots.length;
+  document.getElementById('returnCurrent').style.display = historyMode ? 'inline-flex' : 'none';
+  document.getElementById('setbar').innerHTML = '';
+  const setHead = document.getElementById('setHead');
+  if (setHead) setHead.hidden = true;
+  document.body.classList.remove('noHead');
+  if (view === 'Profile') {
+    document.getElementById('title').textContent = 'Perfil';
+    document.getElementById('subtitle').textContent = '';
+    renderGoals();
+    renderProgress();
+    return;
+  }
+  if (view === 'History') {
+    document.getElementById('title').textContent = 'Historial';
+    document.getElementById('subtitle').textContent = '';
+    renderHistory();
+    return;
+  }
+  if (!data || !data.shots.length) {
+    document.getElementById('title').textContent = view === 'Shot' ? 'Tiro' : (view === 'Set' ? 'Sets' : 'Sesión');
+    document.getElementById('subtitle').textContent = '';
+    ['sTotal', 'sSets', 'sAvg', 'sSd', 'sShot', 'sBest', 'sHr', 'sSettle'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '–'; });
+    document.getElementById('sAvg').style.color = '';
+    const gauge = document.getElementById('stabGauge'); if (gauge) gauge.innerHTML = '';
+    ['sAvgDot', 'mScoreDot'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; });
+    ['trend', 'setList', 'setArrows', 'legend', 'tip', 'tLegend'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = ''; });
+    ['mScore', 'mPeak', 'mSettle', 'mInstab', 'mHr', 'mG'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '–'; });
+    syncTimeline(null);
+    document.getElementById('mScore').parentElement.style.color = '';
+    document.getElementById('mScore').parentElement.style.borderColor = '';
+    document.getElementById('play').disabled = true;
+    ['aim', 'aimSet', 'trace'].forEach(id => { const c = document.getElementById(id); c.width = c.width; });
+    cur = 0;
+    document.getElementById('setList').innerHTML = '<div class="empty">Esperando flechas del sensor</div>';
+    const box = document.getElementById('sessionScore');
+    if (box) box.hidden = true;
+    return;
+  }
+  cur = Math.max(0, Math.min(Number.isFinite(cur) ? cur : 0, data.shots.length - 1));
+  const S = sets(data.shots);
+  const si = S.findIndex(g => g.includes(cur));
+  if (view === 'Session') {
+    document.getElementById('title').textContent = 'Sesión';
+    document.getElementById('subtitle').textContent = historyMode ? fmtDate(histId) : '';
+  } else if (view === 'Set') {
+    document.getElementById('title').textContent = 'Sets';
+    document.getElementById('subtitle').textContent = historyMode ? fmtDate(histId) : '';
+    renderSetHead(S, si);
+  } else {
+    document.getElementById('title').textContent = `${data.shots[cur].candidate?'Candidato':'Flecha'} ${S[si].indexOf(cur) + 1}`;
+    document.getElementById('subtitle').textContent = historyMode ? fmtDate(histId) : '';
+  }
+  if (view === 'Session') renderSession(S);
+  else if (view === 'Set') renderSet(S, si);
+  else renderShot(S, si);
+}
+function renderSetHead(S, si) {
+  const head = document.getElementById('setHead');
+  if (!head) return;
+  const shots = (S[si] || []).map(j => data.shots[j]).filter(s => s && !s.candidate);
+  const aims = shots.map(s => s.aim_score).filter(Number.isFinite);
+  const stab = aims.length ? Math.round(aims.reduce((a, b) => a + b, 0) / aims.length) : null;
+  const pts = Score.totals(shots);
+  head.hidden = false;
+  document.getElementById('setHeadScore').textContent = formatScore(pts, shots);
+  document.getElementById('setHeadPts').classList.toggle('on', !!pts.scored);
+  const stabEl = document.getElementById('setHeadStab');
+  stabEl.textContent = stab == null ? '–' : String(stab);
+
+}
+
+let scoreFocus = null;
+function focusedArrow(shots) {
+  const real = (shots || []).filter(s => s && !s.candidate);
+  if (!real.length) return null;
+  if (real.some(s => s.t_ms === scoreFocus)) return scoreFocus;
+  const blank = real.find(s => Score.points(s.result && s.result.value) == null);
+  return (blank || real[0]).t_ms;
+}
+function commitScore(t_ms, apply) {
+  const id = historyMode ? histId : curSess?.id;
+  if (!Number.isFinite(id)) return;
+  const L = store.list();
+  const sess = L.find(s => s.id === id);
+  const shot = sess?.shots.find(s => s.t_ms === t_ms);
+  if (!shot || !apply(shot)) return;
+  store.save(L);
+  const fresh = store.list().find(s => s.id === id);
+  if (!fresh) return;
+  if (!historyMode) { curSess = fresh; live = !!fresh.live; }
+  data = {shots: fresh.shots};
+  const idx = fresh.shots.findIndex(s => s.t_ms === (scoreFocus ?? t_ms));
+  if (view === 'Shot' && idx >= 0) cur = idx;
+  render();
+}
+function activeFormat() {
+  if (typeof Score.formatOf !== 'function' || typeof displayedSession !== 'function') return null;
+  return Score.formatOf(displayedSession());
+}
+function formatScore(pts, shots) {
+  if (!pts || !pts.scored) return '–';
+  const format = activeFormat();
+  return format ? Score.scoreText(pts, shots, format) : String(pts.score);
+}
+function scoreArrow(t_ms, value) {
+  const format = activeFormat();
+  commitScore(t_ms, shot => Score.set(shot, value, format));
+}
+function placeArrow(t_ms, x, y) {
+  const format = activeFormat();
+  commitScore(t_ms, shot => Score.place(shot, x, y, format));
+}
+const FACE_SCALE = 0.46;
+const FACE_ZOOM_MAX = 4;
+const FACE_DOT = 11;
+const FACE_HIT = 16;
+const FACE_SLOP = 8;
+const FACE_TAP_MS = 300;
+const faceView = {};
+const facePtr = {};
+function faceKey(canvas) { return (canvas && canvas.id) || ''; }
+function faceRead(canvas) { return faceView[faceKey(canvas)] || {z: 1, tx: 0, ty: 0}; }
+function faceState(canvas) {
+  const id = faceKey(canvas) || 'face';
+  if (!faceView[id]) faceView[id] = {z: 1, tx: 0, ty: 0};
+  return faceView[id];
+}
+function faceSide(canvas) { return canvas.clientWidth || canvas.getBoundingClientRect?.().width || 320; }
+function faceScreenToTarget(canvas, sx, sy) {
+  const side = faceSide(canvas), v = faceRead(canvas);
+  const z = Math.min(FACE_ZOOM_MAX, Math.max(1, Number(v.z) || 1));
+  const x = (v.tx || 0) + (sx - side / 2) / (side * FACE_SCALE * z);
+  const y = (v.ty || 0) + (sy - side / 2) / (side * FACE_SCALE * z);
+  return Number.isFinite(x) && Number.isFinite(y) ? {x, y} : null;
+}
+function faceTargetToScreen(canvas, tx, ty) {
+  const side = faceSide(canvas), v = faceRead(canvas);
+  const z = Math.min(FACE_ZOOM_MAX, Math.max(1, Number(v.z) || 1));
+  return {
+    x: side / 2 + (tx - (v.tx || 0)) * side * FACE_SCALE * z,
+    y: side / 2 + (ty - (v.ty || 0)) * side * FACE_SCALE * z
+  };
+}
+function faceClampView(v) {
+  if (!v) return;
+  let z = Number(v.z);
+  if (!Number.isFinite(z) || z < 1) z = 1;
+  if (z > FACE_ZOOM_MAX) z = FACE_ZOOM_MAX;
+  v.z = z;
+  if (z <= 1) { v.tx = 0; v.ty = 0; return; }
+  let tx = Number(v.tx), ty = Number(v.ty);
+  if (!Number.isFinite(tx)) tx = 0;
+  if (!Number.isFinite(ty)) ty = 0;
+  const r = Math.hypot(tx, ty);
+  if (r > Score.FACE) { tx *= Score.FACE / r; ty *= Score.FACE / r; }
+  v.tx = tx; v.ty = ty;
+}
+function faceLocal(canvas, ev) {
+  const rect = canvas.getBoundingClientRect?.();
+  if (rect && Number.isFinite(ev.clientX) && Number.isFinite(ev.clientY) && (rect.width || rect.height)) {
+    return {x: ev.clientX - rect.left, y: ev.clientY - rect.top};
+  }
+  if (Number.isFinite(ev.offsetX) && Number.isFinite(ev.offsetY)) return {x: ev.offsetX, y: ev.offsetY};
+  return null;
+}
+function facePoint(canvas, ev) {
+  const loc = faceLocal(canvas, ev);
+  return loc ? faceScreenToTarget(canvas, loc.x, loc.y) : null;
+}
+function faceDots(shots) {
+  const out = [];
+  (shots || []).forEach((s, i) => {
+    if (!s || s.candidate || Score.points(s.result && s.result.value) == null) return;
+    const p = s.result && s.result.impact;
+    if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) return;
+    out.push({x: p.x, y: p.y, t: s.t_ms, n: i + 1, shot: s});
+  });
+  return out;
+}
+function faceHit(canvas, shots, sx, sy) {
+  let best = null, bestD = FACE_HIT;
+  for (const p of faceDots(shots)) {
+    const s = faceTargetToScreen(canvas, p.x, p.y);
+    const d = Math.hypot(s.x - sx, s.y - sy);
+    if (d <= bestD) { best = p; bestD = d; }
+  }
+  return best;
+}
+function faceGesture(canvas) {
+  const id = faceKey(canvas) || 'face';
+  if (!facePtr[id]) facePtr[id] = {pts: new Map(), mode: 'idle', pending: null, timer: 0, lastTap: 0, eatTap: false, moved: 0};
+  return facePtr[id];
+}
+function faceCancelPending(g) {
+  if (g.timer) clearTimeout(g.timer);
+  g.timer = 0; g.pending = null;
+}
+function facePair(g) {
+  const pts = [...g.pts.values()];
+  return pts.length >= 2 ? [pts[0], pts[1]] : null;
+}
+function faceRefreshSlots(canvas, shots) {
+  let root = canvas.parentElement;
+  while (root && !root.querySelectorAll?.('[data-score-t]')?.length) root = root.parentElement;
+  if (root && root.querySelectorAll) {
+    const focus = focusedArrow(shots);
+    const current = (shots || []).find(s => s.t_ms === focus);
+    root.querySelectorAll('[data-score-t]').forEach(btn => {
+      const t = +(btn.dataset?.scoreT ?? btn.getAttribute?.('data-score-t'));
+      const s = (shots || []).find(x => x.t_ms === t);
+      const b = btn.querySelector?.('b');
+      if (b) b.textContent = (s && s.result && s.result.value) || '·';
+    });
+    root.querySelectorAll('[data-score]').forEach(btn => {
+      const v = btn.dataset?.score ?? btn.getAttribute?.('data-score');
+      btn.classList?.toggle('on', v !== 'clear' && !!(current && current.result && current.result.value === v));
+    });
+  }
+  if (view === 'Set') {
+    const pts = Score.totals(shots);
+    const el = document.getElementById('setHeadScore');
+    if (el) el.textContent = formatScore(pts, shots);
+  }
+}
+function faceRedraw(canvas, g, focus) {
+  drawFace(canvas, g.shots, focus);
+  faceRefreshSlots(canvas, g.shots);
+}
+function faceRevertDrag(canvas, g) {
+  if (g.shot) {
+    if (g.snap) g.shot.result = JSON.parse(JSON.stringify(g.snap));
+    else delete g.shot.result;
+  }
+  g.shot = null; g.snap = null; g.hit = null;
+  faceRedraw(canvas, g, focusedArrow(g.shots));
+}
+function facePinchStart(canvas, g) {
+  const pair = facePair(g);
+  if (!pair) return;
+  const dist = Math.hypot(pair[0].x - pair[1].x, pair[0].y - pair[1].y);
+  const mid = {x: (pair[0].x + pair[1].x) / 2, y: (pair[0].y + pair[1].y) / 2};
+  const anchor = faceScreenToTarget(canvas, mid.x, mid.y) || {x: 0, y: 0};
+  const v = faceState(canvas);
+  g.pinch = {dist: Math.max(dist, 1), z0: v.z || 1, ax: anchor.x, ay: anchor.y};
+}
+function facePinchMove(canvas, g) {
+  const pair = facePair(g);
+  if (!pair || !g.pinch) return;
+  const dist = Math.max(1, Math.hypot(pair[0].x - pair[1].x, pair[0].y - pair[1].y));
+  const mid = {x: (pair[0].x + pair[1].x) / 2, y: (pair[0].y + pair[1].y) / 2};
+  const side = faceSide(canvas);
+  const v = faceState(canvas);
+  v.z = g.pinch.z0 * (dist / g.pinch.dist);
+  faceClampView(v);
+  if (v.z > 1) {
+    const den = side * FACE_SCALE * v.z;
+    v.tx = g.pinch.ax - (mid.x - side / 2) / den;
+    v.ty = g.pinch.ay - (mid.y - side / 2) / den;
+    faceClampView(v);
+  }
+  faceRedraw(canvas, g, focusedArrow(g.shots));
+}
+function faceResetZoom(canvas, g) {
+  const v = faceState(canvas);
+  v.z = 1; v.tx = 0; v.ty = 0;
+  faceRedraw(canvas, g, focusedArrow(g.shots));
+}
+function scoreFaceTap(canvas, sx, sy) {
+  const shots = (faceGesture(canvas).shots || []).filter(s => s && !s.candidate);
+  const pt = faceScreenToTarget(canvas, sx, sy);
+  const t = focusedArrow(shots);
+  if (!pt || t == null) return;
+  const i = shots.findIndex(s => s.t_ms === t);
+  const blank = shots.find((s, j) => j > i && Score.points(s.result && s.result.value) == null);
+  scoreFocus = blank ? blank.t_ms : (shots[Math.min(shots.length - 1, i + 1)]?.t_ms ?? t);
+  placeArrow(t, pt.x, pt.y);
+}
+function faceScheduleTap(canvas, g, fn) {
+  faceCancelPending(g);
+  g.pending = fn;
+  g.lastTap = Date.now();
+  g.timer = setTimeout(() => {
+    const run = g.pending;
+    g.pending = null; g.timer = 0;
+    if (run) run();
+  }, FACE_TAP_MS);
+}
+function faceFocusDot(hit) {
+  scoreFocus = hit.t;
+  if (view === 'Shot') {
+    const i = data.shots.findIndex(s => s.t_ms === scoreFocus);
+    if (i >= 0) cur = i;
+  }
+  render();
+}
+function faceDown(canvas, ev) {
+  ev.preventDefault?.();
+  ev.stopPropagation?.();
+  const loc = faceLocal(canvas, ev);
+  if (!loc) return;
+  const g = faceGesture(canvas);
+  const pid = ev.pointerId ?? 1;
+  g.pts.set(pid, loc);
+  try { canvas.setPointerCapture?.(pid); } catch (e) {}
+  if (g.pts.size >= 2) {
+    faceCancelPending(g);
+    g.eatTap = false;
+    if (g.mode === 'drag' || g.mode === 'arm-drag') faceRevertDrag(canvas, g);
+    g.mode = 'pinch';
+    facePinchStart(canvas, g);
+    return;
+  }
+  if (g.mode === 'dead' || g.mode === 'pinch') return;
+  if (g.pending && g.lastTap && Date.now() - g.lastTap < FACE_TAP_MS) {
+    faceCancelPending(g);
+    g.eatTap = true;
+  }
+  g.origin = loc; g.moved = 0; g.sx = loc.x; g.sy = loc.y;
+  const hit = faceHit(canvas, g.shots, loc.x, loc.y);
+  if (hit) {
+    g.mode = 'arm-drag';
+    g.shot = hit.shot; g.hit = hit;
+    g.snap = hit.shot.result ? JSON.parse(JSON.stringify(hit.shot.result)) : null;
+  } else {
+    g.mode = 'arm-tap';
+    g.shot = null; g.hit = null; g.snap = null;
+  }
+}
+function faceMove(canvas, ev) {
+  ev.preventDefault?.();
+  const loc = faceLocal(canvas, ev);
+  if (!loc) return;
+  const g = faceGesture(canvas);
+  const pid = ev.pointerId ?? 1;
+  if (!g.pts.has(pid)) return;
+  g.pts.set(pid, loc);
+  if (g.mode === 'pinch') { if (g.pts.size >= 2) facePinchMove(canvas, g); return; }
+  if (g.mode === 'dead' || !g.origin) return;
+  const d = Math.hypot(loc.x - g.origin.x, loc.y - g.origin.y);
+  g.moved = d;
+  if (g.mode === 'arm-tap') { if (d >= FACE_SLOP) g.mode = 'slide'; return; }
+  if (g.mode === 'arm-drag' || g.mode === 'drag') {
+    if (d < FACE_SLOP && g.mode === 'arm-drag') return;
+    g.mode = 'drag'; g.eatTap = false;
+    const pt = faceScreenToTarget(canvas, loc.x, loc.y);
+    if (pt && Score.place(g.shot, pt.x, pt.y, activeFormat())) faceRedraw(canvas, g, g.shot.t_ms);
+  }
+}
+function faceUp(canvas, ev) {
+  ev.preventDefault?.();
+  const g = faceGesture(canvas);
+  const pid = ev.pointerId ?? 1;
+  if (!g.pts.has(pid)) return;
+  g.pts.delete(pid);
+  if (g.mode === 'pinch') {
+    if (g.pts.size >= 2) facePinchStart(canvas, g);
+    else if (g.pts.size === 1) g.mode = 'dead';
+    else g.mode = 'idle';
+    return;
+  }
+  if (g.mode === 'dead') { if (g.pts.size === 0) g.mode = 'idle'; return; }
+  if (g.pts.size > 0) return;
+  const mode = g.mode;
+  g.mode = 'idle';
+  if (mode === 'drag') {
+    g.eatTap = false;
+    const shot = g.shot;
+    const result = shot && shot.result ? JSON.parse(JSON.stringify(shot.result)) : null;
+    if (result) commitScore(shot.t_ms, s => { s.result = result; return true; });
+    return;
+  }
+  if (g.eatTap) { g.eatTap = false; g.lastTap = 0; faceResetZoom(canvas, g); return; }
+  if (mode === 'slide') return;
+  if (mode === 'arm-drag' && g.hit) { const hit = g.hit; faceScheduleTap(canvas, g, () => faceFocusDot(hit)); return; }
+  if (mode === 'arm-tap') { const sx = g.sx, sy = g.sy; faceScheduleTap(canvas, g, () => scoreFaceTap(canvas, sx, sy)); }
+}
+function faceAbort(canvas, ev) {
+  const g = faceGesture(canvas);
+  const pid = ev.pointerId ?? 1;
+  g.pts.delete(pid);
+  faceCancelPending(g);
+  if (g.mode === 'drag' || g.mode === 'arm-drag') faceRevertDrag(canvas, g);
+  g.eatTap = false;
+  g.mode = g.pts.size ? 'dead' : 'idle';
+}
+function faceFlush(canvas) {
+  const g = faceGesture(canvas);
+  const fn = g.pending;
+  faceCancelPending(g);
+  if (fn) fn();
+}
+function bindFace(canvas, shots) {
+  if (!canvas) return;
+  const g = faceGesture(canvas);
+  g.shots = shots;
+  canvas.style.touchAction = 'none';
+  canvas.onpointerdown = ev => faceDown(canvas, ev);
+  canvas.onpointermove = ev => faceMove(canvas, ev);
+  canvas.onpointerup = ev => faceUp(canvas, ev);
+  canvas.onpointercancel = ev => faceAbort(canvas, ev);
+  canvas.ontouchmove = ev => ev.preventDefault?.();
+  if (!canvas._awTouch) {
+    canvas._awTouch = true;
+    canvas.addEventListener?.('touchmove', ev => ev.preventDefault(), {passive: false});
+    canvas.addEventListener?.('gesturestart', ev => ev.preventDefault());
+    canvas.addEventListener?.('gesturechange', ev => ev.preventDefault());
+  }
+}
+function paintScore(id, shots) {
+  const root = document.getElementById(id);
+  if (!root) return;
+  const real = (shots || []).filter(s => s && !s.candidate);
+  if (!real.length) { root.hidden = true; root.innerHTML = ''; return; }
+  root.hidden = false;
+  const focus = focusedArrow(real);
+  const current = real.find(s => s.t_ms === focus);
+  const faceId = id === 'shotScore' ? 'faceShot' : 'faceSet';
+  const pad = typeof Score.valuesFor === 'function' ? Score.valuesFor(typeof displayedSession === 'function' ? displayedSession() : null) : Score.VALUES;
+  root.innerHTML = `<div class="cardTitle">Valor</div>` +
+    `<div class="aimwrap"><canvas class="face" id="${faceId}" aria-label="Diana"></canvas></div>` +
+    `<div class="scoreSlots">${real.map((s, i) => `<button type="button" data-score-t="${s.t_ms}" class="${s.t_ms === focus ? 'on' : ''}" aria-label="Flecha ${i + 1}">${i + 1}<b>${s.result?.value || '·'}</b></button>`).join('')}</div>` +
+    `<div class="scorepad" style="grid-template-columns:repeat(${pad.length},minmax(0,1fr))" role="group" aria-label="Valor de la flecha">${pad.map(v => `<button type="button" data-score="${v}" class="${current?.result?.value === v ? 'on' : ''}">${v}</button>`).join('')}<button type="button" class="clear" data-score="clear">Borrar</button></div>`;
+  const face = document.getElementById(faceId);
+  if (face && !face.id) face.id = faceId;
+  drawFace(face, real, focus);
+  bindFace(face, real);
+  root.onclick = ev => {
+    const slot = ev.target.closest?.('[data-score-t]');
+    if (slot) {
+      scoreFocus = +slot.dataset.scoreT;
+      if (view === 'Shot') { const i = data.shots.findIndex(s => s.t_ms === scoreFocus); if (i >= 0) cur = i; }
+      render();
+      return;
+    }
+    const key = ev.target.closest?.('[data-score]')?.dataset.score;
+    if (!key) return;
+    const t = focusedArrow(real);
+    if (t == null) return;
+    if (key !== 'clear') {
+      const i = real.findIndex(s => s.t_ms === t);
+      const blank = real.find((s, j) => j > i && Score.points(s.result && s.result.value) == null);
+      scoreFocus = blank ? blank.t_ms : (real[Math.min(real.length - 1, i + 1)]?.t_ms ?? t);
+    }
+    scoreArrow(t, key === 'clear' ? null : key);
+  };
+}
+function renderSession(S) {
+  const fshots = statShots(data.shots), real = fshots.filter(s => !s.candidate);
+  const sc = fshots.map(s => s.aim_score).filter(Number.isFinite), a = Math.round(avg(sc));
+  document.getElementById('sTotal').textContent = real.length;
+  document.getElementById('sSets').textContent = new Set(real.map(s=>s.set_id)).size;
+  const tAvg = document.getElementById('sAvg');
+  setMetric('sAvg', Number.isFinite(a) ? a : '–');
+  tAvg.style.color = Number.isFinite(a) && a >= 80 ? 'var(--acc)' : 'var(--txt)';
+  const avgDot = document.getElementById('sAvgDot'); if (avgDot) avgDot.hidden = !(Number.isFinite(a) && a < 70);
+  const gauge = document.getElementById('stabGauge'); if (gauge) gauge.innerHTML = gaugeSvg(Number.isFinite(a) ? a : 0);
+  const ars = real.map(aimRadius).filter(Number.isFinite);
+  setMetric('sSd', ars.length ? esNum(avg(ars), 1) : '–', aimUnit(real[0] || data.shots[0]));
+  const secs = real.map(s => s.draw_ms != null ? (s.draw_ms + 1200) / 1000 : null).filter(Number.isFinite);
+  setMetric('sShot', secs.length ? esNum(secs.reduce((x, y) => x + y, 0) / secs.length, 1) : '–', 's');
+  const best = sc.length ? Math.max(...sc) : NaN;
+  setMetric('sBest', Number.isFinite(best) ? Math.round(best) : '–');
+  const bestEl = document.getElementById('sBest'); if (bestEl) bestEl.style.color = Number.isFinite(best) && best >= 80 ? 'var(--acc)' : 'var(--txt)';
+  const hrs = real.map(s => s.hr_bpm).filter(v => Number.isFinite(v) && v > 0);
+  setMetric('sHr', hrs.length ? Math.round(avg(hrs)) : '–');
+  const settles = real.map(s => s.settle_ms).filter(Number.isFinite);
+  setMetric('sSettle', settles.length ? Math.round(avg(settles)) : '–', 'ms');
+  const sessionShots = real;
+  const sessionTotals = Score.totals(sessionShots);
+  const sessionBox = document.getElementById('sessionScore');
+  sessionBox.hidden = false;
+  document.getElementById('sessionScoreCount').textContent = sessionTotals.scored ? sessionTotals.scored + '/' + sessionTotals.arrows : '';
+  const sessionFormat = activeFormat();
+  document.getElementById('scoreTotal').textContent = formatScore(sessionTotals, sessionShots);
+  document.getElementById('scoreAvg').textContent = sessionTotals.scored ? esNum(sessionTotals.avg, 1) : '–';
+  const markLbl = document.getElementById('scoreXLbl');
+  const markVal = sessionFormat === 'lancaster' ? sessionTotals.eleven : sessionFormat === 'wa' ? sessionTotals.nine : sessionTotals.x;
+  if (markLbl) markLbl.textContent = sessionFormat === 'lancaster' ? '11' : sessionFormat === 'wa' ? '9' : 'X';
+  document.getElementById('scoreX').textContent = sessionTotals.scored ? markVal : '–';
+  document.getElementById('scoreTen').textContent = sessionTotals.scored ? sessionTotals.ten : '–';
+  const groupHtml = Score.groups(sessionShots).map(Score.groupLine).filter(Boolean).map(line => `<div>${line}</div>`).join('');
+  const insight = Score.insight(sessionShots).text;
+  document.getElementById('sessionScoreGroups').innerHTML = groupHtml;
+  document.getElementById('sessionScoreInsight').textContent = insight;
+  document.getElementById('sessionScoreMore').hidden = !groupHtml && !insight;
+  const groupWrap = document.getElementById('sessionGroupWrap');
+  const grouped = Score.impacts(sessionShots);
+  if (groupWrap) groupWrap.hidden = !grouped.length;
+  if (grouped.length) drawFace(document.getElementById('sessionGroup'), sessionShots, null);
+  drawTrend(S);
+}
+
+function renderShot(S, si) {
+  const s = data.shots[cur];
+  const mS = document.getElementById('mScore');
+  renderCalibration(s);
+  document.getElementById('play').disabled = proj(s).pts.filter(p => p[2] <= 0).length < 2;
+  const scored = !s.candidate && Number.isFinite(s.aim_score);
+  setMetric('mScore', s.candidate ? '–' : scored ? s.aim_score : 'Manual');
+  mS.style.color = scored && s.aim_score >= 80 ? 'var(--acc)' : 'var(--txt)';
+  const dot = document.getElementById('mScoreDot'); if (dot) dot.hidden = !scored || s.aim_score >= 70;
+  const at = s.draw_ms != null ? s.draw_ms + 1200 : aimTime(s), ar = aimRadius(s);
+  setMetric('mPeak', at == null ? '–' : esNum(at / 1000, 1), 's');
+  setMetric('mInstab', ar == null ? '–' : esNum(ar, 2), aimUnit(s));
+  setMetric('mSettle', s.settle_ms == null ? '–' : s.settle_ms, 'ms');
+  setMetric('mHr', s.hr_bpm > 0 ? Math.round(s.hr_bpm) : '–');
+  setMetric('mG', Number.isFinite(s.peak_mg) ? esNum(s.peak_mg / 1000, 1) : '–', 'g');
+  const legend = document.getElementById('tLegend'); if (legend) legend.innerHTML = '';
+  document.getElementById('tip').textContent = tips(s).join(' · ');
+  syncTimeline(null);
+  paintScore('shotScore', S[si].map(j => data.shots[j]));
+  drawAim(s); drawTrace(s);
+}
+
+async function calibrateFromShot() {
+  const s = data?.shots?.[cur], session = displayedSession();
+  if (!validCalibrationShot(s) || calibrationConfirming) return;
+  if (!window.Native?.command) { notice('Para enviar la calibración usa la app Android.'); return; }
+  const peak = Math.round(s.peak_mg), threshold = Math.max(90, Math.round(peak * 0.35));
+  const profile = document.getElementById('calibrationProfile').value;
+  if (!profile) return;
+  const value = {peak, profile, requestId: Date.now() + '-' + Math.random().toString(36).slice(2)};
+  if([3,4].includes(s.pose?.length)&&s.pose.every(Number.isFinite))value.pose=[...s.pose];
+  const sid = session?.sensorId || '';
+  calibrationConfirming = true;
+  try {
+    if (!await askConfirm(`¿Usar esta flecha como referencia para ${profile}? Umbral: ${threshold} mG (pico ${peak} mG).`)) return;
+    const pending = {...value, threshold, status: 'pending'};
+    localStorage.setItem('atCalibration', JSON.stringify(pending));
+    const error = Native.command(JSON.stringify({sid, action: 'calibrateShot', value: peak, profile, requestId: value.requestId, ...(value.pose?{pose:value.pose}:{})}));
+    if (error) {
+      localStorage.setItem('atCalibration', JSON.stringify({...pending, status: 'error', result: String(error)}));
+      notice('Calibración no enviada: ' + error);
+    } else notice(`Umbral de ${threshold} mG enviado al sensor para ${profile}.`);
+  } catch (e) {
+    localStorage.removeItem('atCalibration');
+    notice('No se pudo preparar la calibración: ' + e.message);
+  } finally { calibrationConfirming = false; }
+}
+
+function tips(s) {
+  const t = [];
+  if (!(s.tilt_x?.length || s.pos_x?.length || s.traj_x?.length)) t.push('Sin traza');
+  if (s.instab_mg > 250) t.push(`Temblor ${esNum(s.instab_mg / 1000, 2)} g`);
+  if (s.settle_ms != null && s.settle_ms > 400) t.push(`${s.settle_ms} ms`);
+  if (s.peak_mg > 5000) t.push(Number.isFinite(s.peak_mg) ? esNum(s.peak_mg / 1000, 1) + ' g' : '');
+  if (Number.isFinite(s.aim_score) && s.aim_score < 60) t.push('Estabilidad baja');
+  return t.filter(Boolean);
+}
+
+function drawProgress(sessions) {
+  const c = document.getElementById('progress');
+  const [x, w] = canvasFit(c, 120);
+  const h = 120, n = sessions.length, top = 10, base = h - 18;
+  if (n < 2) return;
+  const scores = sessions.map(s => Math.round(avg(s.shots.map(a => a.aim_score))));
+  const trem = sessions.map(s => avg(s.shots.map(a => (a.instab_mg || 0) / 1000)));
+  const tMax = Math.max(0.1, ...trem);
+  const X = i => 14 + i * ((w - 28) / (n - 1));
+  const YS = v => base - (v / 100) * (base - top);
+  const YT = v => base - (v / tMax) * (base - top) * .85;
+  // temblor (azul)
+  x.strokeStyle = C.ref; x.lineWidth = 1.5; x.beginPath();
+  trem.forEach((v, i) => i ? x.lineTo(X(i), YT(v)) : x.moveTo(X(i), YT(v)));
+  x.stroke();
+  trem.forEach((v, i) => { x.beginPath(); x.arc(X(i), YT(v), 2.5, 0, 7); x.fillStyle = C.ref; x.fill(); });
+  // puntería (naranja)
+  x.strokeStyle = C.acc; x.lineWidth = 2; x.beginPath();
+  scores.forEach((v, i) => i ? x.lineTo(X(i), YS(v)) : x.moveTo(X(i), YS(v)));
+  x.stroke();
+  scores.forEach((v, i) => { x.beginPath(); x.arc(X(i), YS(v), 3, 0, 7); x.fillStyle = grade(v)[0]; x.fill(); });
+  x.fillStyle = C.txt3; x.font = '10px ' + FONT;
+  x.fillText(fmtDate(sessions[0].id).slice(0, -7), 8, h - 4);
+  x.textAlign = 'right';
+  x.fillText(fmtDate(sessions[n - 1].id).slice(0, -7), w - 8, h - 4);
+  x.textAlign = 'left';
+}
+
+function saveGoals() {
+  const read = id => document.getElementById(id).value;
+  Goals.save(localStorage, {arrows: read('goalArrows'), sessions: read('goalSessions'), average: read('goalAverage'), stability: read('goalStability')});
+  render();
+  if (typeof notice === 'function') notice('Objetivos guardados');
+}
+function fillGoal(id, value) {
+  const el = document.getElementById(id);
+  if (!el || document.activeElement === el) return;
+  el.value = value == null ? '' : String(value).replace('.', ',');
+}
+function renderGoals() {
+  const goals = Goals.load(localStorage);
+  const report = Goals.progress(store.list(), goals, new Date());
+  const bars = document.getElementById('goalBars');
+  if (!bars) return;
+  bars.innerHTML = report.bars.length ? report.bars.map(b =>
+    `<div class="goalRow"><span><b>${escapeText(b.label)}</b><b>${escapeText(b.value)}</b></span><div class="goalBar${b.met ? ' met' : ''}" role="progressbar" aria-valuenow="${b.width}" aria-valuemin="0" aria-valuemax="100" aria-label="${escapeText(b.label)}"><i style="width:${b.width}%"></i></div></div>`
+  ).join('') : '<p class="scoreNote">Sin objetivos</p>';
+  document.getElementById('goalStreak').textContent = report.streakText;
+  fillGoal('goalArrows', goals.arrows);
+  fillGoal('goalSessions', goals.sessions);
+  fillGoal('goalAverage', goals.average);
+  fillGoal('goalStability', goals.stability);
+}
+function renderProgress() {
+  const sessions = store.list().filter(s => s.shots.length).sort((a, b) => a.id - b.id);
+  document.getElementById('progSum').textContent = '';
+  document.getElementById('legend2').textContent = '';
+  document.getElementById('progress').style.display = 'none';
+  document.getElementById('progressEmpty').textContent = sessions.length > 1 ? '' : sessions.length ? 'Primera sesión' : 'Sin sesiones';
+  const bars = document.getElementById('sessBars');
+  if (sessions.length) {
+    const scores = sessions.map(s => Math.round(avg(s.shots.map(a => a.aim_score))));
+    const d = scores.length > 1 ? scores[scores.length - 1] - scores[scores.length - 2] : 0;
+    document.getElementById('progSum').innerHTML =
+      `Media <b>${Math.round(avg(scores))}</b>` +
+      (sessions.length > 1 ? ` · última <b>${scores[scores.length - 1]}</b> ${d > 0 ? '▲' + d : d < 0 ? '▼' + (-d) : 'sin cambio'}` : '');
+    if (bars && sessions.length > 1) {
+      const shown = sessions.slice(-8), base = scores.slice(-8);
+      const lo = Math.min(...base), hi = Math.max(...base);
+      const floor = Math.max(0, lo - 4);
+      const ceil = hi - lo < 15 ? Math.min(100, hi + 4) : 100;
+      const span = Math.max(8, ceil - floor);
+      bars.innerHTML = shown.map((s, i) => {
+        const v = base[i], last = i === shown.length - 1;
+        const h = Math.round(8 + ((v - floor) / span) * 72);
+        const pts = Score.totals(s.shots);
+        const cap = fmtDate(s.id).split(',')[0] + (s.tanda ? '<br>' + (pts.scored ? pts.score : 'T') : '');
+        return `<div><b style="${last ? 'color:var(--acc)' : ''}">${v}</b><i class="${last ? 'last' : ''}" style="height:${h}px"></i><small>${cap}</small></div>`;
+      }).join('');
+      bars.style.gridTemplateColumns = 'repeat(' + shown.length + ', minmax(0, 1fr))';
+    } else if (bars) bars.innerHTML = '';
+  } else if (bars) bars.innerHTML = '';
+  renderSplit();
+}
+function renderSplit() {
+  const split = Score.split(store.list().flatMap(s => s.shots || []));
+  const need = document.getElementById('splitNeed');
+  const body = document.getElementById('splitBody');
+  if (!need || !body) return;
+  if (!split.ready) {
+    need.hidden = false;
+    need.textContent = 'Faltan ' + split.need;
+    body.hidden = true;
+    return;
+  }
+  need.hidden = true;
+  need.textContent = '';
+  body.hidden = false;
+  const put = (aimId, timeId, row) => {
+    document.getElementById(aimId).textContent = row.aim == null ? '–' : String(Math.round(row.aim));
+    document.getElementById(timeId).textContent = row.shot_s == null ? '–' : esNum(row.shot_s, 1) + ' s';
+  };
+  put('splitHighAim', 'splitHighTime', split.high);
+  put('splitLowAim', 'splitLowTime', split.low);
+  drawSplit(split.points);
+}
+function exportBackup() {
+  try {
+    const app = document.querySelector?.('meta[name="at-version"]')?.content || null;
+    const json = Backup.json(localStorage, {app});
+    if (typeof window.Native?.export === 'function') { window.Native.export(json); return; }
+    const blob = new Blob([json], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'ArcheryTrace-backup.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL?.(url), 1500);
+  } catch (e) {
+    if (typeof notice === 'function') notice('No se pudo exportar la copia' + (e && e.message ? ': ' + e.message : ''));
+  }
+}
+function renderHistory() {
+  const L = store.list().filter(s => statShots(s.shots).length).sort((a, b) => b.id - a.id);
+  document.getElementById('histList').innerHTML = L.length ? L.map(s => {
+    const fs = statShots(s.shots), a = Math.round(avg(fs.map(x => x.aim_score)));
+    const pts = Score.totals(fs);
+    const format = Score.formatOf(s);
+    const scoreBit = pts.scored ? (format ? Score.scoreText(pts, s.shots, format) : pts.score + ' pts') : '';
+    const formatName = format && Score.FORMATS[format] ? Score.FORMATS[format].name : '';
+    const meta = [scoreBit, formatName, Training.roundLabel(s), s.bow, s.arrows].filter(Boolean).map(escapeText).join(' · ');
+    return `<div class="setline" data-sess="${s.id}"><div class="rowMain"><b>${fmtDate(s.id)}</b>` +
+      `<span class="m">${[`${fs.length} flecha${fs.length > 1 ? 's' : ''}`, meta].filter(Boolean).join(' · ')}</span></div>` +
+      `<span class="chip" style="--c:${grade(a)[0]}">${Number.isFinite(a)?a:'–'}</span><span class="r"></span>` +
+      `<button class="deleteAction deleteSession" data-delete="${s.id}" aria-label="Eliminar sesión del ${fmtDate(s.id)}">${TRASH}</button></div>`;
+  }).join('') : '<div class="empty"><b>Sin sesiones</b></div>';
+  document.getElementById('histList').onclick = e => {
+    const remove = e.target.closest('[data-delete]');
+    if (remove) { removeSelection('session', +remove.dataset.delete); return; }
+    const id = e.target.closest('[data-sess]')?.dataset.sess;
+    const s = store.list().find(x => x.id === +id);
+    if (s) {
+      data = { shots: s.shots }; cur = 0; live = false; historyMode = true; histId = s.id;
+      document.getElementById('live').style.display = 'none';
+      show('Session');
+    }
+  };
+  const comparable = store.list().filter(s => (s.shots || []).some(x => x && !x.candidate));
+  const open = document.getElementById('openCompare');
+  if (open) open.hidden = comparable.length < 2;
+  const card = document.getElementById('compareCard');
+  if (!card) return;
+  if (comparable.length < 2) cmpOpen = false;
+  card.hidden = !cmpOpen;
+  if (cmpOpen) renderCompare(comparable);
+}
+let cmpOpen = false, cmpA = null, cmpB = null, cmpArrow = 'mean', cmpMetric = 'aim';
+function openCompare() {
+  const rows = Compare.usable(store.list());
+  if (rows.length < 2) return;
+  cmpOpen = !cmpOpen;
+  if (cmpOpen && (cmpA == null || cmpB == null)) {
+    const pick = Compare.pick(rows, 'today');
+    if (pick) { cmpA = pick[0]; cmpB = pick[1]; }
+  }
+  render();
+  if (cmpOpen) document.getElementById('compareCard').scrollIntoView?.({block: 'start'});
+}
+function cmpSide(side, value) {
+  const id = Number(value);
+  if (side === 'A') cmpA = id; else cmpB = id;
+  renderCompare(Compare.usable(store.list()));
+}
+function cmpQuick(kind) {
+  const pick = Compare.pick(store.list(), kind, cmpA);
+  if (!pick) {
+    notice(kind === 'score' ? 'Ninguna otra sesión tiene puntuación.' : kind === 'tanda' ? 'No hay otra tanda del mismo modo.' : 'No hay otra sesión para comparar.');
+    return;
+  }
+  cmpA = pick[0]; cmpB = pick[1]; cmpOpen = true;
+  render();
+}
+function cmpMetricSet(metric) { cmpMetric = metric === 'score' ? 'score' : 'aim'; renderCompare(Compare.usable(store.list())); }
+function cmpArrowSet(value) { cmpArrow = value === 'mean' ? 'mean' : String(Number(value)); renderCompare(Compare.usable(store.list())); }
+function cmpOptionLabel(s) {
+  const n = Compare.real(s).length;
+  const kind = Training.roundLabel(s);
+  return fmtDate(s.id) + (kind ? ' · ' + kind : '') + ' · ' + n + (n === 1 ? ' flecha' : ' flechas');
+}
+function renderCompare(sessions) {
+  const rows = sessions || Compare.usable(store.list());
+  if (cmpA == null || !rows.some(s => s.id === cmpA) || cmpB == null || !rows.some(s => s.id === cmpB)) {
+    const pick = Compare.pick(rows, 'today');
+    if (!pick) return;
+    cmpA = pick[0]; cmpB = pick[1];
+  }
+  const A = rows.find(s => s.id === cmpA), B = rows.find(s => s.id === cmpB);
+  const fill = (id, selected) => {
+    const el = document.getElementById(id);
+    el.innerHTML = rows.map(s => `<option value="${s.id}">${escapeText(cmpOptionLabel(s))}</option>`).join('');
+    el.value = String(selected);
+  };
+  fill('cmpA', cmpA); fill('cmpB', cmpB);
+  const same = cmpA === cmpB;
+  const face = same ? [] : Compare.rows(A, B);
+  document.getElementById('cmpTable').innerHTML = same ? '' : `<span></span><span class="cmpH">${escapeText(fmtDate(A.id))}</span><span class="cmpH">${escapeText(fmtDate(B.id))}</span><span class="cmpH">Δ</span>` +
+    face.filter(r => r.key !== 'gear').map(r => `<span>${r.label}</span><b>${escapeText(r.a)}</b><b>${escapeText(r.b)}</b><b>${escapeText(r.d)}</b>`).join('');
+  const gear = face.find(r => r.key === 'gear');
+  document.getElementById('cmpGear').innerHTML = !gear ? '' : `<b>Material${gear.d === 'Igual' ? ' · igual' : ''}</b><span>${escapeText(gear.a)}</span><span>${escapeText(gear.b)}</span>`;
+  document.getElementById('cmpMetricAim').className = cmpMetric === 'aim' ? 'sel' : '';
+  document.getElementById('cmpMetricScore').className = cmpMetric === 'score' ? 'sel' : '';
+  const maxArrows = Math.max(Compare.real(A).length, Compare.real(B).length, 0);
+  const arrow = document.getElementById('cmpArrow');
+  const choices = ['mean', ...Array.from({length: maxArrows}, (_, i) => String(i))];
+  if (!choices.includes(cmpArrow)) cmpArrow = 'mean';
+  arrow.innerHTML = choices.map(v => `<option value="${v}">${v === 'mean' ? 'Flecha media' : 'Flecha ' + (Number(v) + 1)}</option>`).join('');
+  arrow.value = cmpArrow;
+  document.getElementById('cmpLegend').innerHTML = `<span><i style="background:${Compare.COLORS[0]}"></i>${escapeText(fmtDate(A.id))}</span><span><i style="background:${Compare.COLORS[1]}"></i>${escapeText(fmtDate(B.id))}</span>`;
+  if (same) {
+    document.getElementById('cmpAimCap').textContent = 'Dos sesiones';
+    document.getElementById('cmpLegend').innerHTML = '';
+    for (const id of ['cmpSets', 'cmpAim']) {
+      const c = document.getElementById(id);
+      c.getContext('2d').clearRect(0, 0, c.width, c.height);
+    }
+    return;
+  }
+  drawCmpSets(Compare.setSeries(A), Compare.setSeries(B), cmpMetric);
+  const pathA = Compare.arrowPath(A, cmpArrow), pathB = Compare.arrowPath(B, cmpArrow);
+  drawCmpAim([pathA, pathB]);
+  const missing = [pathA ? '' : 'La primera no tiene brújula.', pathB ? '' : 'La segunda no tiene brújula.'].filter(Boolean);
+  document.getElementById('cmpAimCap').textContent = missing.join(' ') || (cmpArrow === 'mean' ? 'Media · grados' : 'Flecha ' + (Number(cmpArrow) + 1) + ' · grados');
+}
+function drawCmpSets(seriesA, seriesB, metric) {
+  const c = document.getElementById('cmpSets');
+  const [x, w] = canvasFit(c, 160);
+  const h = 160, top = 16, base = h - 22, left = 28, right = 8;
+  const n = Math.max(seriesA.length, seriesB.length, 1);
+  const max = metric === 'score' ? 10 : 100;
+  const X = i => left + (n === 1 ? (w - left - right) / 2 : i * ((w - left - right) / (n - 1)));
+  const Y = v => base - (Math.max(0, Math.min(max, v)) / max) * (base - top);
+  x.strokeStyle = 'rgba(255,255,255,.08)'; x.lineWidth = 1; x.beginPath();
+  x.moveTo(left, top); x.lineTo(left, base); x.lineTo(w - right, base); x.stroke();
+  x.fillStyle = '#6f747d'; x.font = '10px ' + FONT;
+  x.fillText(metric === 'score' ? '10' : '100', 2, top + 4);
+  x.fillText('0', 8, base);
+  [seriesA, seriesB].forEach((series, si) => {
+    x.beginPath();
+    let moved = false;
+    series.forEach((row, i) => {
+      const v = row[metric];
+      if (!Number.isFinite(v)) { moved = false; return; }
+      const px = X(i), py = Y(v);
+      if (!moved) { x.moveTo(px, py); moved = true; } else x.lineTo(px, py);
+    });
+    x.strokeStyle = Compare.COLORS[si]; x.lineWidth = 2; x.stroke();
+    series.forEach((row, i) => {
+      if (!Number.isFinite(row[metric])) return;
+      x.beginPath(); x.arc(X(i), Y(row[metric]), 3, 0, 7); x.fillStyle = Compare.COLORS[si]; x.fill();
+    });
+  });
+  x.fillStyle = '#6f747d'; x.font = '10px ' + FONT;
+  for (let i = 0; i < n; i++) x.fillText(String(i + 1), X(i) - 3, h - 6);
+}
+function drawCmpAim(paths) {
+  const c = document.getElementById('cmpAim');
+  const [x, w] = canvasFit(c);
+  const present = (paths || []).map(p => p && p.length > 1 ? p : null);
+  const span = Math.max(1, ...present.filter(Boolean).flatMap(p => p.flatMap(q => [Math.abs(q[0]), Math.abs(q[1])])));
+  const esc = span * 1.25;
+  const P = q => [w / 2 + Math.max(-1, Math.min(1, q[0] / esc)) * w * .42, w / 2 + Math.max(-1, Math.min(1, q[1] / esc)) * w * .42];
+  x.strokeStyle = 'rgba(255,255,255,.08)'; x.lineWidth = 1; x.beginPath();
+  x.arc(w / 2, w / 2, w * .42, 0, 7);
+  x.moveTo(w * .08, w / 2); x.lineTo(w * .92, w / 2);
+  x.moveTo(w / 2, w * .08); x.lineTo(w / 2, w * .92);
+  x.stroke();
+  present.forEach((p, i) => {
+    if (!p) return;
+    x.beginPath();
+    p.forEach((q, k) => { const pt = P(q); k ? x.lineTo(pt[0], pt[1]) : x.moveTo(pt[0], pt[1]); });
+    x.strokeStyle = Compare.COLORS[i]; x.lineWidth = 2; x.stroke();
+  });
+  x.fillStyle = '#6f747d'; x.font = '11px ' + FONT;
+  x.fillText('±' + (Math.round(esc * 10) / 10) + '°', 8, 16);
+}
+function askConfirm(message) {  // dialogo propio: los confirm() nativos rompen la estetica en el APK
+  return new Promise(resolve => {
+    const m = document.getElementById('askModal');
+    document.getElementById('askMsg').textContent = message;
+    m.hidden = false;
+    const done = v => { m.hidden = true; document.getElementById('askYes').onclick = document.getElementById('askNo').onclick = null; resolve(v); };
+    document.getElementById('askYes').onclick = () => done(true);
+    document.getElementById('askNo').onclick = () => done(false);
+  });
+}
+async function removeSelection(kind, id = historyMode ? histId : curSess?.id) {
+  const L = store.list(), s = L.find(s => s.id === id);
+  if (!s?.shots.length) return;
+  const selected = kind === 'session' ? s.shots : kind === 'set'
+    ? sets(s.shots).find(g => g.includes(cur))?.map(i => s.shots[i]) : [s.shots[cur]];
+  if (!selected?.length || selected.some(x => !x)) return;
+  const label = kind === 'shot' ? 'esta flecha' : kind === 'set' ? `este set (${selected.length} flechas)` : `esta sesión (${selected.length} flechas)`;
+
+  const removed = new Set(selected.map(x => x.t_ms));
+  s.shots = s.shots.filter(x => !removed.has(x.t_ms));
+  // Mantener marcas en la actividad viva: su cola BLE puede reenviar un tiro borrado.
+  if (s.live || s.sensorId) s.removed = [...new Set([...(s.removed || []), ...removed])];
+  store.save(L.filter(x => x.shots.length || x.live || x.sensorId));
+  if (curSess?.id === s.id) curSess = s;
+  if ((historyMode && histId === s.id) || (!historyMode && curSess?.id === s.id)) {
+    data = {shots:s.shots}; cur = Math.max(0, Math.min(cur, s.shots.length - 1));
+    if (!s.shots.length && historyMode) { backToCurrent(); show('History'); return; }
+  }
+  if (live && !historyMode) {
+    const b = document.getElementById('live');
+    b.textContent = 'En vivo' + (data.shots.length ? ' · ' + data.shots.length : '');
+  }
+  render();
+}
+function backToCurrent() {
+  historyMode = false; histId = 0; cur = 0;
+  const f = store.list().find(x => x.live && (x.metric===2 || Date.now() - x.lastWt < 600000) && (x.metric===2 || x.shots.length));
+  if (f) {
+    data = { shots: f.shots }; live = true; curSess = f;
+    const b = document.getElementById('live');
+    b.style.display = 'block';
+    b.textContent = 'En vivo · ' + f.shots.length;
+  } else {
+    data = { shots: [] }; live = false; curSess = null;
+    document.getElementById('live').style.display = 'none';
+  }
+  show('Session');
+}
+
+function fmtDate(ms) {
+  const d = new Date(ms), now = new Date();
+  const hh = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  if (d.toDateString() === now.toDateString()) return 'Hoy, ' + hh;
+  if (d.toDateString() === new Date(now - 864e5).toDateString()) return 'Ayer, ' + hh;
+  return d.getDate() + ' ' + ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d.getMonth()] + ', ' + hh;
+}
+
+function renderSet(S, si) {
+  const bar = document.getElementById('setbar');
+  bar.innerHTML = S.length > 1 ? S.map((g, i) => `<button class="${i === si ? 'sel' : ''}" data-set="${i}">${setLabel(S,i)}</button>`).join('') : '';
+  bar.onclick = e => { const i = e.target.dataset?.set; if (i) { cur = S[+i][0]; render(); } };
+  const g = S[si];
+  paintScore('setScore', g.map(j => data.shots[j]));
+  document.getElementById('legend').innerHTML = g.map((j, k) =>
+    `<span><i style="background:${ACOLORS[k % 6]}"></i>${k + 1}</span>`).join('');
+  document.getElementById('setArrows').innerHTML = g.map((j, k) => {
+    const s = data.shots[j];
+    const mark = s.candidate || Score.points(s.result?.value) == null ? '' : `<span class="trendScore">${s.result.value}</span>`;
+    const tone = !s.candidate && Number.isFinite(s.aim_score) && s.aim_score >= 80 ? 'var(--acc)' : 'var(--txt)';
+    return `<div class="arrowline" data-jump="${j}"><span class="chip dotChip" style="--c:${ACOLORS[k % 6]}">${k + 1}</span>` +
+      mark + `<b style="color:${tone}">${s.candidate?'Cal':s.aim_score ?? '–'}</b><span class="r">${Number.isFinite(s.peak_mg)?esNum(s.peak_mg / 1000, 1)+' g':'–'} · ${s.settle_ms ?? '–'} ms</span></div>`;
+  }).join('');
+  document.getElementById('setArrows').onclick = e => {
+    const j = e.target.closest('[data-jump]')?.dataset.jump;
+    if (j) { cur = +j; show('Shot'); }
+  };
+  drawSet(g);
+}
+
+// ---------- dibujo ----------
+function rr(x, X, y, w2, h2, r) {
+  r = Math.min(r, h2 / 2, w2 / 2);
+  x.beginPath(); x.moveTo(X + r, y);
+  x.arcTo(X + w2, y, X + w2, y + h2, r); x.arcTo(X + w2, y + h2, X, y + h2, r);
+  x.arcTo(X, y + h2, X, y, r); x.arcTo(X, y, X + w2, y, r); x.closePath();
+}
+function canvasFit(c, h) {
+  const dpr = devicePixelRatio || 1;
+  if (h == null) {
+    const side = Math.max(1, Math.round(c.clientWidth || 320));
+    c.style.height = side + 'px';
+    const px = Math.max(1, Math.round(side * dpr));
+    c.width = px; c.height = px;
+    const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    x.clearRect(0, 0, side, side);
+    return [x, side];
+  }
+  const w = c.clientWidth || 320;
+  c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+  const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  x.clearRect(0, 0, w, h);
+  return [x, w];
+}
+function niceStep(maxDeg) {
+  const cand = [0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10];
+  return cand.find(c => maxDeg / c <= 4.2) || 10;
+}
+function drawFace(c, shots, focus) {
+  if (!c) return;
+  const [x, sz] = canvasFit(c, null);
+  const v = faceRead(c);
+  const z = Math.min(FACE_ZOOM_MAX, Math.max(1, Number(v.z) || 1));
+  const origin = faceTargetToScreen(c, 0, 0);
+  const cx = origin.x, cy = origin.y, R = sz * FACE_SCALE * z, base = sz * FACE_SCALE;
+  const disk = (r, color) => { x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fillStyle = color; x.fill(); };
+  const format = typeof activeFormat === 'function' ? activeFormat() : null;
+  const fs = Math.max(9, Math.min(13, Math.round(base * 0.055)));
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  const num = (text, r, color) => { x.fillStyle = color; x.fillText(text, cx, cy - r); };
+  disk(R, '#3F5F78');
+  disk(R * 0.8, '#8F4A4C');
+  disk(R * 0.4, '#C2A36A');
+  x.lineWidth = 1; x.strokeStyle = 'rgba(0,0,0,.62)';
+  for (const k of [1, 0.8, 0.6, 0.4, 0.2, 0.1]) { x.beginPath(); x.arc(cx, cy, R * k, 0, Math.PI * 2); x.stroke(); }
+  const center = format === 'lancaster' ? '11' : format === 'wa' ? '' : 'X';
+  x.font = '600 ' + Math.max(8, Math.round(fs * 0.75)) + 'px ' + MONO;
+  if (center) { x.fillStyle = 'rgba(44,36,22,.7)'; x.fillText(center, cx, cy); }
+  x.font = '600 ' + fs + 'px ' + MONO;
+  num('10', R * 0.15, 'rgba(44,36,22,.78)');
+  num('9', R * 0.3, 'rgba(44,36,22,.78)');
+  num('8', R * 0.5, 'rgba(42,18,18,.76)');
+  num('7', R * 0.7, 'rgba(42,18,18,.76)');
+  num('6', R * 0.9, 'rgba(236,242,246,.82)');
+  const pts = Score.impacts(shots);
+  if (pts.length >= 2) {
+    const g = Score.groupCenter(pts);
+    const s = faceTargetToScreen(c, g.x, g.y);
+    x.strokeStyle = 'rgba(255,255,255,.32)'; x.lineWidth = 1;
+    x.beginPath(); x.arc(s.x, s.y, 3.2, 0, Math.PI * 2); x.stroke();
+  }
+  const numbered = c.id === 'faceShot' || c.id === 'faceSet';
+  for (const p of faceDots(shots)) {
+    const s = faceTargetToScreen(c, p.x, p.y);
+    const on = focus != null && p.t === focus;
+    const rad = numbered ? (on ? 12.5 : FACE_DOT) : (on ? 4.4 : 3.3);
+    x.beginPath(); x.arc(s.x, s.y, rad, 0, Math.PI * 2);
+    x.fillStyle = on ? C.mark : '#F3F0E8'; x.fill();
+    x.lineWidth = 1; x.strokeStyle = 'rgba(12,10,8,.8)'; x.stroke();
+    if (numbered) {
+      x.fillStyle = '#1A140C';
+      x.font = '700 13px ' + MONO;
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText(String(p.n), s.x, s.y);
+    }
+  }
+}
+function drawSplit(points) {
+  const c = document.getElementById('splitPlot');
+  if (!c) return;
+  const [x, w] = canvasFit(c, 150);
+  const h = 150;
+  const has11 = points.some(p => p.value === '11');
+  const labels = ['M', '6', '7', '8', '9', '10', 'X'].concat(has11 ? ['11'] : []);
+  const padL = 28, padR = 8, padT = 10, padB = 20;
+  const aims = points.map(p => p.aim);
+  let lo = aims.length ? Math.min(...aims) : 0, hi = aims.length ? Math.max(...aims) : 100;
+  if (hi - lo < 12) { lo = Math.max(0, lo - 6); hi = Math.min(100, hi + 6); }
+  else { lo = Math.max(0, lo - 4); hi = Math.min(100, hi + 4); }
+  if (!(hi > lo)) { lo = 0; hi = 100; }
+  const X = i => padL + (i / (labels.length - 1)) * (w - padL - padR);
+  const Y = v => padT + (1 - (v - lo) / (hi - lo)) * (h - padT - padB);
+  x.strokeStyle = 'rgba(255,255,255,.14)'; x.lineWidth = 1;
+  x.beginPath(); x.moveTo(padL, padT); x.lineTo(padL, h - padB); x.lineTo(w - padR, h - padB); x.stroke();
+  x.fillStyle = 'rgba(255,255,255,.45)'; x.font = '600 10px ' + MONO; x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+  labels.forEach((lab, i) => x.fillText(lab, X(i), h - 6));
+  x.textAlign = 'right'; x.textBaseline = 'middle';
+  x.fillText(String(Math.round(hi)), padL - 4, padT + 4);
+  x.fillText(String(Math.round(lo)), padL - 4, h - padB);
+  points.forEach((p, n) => {
+    const i = labels.indexOf(p.value);
+    if (i < 0) return;
+    const jx = ((n * 17) % 7 - 3) * 1.3;
+    const high = p.value === 'X' || p.value === '10' || p.value === '11';
+    x.beginPath(); x.arc(X(i) + jx, Y(p.aim), 3.2, 0, Math.PI * 2);
+    x.fillStyle = high ? '#FF8A1F' : 'rgba(255,255,255,.62)'; x.fill();
+  });
+}
+function ringBase(x, sz, scale) {
+  const cx = sz / 2, cy = sz / 2, R = sz * .45;
+  const outer = Math.max(0.25, Number.isFinite(scale) ? scale : 1);
+  const step = niceStep(outer);
+  const n = Math.max(1, Math.min(5, Math.ceil(outer / step)));
+  x.lineWidth = 1;
+  for (let i = 1; i <= n; i++) {
+    const r = Math.min(R, R * (step * i) / outer);
+    x.beginPath(); x.arc(cx, cy, r, 0, 7);
+    x.strokeStyle = i === n ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.07)';
+    x.stroke();
+  }
+  for (let a = 0; a < 72; a++) {
+    const ang = a / 72 * Math.PI * 2, L = a % 6 === 0 ? 6 : 3;
+    x.beginPath();
+    x.moveTo(cx + Math.cos(ang) * (R + 3), cy + Math.sin(ang) * (R + 3));
+    x.lineTo(cx + Math.cos(ang) * (R + 3 + L), cy + Math.sin(ang) * (R + 3 + L));
+    x.strokeStyle = a % 6 === 0 ? 'rgba(255,255,255,.28)' : 'rgba(255,255,255,.1)';
+    x.stroke();
+  }
+  x.strokeStyle = 'rgba(255,255,255,.06)';
+  x.beginPath(); x.moveTo(cx - R, cy); x.lineTo(cx + R, cy); x.moveTo(cx, cy - R); x.lineTo(cx, cy + R); x.stroke();
+  x.fillStyle = 'rgba(255,255,255,.4)'; x.font = "600 11px " + MONO; x.textAlign = 'left';
+  for (let i = 1; i <= n; i++) {
+    const deg = step * i, r = Math.min(R, R * deg / outer);
+    x.fillText((deg < 1 ? deg.toFixed(1) : String(Math.round(deg * 10) / 10)).replace('.', ',') + '°', cx + 4, cy - r + 12);
+  }
+  x.textAlign = 'left';
+  return [cx, cy];
+}
+function gaugeSvg(v) {
+  const size = 150, r = size / 2 - 8, circ = 2 * Math.PI * r, arc = 0.75;
+  const val = Math.max(0, Math.min(100, Number.isFinite(v) ? v : 0));
+  const ang = (135 + 270 * val / 100) * Math.PI / 180;
+  const ex = size / 2 + r * Math.cos(ang), ey = size / 2 + r * Math.sin(ang);
+  return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true">
+    <g transform="rotate(135 ${size / 2} ${size / 2})"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${circ * arc} ${circ}"/>
+    <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--acc)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${circ * arc * val / 100} ${circ}"/></g>
+    <circle cx="${ex}" cy="${ey}" r="9" fill="var(--glow)"/><circle cx="${ex}" cy="${ey}" r="3" fill="#fff"/></svg>`;
+}
+function syncTimeline(ms) {
+  const fill = document.getElementById('tlFill'), clock = document.getElementById('aimClock');
+  if (fill) fill.style.width = ms == null ? '0' : Math.max(0, Math.min(100, (ms - -6000) / 7200 * 100)) + '%';
+  if (clock) {
+    if (ms == null) clock.textContent = '';
+    else {
+      const body = esNum(Math.abs(ms) / 1000, 1);
+      clock.textContent = (body === '0,0' ? '' : (ms < 0 ? '−' : '+')) + body + ' s';
+    }
+  }
+}
+const yawOf = s => s.yaw_c?.length ? s.yaw_c : (s.yaw_deg || []);  // yw2 = azimut compensado por inclinacion; yw = atan2 crudo
+const hasCompass = s => { const y=yawOf(s); return y.length>2 && (Math.max(...y)-Math.min(...y))>0.5; };
+function proj(s) {
+  // Una sola vista, en grados. qx/qy se conservan en la sesión y no se dibujan.
+  const view = Trace.view(s || {});
+  const sz = document.getElementById('aim')?.clientWidth || 300;
+  const esc = Math.max(0.25, view.scale || 1);
+  const cl = v => Math.max(-1, Math.min(1, v / esc));
+  return {...view, esc, P: p => [sz / 2 + cl(p[0]) * sz * .45, sz / 2 + cl(p[1]) * sz * .45]};
+}
+const aimColor=(t,hold,release)=>t>=release?C.acc:t>=-hold?C.aim:C.prev;
+const releasePoint=(pts,t)=>pts.reduce((a,b)=>Math.abs(b[2]-t)<Math.abs(a[2]-t)?b:a);
+function releasePath(pts,t) {
+  const i=pts.findIndex(p=>p[2]>=t);
+  // Mantener el ultimo apunte hasta el instante registrado; el impulso posterior no es una posicion de apunte.
+  return i<=0?pts:[...pts.slice(0,i),[pts[i-1][0],pts[i-1][1],t],...pts.slice(i)];
+}
+function releaseMark(x,p) {
+  x.save();
+  const g = x.createRadialGradient(p[0], p[1], 0, p[0], p[1], 18);
+  g.addColorStop(0, 'rgba(255,138,31,.28)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g; x.beginPath(); x.arc(p[0], p[1], 18, 0, 7); x.fill();
+  x.strokeStyle = C.mark; x.lineWidth = 1.6;
+  x.beginPath(); x.arc(p[0], p[1], 7.5, 0, 7); x.stroke();
+  x.beginPath();
+  x.moveTo(p[0] - 13, p[1]); x.lineTo(p[0] - 9, p[1]);
+  x.moveTo(p[0] + 9, p[1]); x.lineTo(p[0] + 13, p[1]);
+  x.moveTo(p[0], p[1] - 13); x.lineTo(p[0], p[1] - 9);
+  x.moveTo(p[0], p[1] + 9); x.lineTo(p[0], p[1] + 13);
+  x.stroke();
+  x.beginPath(); x.arc(p[0], p[1], 5, 0, 7); x.fillStyle = '#fff'; x.fill();
+  x.restore();
+}
+function aimPath(x,pts,P,hold,release=0) {
+  x.lineCap='round'; x.lineJoin='round';
+  const col=t=>aimColor(t,hold,release);
+  let run = null;  // fases secuenciales en el tiempo: un beginPath/stroke por run de color (no 64 trazos)
+  const flush = () => { if (run) { x.save(); x.globalAlpha = run.a; x.lineWidth = run.w; x.strokeStyle = run.c; x.stroke(); x.restore(); run = null; } };
+  for(let i=1;i<pts.length;i++) {
+    const a0=P(pts[i-1]), a1=P(pts[i]);
+    const step = Math.hypot(pts[i][0] - pts[i-1][0], pts[i][1] - pts[i-1][1]);
+    if (pts[i][2] > 0 && Math.hypot(pts[i-1][0], pts[i-1][1]) < 0.35 && step > 1.2) { flush(); continue; }
+    const c=col(pts[i-1][2]);
+    const follow = pts[i-1][2] >= release;
+    const prev=i>1?P(pts[i-2]):a0;
+    const m0=i>1&&col(pts[i-2][2])===c&&(pts[i-2][2] >= release)===follow?[(prev[0]+a0[0])/2,(prev[1]+a0[1])/2]:a0;
+    const m1=i===pts.length-1||col(pts[i][2])!==c||(pts[i][2] >= release)!==follow?a1:[(a0[0]+a1[0])/2,(a0[1]+a1[1])/2];
+    if(run&&(run.c!==c||run.follow!==follow))flush();
+    if (!run) { x.beginPath(); x.moveTo(m0[0],m0[1]); run = { c, follow, a: follow ? 0.45 : 1, w: follow ? 1.5 : 2.2 }; }
+    x.quadraticCurveTo(a0[0],a0[1],m1[0],m1[1]);
+  }
+  flush();
+}
+function lineWidth1(x) { x.lineWidth = 1; }
+function cross(x, sz) {
+  x.strokeStyle = C.txt; x.lineWidth = 1.5;
+  x.beginPath();
+  x.moveTo(sz / 2 - 6, sz / 2); x.lineTo(sz / 2 + 6, sz / 2);
+  x.moveTo(sz / 2, sz / 2 - 6); x.lineTo(sz / 2, sz / 2 + 6);
+  x.stroke();
+}
+let aimDrawnKey = '', c0 = 0, playbackKey = '';
+function shotViewKey() {
+  return JSON.stringify([historyMode ? histId : curSess?.id, cur, data?.shots.length, data?.shots[cur], document.getElementById('aim').clientWidth, devicePixelRatio]);
+}
+function aimCaptionText(s, view) {
+  if (view.unit !== 'deg') return 'Sin brújula';
+  return s && s.candidate ? 'Grados · esta flecha' : 'Grados';
+}
+function drawAim(s) {
+  if (anim != null) return;  // durante la reproduccion el canvas es del animador: repintar aqui produce parpadeo
+  const cw = document.getElementById('aim').width;
+  const key = shotViewKey();
+  if (key === aimDrawnKey && c0 === cw) return;  // misma flecha: no repintar (cero parpadeo con eventos de pulso/estado)
+  aimDrawnKey = key; c0 = cw;
+  const c = document.getElementById('aim');
+  const [x, sz] = canvasFit(c, null);
+  const view = proj(s), releaseAt=0, pts=releasePath(view.pts,releaseAt), P=view.P;
+  ringBase(x, sz, view.esc);
+  document.getElementById('aimCaption').textContent=aimCaptionText(s, view);
+  if (!pts.length) return;
+  aimPath(x,pts,P,aimTime(s)||0,releaseAt);
+  cross(x, sz);
+  releaseMark(x,P(releasePoint(pts,releaseAt)),sz);
+}
+function stopPlayback() {
+  if (anim != null) { cancelAnimationFrame(anim); aimDrawnKey = ''; }
+  anim = null; playbackKey = '';
+  document.getElementById('play').textContent = 'Reproducir';
+  document.getElementById('play').classList.remove('playing');
+}
+function play() {
+  if (anim != null) { stopPlayback(); aimDrawnKey = ''; if (data?.shots[cur]) drawAim(data.shots[cur]); return; }
+  if (!data?.shots[cur]) return;
+  const s = data.shots[cur], c = document.getElementById('aim');
+  const sz = c.clientWidth || 320;
+  const view = proj(s), pts = view.pts, P = view.P;
+  const releaseAt=0, path=releasePath(pts,releaseAt);
+  if (path.length < 2) {
+    document.getElementById('tip').textContent = 'Sin traza';
+    return;
+  }
+  const btn = document.getElementById('play');
+  const real = Math.max(50, path[path.length-1][2]-path[0][2]);
+  const t0 = performance.now(), dur = Math.min(10000, Math.max(4000, (real <= 8000 ? real : real / 4) * 1.35));  // un 35% mas lento que tiempo real
+  const pause=700, rev=dur-pause;  // pausa visual en la suelta; el resto mantiene velocidad constante por longitud de arco
+  const dpr = devicePixelRatio || 1, rl = document.createElement('canvas');  // anillos cacheados: 1 blit por frame
+  rl.width = sz * dpr; rl.height = sz * dpr;
+  const rx = rl.getContext('2d'); rx.setTransform(dpr, 0, 0, dpr, 0, 0); ringBase(rx, sz, view.esc);
+  const blit = () => { x.drawImage(rl, 0, 0, sz, sz); };
+  const GR = 16, gl = document.createElement('canvas');  // halo de la punta precalculado (shadowBlur va mal en movil)
+  gl.width = gl.height = GR * 2 * dpr;
+  const gx = gl.getContext('2d'); gx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const gg = gx.createRadialGradient(GR, GR, 0, GR, GR, GR);
+  gg.addColorStop(0, 'rgba(255,138,31,.75)'); gg.addColorStop(.45, 'rgba(255,138,31,.18)'); gg.addColorStop(1, 'rgba(0,0,0,0)');
+  gx.fillStyle = gg; gx.fillRect(0, 0, GR * 2, GR * 2);
+  const hold = aimTime(s) || 0;
+  const col = t => aimColor(t,hold,releaseAt);
+  // la curva suavizada se aplana UNA vez: la estela solo crece sobre geometria fija, nada se recalcula ni se dobla
+  const ax = path.map(p => P(p)), SUB = 12, segN = path.length - 1;
+  const fx = [], fy = [], fc = [], ft = [];
+  const releaseIndex=path.indexOf(releasePoint(path,releaseAt));let releaseVertex=0;
+  for (let i = 1; i <= segN; i++) {
+    const a0 = ax[i - 1], a1 = ax[i], pr = i > 1 ? ax[i - 2] : a0;
+    const color=col(path[i-1][2]);
+    const m0 = i > 1 && col(path[i-2][2])===color ? [(pr[0] + a0[0]) / 2, (pr[1] + a0[1]) / 2] : a0;
+    const m1 = i === segN || col(path[i][2])!==color ? a1 : [(a0[0] + a1[0]) / 2, (a0[1] + a1[1]) / 2];
+    for (let j = i === 1 ? 0 : 1; j <= SUB; j++) {
+      const t = j / SUB, u = 1 - t;
+      fx.push(u * u * m0[0] + 2 * u * t * a0[0] + t * t * m1[0]);
+      fy.push(u * u * m0[1] + 2 * u * t * a0[1] + t * t * m1[1]);
+      fc.push(color);
+      ft.push(path[i - 1][2] + (path[i][2] - path[i - 1][2]) * t);
+    }
+    if(i===releaseIndex)releaseVertex=fx.length-1;
+  }
+  const tl = document.createElement('canvas');  // estela horneada: cada vertice se pinta 1 vez; el frame solo hace blit
+  tl.width = sz * dpr; tl.height = sz * dpr;
+  const tx2 = tl.getContext('2d'); tx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+  tx2.lineWidth = 2; tx2.lineCap = 'round'; tx2.lineJoin = 'round';
+  const cum = [0];  // longitud de arco acumulada: la bolita avanza a px/s constante, no por tiempo de muestra
+  for (let i = 1; i < fx.length; i++) cum.push(cum[i - 1] + Math.hypot(fx[i] - fx[i - 1], fy[i] - fy[i - 1]));
+  const totalLen = cum[cum.length - 1];
+  if (!Number.isFinite(totalLen) || totalLen < 1) { document.getElementById('tip').textContent = 'Trayectoria plana'; return; }
+  const [x] = canvasFit(c, null);
+  btn.textContent = 'Detener'; btn.classList.add('playing'); playbackKey = shotViewKey();
+  let baked = 0;
+  const bakeTo = gi => {  // funde los vertices nuevos (baked+1..gi) en la estela persistente
+    while (baked < gi) {
+      baked++;
+      tx2.strokeStyle = fc[baked];
+      tx2.beginPath(); tx2.moveTo(fx[baked - 1], fy[baked - 1]); tx2.lineTo(fx[baked], fy[baked]); tx2.stroke();
+    }
+  };
+  const rp = P(releasePoint(path,releaseAt));  // mismo ultimo apunte que la marca estatica
+  const releaseDistance=cum[releaseVertex], pauseAt=rev*releaseDistance/totalLen;
+  const frame = now => {
+    const w=now-t0, pausing=w>=pauseAt&&w<pauseAt+pause;
+    const sEnd=pausing?releaseDistance:Math.min((w-Math.max(0,Math.min(pause,w-pauseAt)))/rev,1)*totalLen;
+    let lo = 0, hi = cum.length - 1;  // busqueda binaria: primer vertice que alcanza sEnd
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (cum[mid] <= sEnd) lo = mid; else hi = mid - 1; }
+    const gi = Math.min(pausing?releaseVertex:lo, fx.length - 2), sl = cum[gi + 1] - cum[gi];
+    const rem = sl > 0 ? Math.min(1, (sEnd - cum[gi]) / sl) : 0;
+    bakeTo(gi);
+    const tp = [fx[gi] + (fx[gi + 1] - fx[gi]) * rem, fy[gi] + (fy[gi + 1] - fy[gi]) * rem];
+    x.clearRect(0, 0, sz, sz);
+    x.globalAlpha = Math.min(1, w / 350); blit(); x.globalAlpha = 1;  // la diana entra suave
+    x.drawImage(tl, 0, 0, sz, sz);
+    if (w < dur) {  // creciendo: conector vivo hasta la bolita + halo
+      if (sEnd > 0 && !pausing) {
+        x.strokeStyle = fc[Math.min(gi + 1, fc.length - 1)]; x.lineWidth = 2; x.lineCap = 'round';
+        x.beginPath(); x.moveTo(fx[gi], fy[gi]); x.lineTo(tp[0], tp[1]); x.stroke();
+        x.drawImage(gl, tp[0] - GR, tp[1] - GR, GR * 2, GR * 2);
+        x.beginPath(); x.arc(tp[0], tp[1], 3.6, 0, 7); x.fillStyle = C.mark; x.fill();
+        x.beginPath(); x.arc(tp[0], tp[1], 3, 0, 7); x.fillStyle = '#fff'; x.fill();
+        syncTimeline(ft[Math.min(gi, ft.length - 1)]);
+      }
+      if(sEnd>=releaseDistance){cross(x,sz);releaseMark(x,rp,sz);}
+      anim = requestAnimationFrame(frame);
+    } else {
+      anim = null; aimDrawnKey = ''; btn.textContent = 'Reproducir'; btn.classList.remove('playing');
+      syncTimeline(null);
+      drawAim(s);  // termina exactamente en el estado estatico
+    }
+  };
+  anim = requestAnimationFrame(frame);
+}
+function drawTrace(s) {
+  const c = document.getElementById('trace');
+  const [x, w] = canvasFit(c, 140);
+  const t = s.window ? [...s.window.pre, ...s.window.post] : [];
+  const m = s.window ? [...s.window.mag_pre, ...s.window.mag_post] : [];
+  if (!t.length) {
+    x.fillStyle = C.txt3; x.font = '12px ' + FONT; x.textAlign = 'center';
+    x.fillText('Sin señal', w / 2, 75);
+    x.textAlign = 'left';
+    return;
+  }
+  const h = 150, preLen = s.window.pre.length;
+  const g0 = avg(m.slice(0, preLen));
+  const dev = m.map(v => Math.abs(v - g0));
+  // fase 1 (colocación/apertura) = tramo inestable inicial del pre; fase 2 = apuntado estable final
+  let holdStart=s.window.pre.findIndex(v=>v>=-(aimTime(s)||0));
+  if(holdStart<0)holdStart=preLen;
+  // fase 3 (suelta) = pico post hasta caer del 15% (máx 400 ms); fase 4 = follow-through
+  const peak = Math.max(...dev, 1);
+  let spikeEnd = 0;
+  for (let j = 0; j < s.window.post.length && s.window.post[j]<=400; j++) {
+    if (dev[preLen + j] > peak * 0.15) spikeEnd = j + 1;
+  }
+  const PH = [C.prev, C.aim, C.rel, C.acc];
+  const phaseOf = idx => idx < preLen ? (idx < holdStart ? 0 : 1) : ((idx - preLen) < spikeEnd ? 2 : 3);
+  const t0v = t[0], t1 = t[t.length - 1], mx = Math.max(...m, 1500);
+  const L = v => Math.log10(1 + Math.max(0, v)), mxL = L(mx);  // escala log: el pico de suelta no aplasta el apunte
+  const X = v => (v - t0v) / (t1 - t0v) * (w - 12) + 6, Y = v => h - 20 - (L(v) / mxL) * (h - 36);
+  // rejilla 1g/2g/4g
+  x.strokeStyle = C.grid; x.lineWidth = 1; x.beginPath();
+  [1000, 2000, 4000].forEach(g => { x.moveTo(4, Y(g)); x.lineTo(w - 4, Y(g)); }); x.stroke();
+  x.fillStyle = C.txt3; x.font = '10px ' + MONO; x.fillText('1g', 6, Y(1000) - 4);
+  // línea por tramos de fase
+  x.lineWidth = 1.8;
+  let start = 0;
+  for (let idx = 1; idx <= t.length; idx++) {
+    if (idx === t.length || phaseOf(idx) !== phaseOf(start)) {
+      x.strokeStyle = PH[phaseOf(start)];
+      x.beginPath();
+      for (let k = start; k <= Math.min(idx, t.length - 1); k++) {
+        k === start ? x.moveTo(X(t[k]), Y(m[k])) : x.lineTo(X(t[k]), Y(m[k]));
+      }
+      x.stroke();
+      start = idx;
+    }
+  }
+  // marca de suelta
+  const xRel = X(0);
+  x.strokeStyle = 'rgba(236,238,241,.5)'; x.lineWidth = 1; x.setLineDash([3, 4]);
+  x.beginPath(); x.moveTo(xRel, 4); x.lineTo(xRel, h - 18); x.stroke(); x.setLineDash([]);
+  x.fillStyle = C.txt2; x.font = '500 11px ' + FONT; x.fillText('Suelta', xRel + 6, 13);
+  // regla de tiempo relativa a la suelta: -2s … 0 … +2s
+  x.strokeStyle = C.grid; x.fillStyle = C.txt3; x.font = '10px ' + MONO; x.textAlign = 'center';
+  x.beginPath(); x.moveTo(4, h - 14); x.lineTo(w - 4, h - 14); x.stroke();
+  for (let k = Math.ceil(t0v / 1000); k <= Math.floor(t1 / 1000); k++) {
+    const px = X(k * 1000);
+    x.beginPath(); x.moveTo(px, h - 14); x.lineTo(px, h - 10); x.stroke();
+    x.fillText(k === 0 ? '0' : (k > 0 ? '+' + k + 's' : k + 's'), px, h - 2);
+  }
+  x.textAlign = 'left';
+}
+function drawTrend(S) {
+  const c = document.getElementById('trend'), list=document.getElementById('setList');
+  const opened=new Set([...list.querySelectorAll('details[open]')].map(d=>d.dataset.set));
+  const candidates=data.shots.every(s=>s.candidate), values=data.shots.map(s=>candidates?s.peak_mg:s.aim_score);
+  const max=candidates?values.reduce((m,v)=>Number.isFinite(v)?Math.max(m,v):m,1):100;
+  const anyValue=!candidates && data.shots.some(s => Score.points(s.result && s.result.value) != null);
+  const barOf = v => candidates ? 'var(--acc)' : !Number.isFinite(v) ? 'rgba(255,255,255,.2)' : v >= 80 ? 'var(--acc)' : v < 70 ? 'var(--low)' : 'rgba(255,255,255,.85)';
+  const numOf = v => !candidates && Number.isFinite(v) && v >= 80 ? 'var(--acc)' : 'var(--txt)';
+  const rows=S.map((g,si)=>{const name=setLabel(S,si);return g.map((i,j)=>{
+    const s=data.shots[i], v=values[i], valid=Number.isFinite(v), label=(s.candidate?'Candidato':'Flecha')+' '+(j+1);
+    const marked=!s.candidate && s.result && Score.points(s.result.value) != null ? s.result.value : '';
+    const scoreBit=anyValue ? `<b class="trendScore${/^(X|10|11)$/.test(marked) ? ' hi' : ''}">${marked || '·'}</b>` : '';
+    const sec = s.draw_ms != null ? esNum((s.draw_ms + 1200) / 1000, 1) + ' s' : '';
+    const rad = aimRadius(s); const radTxt = rad == null ? '' : esNum(rad, 1) + '°';
+    const meta = [sec, radTxt].filter(Boolean).join(' · ');
+    const phaseName = s.phase === 'warm' ? 'Calentamiento' : s.phase === 'score' ? 'Puntuable' : '';
+    const phaseBit = '';
+    const tAttr = Number.isFinite(Number(s.t_ms)) ? ` data-t="${Number(s.t_ms)}"` : '';
+    const aria=`${name}, ${label}${marked ? ', valor ' + marked : ''}${phaseName ? ', ' + phaseName : ''}, ${valid ? Math.round(v) + (candidates ? ' mG' : ' de estabilidad') : 'sin estabilidad'}`;
+    return `<button class="trendRow" data-shot="${i}"${tAttr} aria-current="${i===cur}" aria-label="${aria}" style="--c:${barOf(v)};--n:${numOf(v)}">`+
+      `<span class="trendLabel">${j + 1}${scoreBit}${phaseBit}</span><span class="trendBar" aria-hidden="true"><span style="width:${valid?Math.max(0,Math.min(100,v/max*100)):0}%"></span></span><span class="trendMeta">${meta}</span><span class="trendValue">${valid?Math.round(v):'–'}</span></button>`;
+  }).join('');});
+  if (c) c.innerHTML=rows.join('');
+  list.innerHTML=S.map((g,i)=>{
+    const sa=Math.round(avg(g.map(j=>data.shots[j].aim_score))), key=(historyMode?histId:curSess?.id)+'_'+encodeURIComponent(data.shots[g[0]].set_id);
+    const setShots=g.map(j => data.shots[j]);
+    const pts=Score.totals(setShots);
+    const points=`<span class="setPts${pts.scored?' on':''}"><b>${formatScore(pts, setShots)}</b><small>pts</small></span>`;
+    const mini=g.map(j=>{const v=data.shots[j].aim_score;const h=Number.isFinite(v)?Math.max(3,(Math.min(100,v)-40)/60*22):3;return `<i style="height:${h}px;background:${barOf(v)}"></i>`;}).join('');
+    const sid = escapeText(String(data.shots[g[0]].set_id));
+    return `<details data-set="${key}" data-sid="${sid}" ${opened.has(key)?'open':''}><summary class="setline"><b>${setLabel(S,i)}</b><span class="mini">${mini}</span>${points}<span class="setVal" style="color:${numOf(sa)}">${Number.isFinite(sa)?sa:'–'}</span><span class="r"></span></summary>${rows[i]}</details>`;
+  }).join('');
+  c.onclick=list.onclick=e=>{if(typeof Studio!=='undefined'&&Studio.onSetClick&&Studio.onSetClick(e))return;const i=e.target.closest('[data-shot]')?.dataset.shot;if(i!=null){cur=+i;show('Shot');}};
+}
+function drawSet(g) {
+  const c = document.getElementById('aimSet');
+  const [x, sz] = canvasFit(c, null);
+  const all = g.map(j => proj(data.shots[j]));
+  const esc = Math.max(0.25, ...all.map(v => v.scale || 0));
+  ringBase(x, sz, esc);
+  const P = p => [sz / 2 + p[0] / esc * sz * .45, sz / 2 + p[1] / esc * sz * .45];
+  g.forEach((j, k) => {
+    const { pts } = all[k], col = ACOLORS[k % 6];
+    if (!pts.length) return;
+    x.strokeStyle = col; x.globalAlpha = .75; x.lineWidth = 1.6; x.lineJoin = 'round';
+    x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(...P(p)) : x.moveTo(...P(p))); x.stroke();
+    x.globalAlpha = 1;
+    const e = pts[pts.length - 1];
+    x.beginPath(); x.arc(...P(e), 4, 0, 7); x.fillStyle = col; x.fill();
+  });
+  cross(x, sz);
+}
+
+addEventListener('resize', () => data && render());
+</script>
+<script src="training.js"></script>
+<script src="studio.js"></script>
+<script src="tanda.js"></script>
+<script src="picker.js"></script>
+<script src="objetivos.js"></script>
+<script src="header.js"></script>
+<script src="sensor.js"></script>
+<script>boot();</script>
+</body>
+</html>

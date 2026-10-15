@@ -1,0 +1,22 @@
+# toolchains y SDKs de terceros (licencia propietaria, enormes)
+tools/android/
+.venv/
+node_modules/
+# claves y certificados de firma (NUNCA al repo)
+*.keystore
+*.tmp
+# builds
+android/build/
+# datos personales de campo
+captures/
+*.log
+# basura de herramientas y sesiones
+.playwright-mcp/
+.zcode/
+.agents/
+output/
+__pycache__/
+.DS_Store
+Thumbs.db
+keytest.jsh
+mobile/shots.json
