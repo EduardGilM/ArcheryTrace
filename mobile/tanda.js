@@ -29,9 +29,12 @@
   function sessRef(){ return curSess && !historyMode ? curSess : null; }
   function tandaStats(s,n){ const sh=s.shots.filter(x=>!x.candidate&&x.tanda===n), p=Score.totals(sh);
     return `${sh.length} flecha${sh.length===1?'':'s'}${p.scored?' · '+p.score+' pts':''}`; }
-  $('tandaBtn').onclick=()=>{ const s=sessRef(); if(!s) return;
+  function tandaSets(s,n){ return new Set(s.shots.filter(x=>!x.candidate&&x.tanda===n&&x.set_id>0).map(x=>x.set_id)).size; }
+  $('tandaBtn').onclick=async()=>{ const s=sessRef(); if(!s) return;
     s.tandas=s.tandas||[];
-    if(s.activeTanda){ const t=s.tandas.find(x=>x.n===s.activeTanda); if(t) t.end=Date.now();
+    if(s.activeTanda){
+      const goal=s.mode==='Indoor'?10:s.mode==='Outdoor'?6:0;
+      if(goal && tandaSets(s,s.activeTanda)<goal && typeof askConfirm==='function' && !(await askConfirm(`No has acabado los ${goal} sets, ¿quieres cerrar la tanda?`))) return; const t=s.tandas.find(x=>x.n===s.activeTanda); if(t) t.end=Date.now();
       notice(`Tanda ${s.activeTanda} terminada · ${tandaStats(s,s.activeTanda)}`); try{window.Native?.command?.(JSON.stringify({action:'mark',value:'tanda_end '+s.activeTanda}));}catch(_){} s.activeTanda=0; }
     else { const n=s.tandas.length+1; s.tandas.push({n,start:Date.now()}); s.activeTanda=n; try{window.Native?.command?.(JSON.stringify({action:'mark',value:'tanda_start '+n}));}catch(_){} notice(`Tanda ${n} empezada`); }
     persist(); render(); };
@@ -52,7 +55,7 @@
     const s=sessRef(), bar=$('tandaBar'); bar.hidden=!s;
     if(s){ const a=s.activeTanda; $('tandaBtn').className='tandaBtn'+(a?' on':'');
       $('tandaBtn').innerHTML=a?`Terminar tanda ${a}`:`Empezar tanda ${(s.tandas?.length||0)+1}`;
-      $('tandaInfo').textContent=a?tandaStats(s,a):(s.tandas?.length?`${s.tandas.length} tanda${s.tandas.length>1?'s':''} en la sesión`:''); }
+      $('tandaInfo').textContent=a?tandaStats(s,a):''; }
   }
   const base=render; render=function(){ const r=base.apply(this,arguments); try{paintFilters();}catch(e){console.error(e);} return r; };
   window.render=render;
