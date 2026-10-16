@@ -159,6 +159,9 @@
   .mrow, .top3 { display:grid; background:var(--surface); border:1px solid var(--line); border-radius:18px; min-width:0; }
   .mrow { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .mrow.quad { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .mrow.duo { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .mrow.duo > div { padding:14px 16px 16px; }
+  .mrow.duo .num { font-size:clamp(28px,8.4vw,34px); margin-top:8px; }
   .top3 { grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr); }
   .mrow > div, .top3 > div { padding:12px 12px; min-width:0; }
   .mrow > div + div, .top3 > div + div { border-left:1px solid var(--line); }
@@ -568,7 +571,7 @@
     </div>
   </div>
   <button id="play">Reproducir</button>
-  <div class="mrow">
+  <div class="mrow duo">
     <div><span class="lbl">Estabiliz.</span><b id="mSettle" class="num">–</b></div>
     <div><span class="lbl">Impulso</span><b id="mG" class="num">–</b></div>
   </div>
@@ -597,7 +600,7 @@
       <div><span class="lbl">Tiro</span><b class="num" id="sShot">–</b></div>
     </div>
   </section>
-  <div class="mrow">
+  <div class="mrow duo">
     <div><span class="lbl">Mejor</span><b class="num" id="sBest">–</b></div>
     <div><span class="lbl">Estabiliz.</span><b class="num" id="sSettle">–</b></div>
   </div>
