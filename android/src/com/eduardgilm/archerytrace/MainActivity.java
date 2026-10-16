@@ -13,12 +13,14 @@ public class MainActivity extends Activity {
     private boolean started;
     private boolean pageReady;  // el drain antes de que cargue la página pierde los eventos
     private boolean draining;
+    private CoachClient coach;
     private android.webkit.ValueCallback<android.net.Uri[]> fileCallback;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
         wv = new WebView(this);
         setContentView(wv);
+        coach = new CoachClient(this, (id, result, error) -> push("CoachUI.receive(" + org.json.JSONObject.quote(id) + "," + org.json.JSONObject.quote(result) + "," + org.json.JSONObject.quote(error) + ")"));
         WebSettings s = wv.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);  // sin esto localStorage es null y el historial/live revientan
@@ -105,6 +107,8 @@ public class MainActivity extends Activity {
         super.onPause();
     }
 
+    @Override protected void onDestroy() { if (coach != null) coach.close(); super.onDestroy(); }
+
     void push(final String js) {
         runOnUiThread(new Runnable() { @Override public void run() {
             if (pageReady) wv.evaluateJavascript(js, null);
@@ -128,6 +132,7 @@ public class MainActivity extends Activity {
         push("notice(" + org.json.JSONObject.quote(message) + ")");
     }
     public class Bridge {
+        @android.webkit.JavascriptInterface public String chatCoach(String id, String json) { return coach.ask(id, json); }
         @android.webkit.JavascriptInterface public String diagnostics() { return SensorService.diagnostics(); }
         @android.webkit.JavascriptInterface public String command(String json) {
             try { SensorService.command(json); return ""; } catch(Exception e) { return e.getMessage(); }

@@ -2,6 +2,9 @@
 tools/android/
 .venv/
 node_modules/
+.wrangler/
+.dev.vars*
+.env*
 # claves y certificados de firma (NUNCA al repo)
 *.keystore
 *.tmp

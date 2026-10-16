@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="at-version" content="0.1">
+<meta name="at-version" content="0.4">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
@@ -525,6 +525,7 @@
   nav button { position:relative; gap:4px; padding:6px 0; border-radius:16px; font-size:10px; color:var(--txt-3); }
   nav button svg { width:21px; height:21px; }
   nav button svg path { stroke:currentColor; stroke-width:0; }
+  #nCoach svg path { stroke-width:16; }
   nav button.sel { color:var(--txt); background:var(--surface-2); }
   nav button.sel svg { color:var(--acc); }
   nav button.sel::before { display:none; }
@@ -543,6 +544,22 @@
   .modeSeg button, .pickScope button { border-radius:999px !important; background:#1c1c1e !important; border:1px solid transparent !important; font-weight:500 !important; }
   .modeSeg button.on, .pickScope button.on, .modeSeg button[aria-pressed="true"], .pickScope button[aria-pressed="true"] { border-color:var(--acc-line) !important; color:var(--acc) !important; }
   #calibrationProfile, .training select, .cmpPick select { background-color:#1c1c1e !important; border:none !important; border-radius:999px !important; padding-left:16px !important; font-weight:500; }
+  body.coachOpen #link,body.coachOpen #live,body.coachOpen #returnCurrent { display:none !important; }
+  #vCoach { overflow:hidden;padding-bottom:8px;gap:0; }
+  #coachThread { flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:20px 0;display:flex;flex-direction:column;gap:22px; }
+  .chatWelcome { margin:auto 0;padding:22px 6px; }.chatWelcome>svg { width:48px;height:48px;color:var(--acc);margin-bottom:20px; }
+  .chatWelcome h2 { font-size:25px;letter-spacing:-.04em;font-weight:500; }.chatWelcome p { font-size:14px;line-height:1.6;color:var(--txt-2);margin:10px 0 28px;max-width:290px; }
+  .chatSuggestions { display:flex;flex-direction:column; }.chatSuggestions button { text-align:left;display:flex;justify-content:space-between;gap:12px;padding:15px 0;background:none;border:0;border-bottom:1px solid var(--line);font-size:14px; }.chatSuggestions span { color:var(--acc); }
+  .chatMessage { flex-shrink:0;min-width:0;max-width:100%;font-size:15px;line-height:1.65;user-select:text;overflow-wrap:anywhere; }.chatMessage div { white-space:pre-wrap; }
+  .chatMessage small { display:block;font-size:11px;color:var(--acc);margin-bottom:6px;font-weight:500; }.chatMessage.user { align-self:flex-end;max-width:88%;padding:12px 16px;border-radius:20px 20px 5px 20px;background:var(--surface-2); }.chatMessage.user small { color:var(--txt-2); }
+  .chatThinking i { display:inline-block;width:5px;height:5px;background:var(--txt-2);border-radius:50%;margin:0 4px 0 0; }.chatThinking i:nth-of-type(2) { animation-delay:.15s; }.chatThinking i:nth-of-type(3) { animation-delay:.3s; }
+  .chatError { font-size:13px;color:var(--danger);line-height:1.5; }
+  #coachForm { display:flex;align-items:flex-end;gap:8px;background:var(--surface-2);padding:8px;border-radius:26px; }
+  #coachInput { flex:1;min-width:0;min-height:44px;max-height:120px;resize:none;border:0;background:none;padding:11px 8px;font:400 16px/1.4 var(--font);color:var(--txt);outline:none;user-select:text; }
+  #coachInput::placeholder { color:var(--txt-3); }#coachSend { display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:var(--acc);color:var(--acc-ink);flex-shrink:0; }#coachSend svg { width:21px;height:21px; }
+  @media(prefers-reduced-motion:no-preference) { .chatMessage { animation:chatIn .18s ease-out; }.chatThinking i { animation:pulse 1s ease-in-out infinite; } }
+  @keyframes chatIn { from { opacity:0;transform:translateY(5px); } to { opacity:1;transform:translateY(0); } }
+  @media(max-height:550px) { .chatWelcome { padding:6px; }.chatWelcome>svg,.chatWelcome h2,.chatWelcome>p { display:none; } }
 </style>
 </head>
 <body>
@@ -571,10 +588,6 @@
     </div>
   </div>
   <button id="play">Reproducir</button>
-  <div class="mrow duo">
-    <div><span class="lbl">Estabiliz.</span><b id="mSettle" class="num">–</b></div>
-    <div><span class="lbl">Impulso</span><b id="mG" class="num">–</b></div>
-  </div>
   <section class="card" id="shotScore"></section>
   <div class="card">
     <div class="cardTitle">Señal</div>
@@ -717,10 +730,14 @@
     <div class="swatches" id="themeSwatches"></div>
   </section>
 </main>
+<main id="vCoach" style="display:none">
+  <div id="coachThread" role="log" aria-label="Conversación con el entrenador" aria-live="polite"></div>
+  <form id="coachForm"><textarea id="coachInput" rows="1" maxlength="1800" placeholder="Pregunta a tu entrenador…" aria-label="Tu pregunta" enterkeyhint="send"></textarea><button type="submit" id="coachSend" aria-label="Enviar pregunta" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button></form>
+</main>
 <nav>
   <button id="nSession"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M80,64a8,8,0,0,1,8-8H216a8,8,0,0,1,0,16H88A8,8,0,0,1,80,64Zm136,56H88a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Zm0,64H88a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16ZM44,52A12,12,0,1,0,56,64,12,12,0,0,0,44,52Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,116Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,180Z"/></svg>Sesión</button>
   <button id="nShot" class="sel"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M232,120h-8.34A96.14,96.14,0,0,0,136,32.34V24a8,8,0,0,0-16,0v8.34A96.14,96.14,0,0,0,32.34,120H24a8,8,0,0,0,0,16h8.34A96.14,96.14,0,0,0,120,223.66V232a8,8,0,0,0,16,0v-8.34A96.14,96.14,0,0,0,223.66,136H232a8,8,0,0,0,0-16Zm-96,87.6V200a8,8,0,0,0-16,0v7.6A80.15,80.15,0,0,1,48.4,136H56a8,8,0,0,0,0-16H48.4A80.15,80.15,0,0,1,120,48.4V56a8,8,0,0,0,16,0V48.4A80.15,80.15,0,0,1,207.6,120H200a8,8,0,0,0,0,16h7.6A80.15,80.15,0,0,1,136,207.6ZM128,88a40,40,0,1,0,40,40A40,40,0,0,0,128,88Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,152Z"/></svg>Tiro</button>
-  <button id="nSet"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M172,76a44,44,0,1,0-44,44A44.05,44.05,0,0,0,172,76Zm-44,28a28,28,0,1,1,28-28A28,28,0,0,1,128,104Zm60,24a44,44,0,1,0,44,44A44.05,44.05,0,0,0,188,128Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,188,200ZM68,128a44,44,0,1,0,44,44A44.05,44.05,0,0,0,68,128Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,68,200Z"/></svg>Set</button>
+  <button id="nCoach"><svg viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M216 40H40a16 16 0 0 0-16 16v128a16 16 0 0 0 16 16h40l48 40v-40h88a16 16 0 0 0 16-16V56a16 16 0 0 0-16-16Z"/><path d="M72 96h112M72 144h72"/></svg>Entrenador</button>
   <button id="nHistory"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M136,80v43.47l36.12,21.67a8,8,0,0,1-8.24,13.72l-40-24A8,8,0,0,1,120,128V80a8,8,0,0,1,16,0Zm-8-48A95.44,95.44,0,0,0,60.08,60.15C52.81,67.51,46.350,74.59,40,82V64a8,8,0,0,0-16,0v40a8,8,0,0,0,8,8H72a8,8,0,0,0,0-16H49c7.15-8.420,14.27-16.35,22.39-24.57a80,80,0,1,1,1.66,114.75,8,8,0,1,0-11,11.64A96,96,0,1,0,128,32Z"/></svg>Historial</button>
   <button id="nProfile"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24ZM74.08,197.5a64,64,0,0,1,107.84,0,87.83,87.83,0,0,1-107.84,0ZM96,120a32,32,0,1,1,32,32A32,32,0,0,1,96,120Zm97.76,66.41a79.66,79.66,0,0,0-36.06-28.75,48,48,0,1,0-59.4,0,79.66,79.66,0,0,0-36.06,28.75,88,88,0,1,1,131.52,0Z"/></svg>Perfil</button>
 </nav>
@@ -801,6 +818,7 @@ function statShots(shots) {
 <script src="score.js"></script>
 <script src="compare.js"></script>
 <script src="goals.js"></script>
+<script src="coach.js"></script>
 <script>
 const GAP_MS = 60000, ACOLORS = ['#FF8A1F', 'rgba(255,255,255,.9)', 'rgba(255,255,255,.62)', 'rgba(255,255,255,.4)', 'rgba(255,255,255,.24)', 'rgba(255,255,255,.16)'];
 const C = {txt:'#fff', txt2:'#9a9aa2', txt3:'#5c5c64', grid:'rgba(255,255,255,.07)', acc:'#ffffff', mark:'#FF8A1F', prev:'rgba(255,255,255,.32)', aim:'#fff', rel:'#FF8A1F', low:'#F0506E', ref:'rgba(255,255,255,.45)'};
@@ -1008,7 +1026,7 @@ async function boot() {
   if (fresh) { data = { shots: fresh.shots }; live = true; curSess = fresh; }
   if (!data) data = { shots: [] };  // en vacío: esperando flechas; las viejas, en HISTORIAL
   document.getElementById('nSession').onclick = () => historyMode ? backToCurrent() : show('Session');
-  ['Shot', 'Set', 'History'].forEach(v => document.getElementById('n' + v).onclick = () => show(v));
+  ['Shot', 'Coach', 'History'].forEach(v => document.getElementById('n' + v).onclick = () => show(v));
   document.getElementById('play').onclick = play;
   // swipe izquierda/derecha en la vista de tiro: gesto claramente horizontal, rápido y fuera de controles/gráficas interactivas
   let tx0 = null, ty0 = 0, tt0 = 0;
@@ -1035,7 +1053,8 @@ function step(d) { const n = data?.shots.length || 0; if (!n) return; cur = (cur
 function show(v) {
   if (v === 'Progress') v = 'Profile';
   view = v;
-  ['Session', 'Shot', 'Set', 'History', 'Profile'].forEach(x => {
+  document.body.classList.toggle('coachOpen',v==='Coach');
+  ['Session', 'Shot', 'Set', 'Coach', 'History', 'Profile'].forEach(x => {
     const page = document.getElementById('v' + x);
     const tab = document.getElementById('n' + x);
     if (page) page.style.display = x === v ? 'flex' : 'none';
@@ -1056,6 +1075,11 @@ function render() {
   const setHead = document.getElementById('setHead');
   if (setHead) setHead.hidden = true;
   document.body.classList.remove('noHead');
+  if (view === 'Coach') {
+    document.getElementById('title').textContent = 'Entrenador';
+    document.getElementById('subtitle').textContent = '';
+    return;
+  }
   if (view === 'Profile') {
     document.getElementById('title').textContent = 'Perfil';
     document.getElementById('subtitle').textContent = '';
@@ -1077,7 +1101,7 @@ function render() {
     const gauge = document.getElementById('stabGauge'); if (gauge) gauge.innerHTML = '';
     ['sAvgDot', 'mScoreDot'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; });
     ['trend', 'setList', 'setArrows', 'legend', 'tip', 'tLegend'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = ''; });
-    ['mScore', 'mPeak', 'mSettle', 'mInstab', 'mG'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '–'; });
+    ['mScore', 'mPeak', 'mInstab'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '–'; });
     syncTimeline(null);
     document.getElementById('mScore').parentElement.style.color = '';
     document.getElementById('mScore').parentElement.style.borderColor = '';
@@ -1553,10 +1577,8 @@ function renderShot(S, si) {
   const at = s.draw_ms != null ? s.draw_ms + 1200 : aimTime(s), ar = aimRadius(s);
   setMetric('mPeak', at == null ? '–' : esNum(at / 1000, 1), 's');
   setMetric('mInstab', ar == null ? '–' : esNum(ar, 2), aimUnit(s));
-  setMetric('mSettle', s.settle_ms == null ? '–' : s.settle_ms, 'ms');
-  setMetric('mG', Number.isFinite(s.peak_mg) ? esNum(s.peak_mg / 1000, 1) : '–', 'g');
   const legend = document.getElementById('tLegend'); if (legend) legend.innerHTML = '';
-  document.getElementById('tip').textContent = tips(s).join(' · ');
+  document.getElementById('tip').textContent = '';
   syncTimeline(null);
   paintScore('shotScore', S[si].map(j => data.shots[j]));
   drawAim(s); drawTrace(s);
@@ -1586,16 +1608,6 @@ async function calibrateFromShot() {
     localStorage.removeItem('atCalibration');
     notice('No se pudo preparar la calibración: ' + e.message);
   } finally { calibrationConfirming = false; }
-}
-
-function tips(s) {
-  const t = [];
-  if (!(s.tilt_x?.length || s.pos_x?.length || s.traj_x?.length)) t.push('Sin traza');
-  if (s.instab_mg > 250) t.push(`Temblor ${esNum(s.instab_mg / 1000, 2)} g`);
-  if (s.settle_ms != null && s.settle_ms > 400) t.push(`${s.settle_ms} ms`);
-  if (s.peak_mg > 5000) t.push(Number.isFinite(s.peak_mg) ? esNum(s.peak_mg / 1000, 1) + ' g' : '');
-  if (Number.isFinite(s.aim_score) && s.aim_score < 60) t.push('Estabilidad baja');
-  return t.filter(Boolean);
 }
 
 function drawProgress(sessions) {
@@ -2430,6 +2442,8 @@ addEventListener('resize', () => data && render());
 <script src="objetivos.js"></script>
 <script src="header.js"></script>
 <script src="sensor.js"></script>
+<script src="coach-agent.js"></script>
+<script src="coach-ui.js"></script>
 <script>boot();</script>
 </body>
 </html>

@@ -22,7 +22,6 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .addItem input{flex:1;min-width:0;background:var(--surface-2);color:var(--txt);border:1px solid var(--line-2);border-radius:12px;padding:10px 12px;min-height:44px}
 .addItem input::placeholder{color:var(--txt-3)}
 .addItem button{background:var(--acc-soft);color:var(--acc);border:1px solid var(--acc-line);border-radius:12px;padding:10px 16px;font-weight:600;min-height:44px}
-#shotContext{font-size:12.5px;color:var(--txt-2)}
 #comparison:empty,#setState:empty,#volume:empty{display:none}
 #notice{position:fixed;bottom:84px;left:16px;right:16px;z-index:20;padding:12px 14px;background:var(--surface-3);border:1px solid var(--line-2);color:var(--txt);border-radius:12px;font-size:13px;box-shadow:0 12px 30px rgba(0,0,0,.4)}
 </style>`);
@@ -52,7 +51,6 @@ $('sessionHero').insertAdjacentHTML('afterend',`<section class="training" id="tr
 <div class="addItem"><input id="arrowName" placeholder="Nombre de las flechas" maxlength="24"><button id="arrowAdd">Añadir</button></div></div>
 </div></section>`);
 $('vSet').querySelector('.deleteAction').insertAdjacentHTML('beforebegin',`<section class="training"><div id="setState"></div></section>`);
-$('vShot').querySelector('.deleteAction').insertAdjacentHTML('beforebegin',`<section class="training card"><div id="shotContext"></div></section>`);
 $('vProgress').insertAdjacentHTML('afterbegin',`<section class="training card"><label>Equipo <select id="progressProfile" onchange="renderProgress()"></select></label><div id="volume"></div></section>`);
 document.body.insertAdjacentHTML('beforeend','<div id="notice" role="status" hidden></div>');
 const gear={get:()=>{try{const g=JSON.parse(localStorage.getItem('atGear'));return {bows:Array.isArray(g?.bows)?g.bows:[],arrows:Array.isArray(g?.arrows)?g.arrows:[]};}catch(e){return {bows:[],arrows:[]};}},
@@ -225,10 +223,7 @@ render=function() {
   $('arrowList').innerHTML=g.arrows.map(n=>`<div class="gearRow"><button data-n="${escapeText(n)}"${n===s?.arrows?' class="on"':''}>${escapeText(n)}<span>‹</span></button><button class="deleteGear" data-delete-arrow="${escapeText(n)}" aria-label="Eliminar flechas ${escapeText(n)}">${TRASH}</button></div>`).join('')||'';
   if(shot) {
     $('setState').textContent=(s?.ends||[]).some(e=>e.id===shot.set_id)?'Cerrado':'Abierto';
-    const group=sets(data.shots).find(g=>g.includes(cur)), stats=Training.summary(group.map(i=>data.shots[i]));
-    const eq=[...new Set([shot.profile,s?.profile,s?.bow,s?.arrows].filter(Boolean))].join(' · ');
-    const rhythm=stats.rhythm==null?'':` · ${stats.rhythm.toFixed(1).replace('.', ',')} s`;
-    $('shotContext').textContent=`${shot.candidate?'Candidato':shot.manual?'Manual':eq||'–'}${rhythm}`;
+    const group=sets(data.shots).find(g=>g.includes(cur));
     const select=$('compareShot');
     if(select){ const selected=select.value;
     select.innerHTML='<option value="">Ninguna</option>'+group.filter(i=>i!==cur).map(i=>`<option value="${i}">Flecha ${group.indexOf(i)+1}</option>`).join('');select.value=selected;

@@ -28,6 +28,10 @@ Entrenador de tiro con arco con un inclinómetro **WitMotion (WIT) Bluetooth 5.0
 
 `mobile/` (interfaz web empaquetada), `android/` (APK sin Gradle: `SensorService` BLE, `WitParser`, `ShotDetector`), `tools/` (tests y scripts).
 
+## Entrenador IA
+
+Chat en la pestaña Entrenador, con selección automática de sesiones según la pregunta y análisis de todo el historial. Responde únicamente sobre tiro con arco. Conversaciones e historial locales; MiMo mediante OpenRouter y un intermediario sin base de datos. Configuración, despliegue y límites en [coach/README.md](coach/README.md).
+
 ## Build
 
 `bash android/build.sh`. En Windows (Git Bash) usa `tools/android/`; en Linux o macOS define `ANDROID_BUILD_TOOLS` y `ANDROID_JAR`.
