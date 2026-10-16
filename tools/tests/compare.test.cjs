@@ -4,7 +4,7 @@ const Compare = require('../../mobile/compare.js');
 
 const shot = (t, aim, extra = {}) => ({
   t_ms: t, set_id: extra.set_id ?? (t < 3000 ? 1 : 2), aim_score: aim, candidate: false,
-  draw_ms: extra.draw_ms ?? 1800, settle_ms: extra.settle_ms ?? 200, hr_bpm: extra.hr_bpm ?? 80,
+  draw_ms: extra.draw_ms ?? 1800, settle_ms: extra.settle_ms ?? 200,
   result: extra.value ? {value: extra.value} : undefined,
   yaw_c: extra.yaw || [10, 12, 14, 16, 18],
   pitch_deg: extra.pitch || [0, 1, 2, 1, 0],
@@ -12,8 +12,8 @@ const shot = (t, aim, extra = {}) => ({
 });
 
 test('summary faces score, stability, timing and gear, and the delta is the second minus the first', () => {
-  const older = {id: 1, mode: 'Indoor', bow: 'Recurvo', arrows: 'X10', shots: [shot(1000, 70, {value: '9', draw_ms: 1800, settle_ms: 200, hr_bpm: 90}), shot(2000, 80, {value: '8', draw_ms: 1800, settle_ms: 200, hr_bpm: 80})]};
-  const newer = {id: 2, mode: 'Indoor', bow: 'Recurvo', arrows: 'X10', shots: [shot(1000, 90, {value: 'X', draw_ms: 2800, settle_ms: 100, hr_bpm: 70}), shot(2000, 86, {value: '10', draw_ms: 2800, settle_ms: 100, hr_bpm: 60})]};
+  const older = {id: 1, mode: 'Indoor', bow: 'Recurvo', arrows: 'X10', shots: [shot(1000, 70, {value: '9', draw_ms: 1800, settle_ms: 200}), shot(2000, 80, {value: '8', draw_ms: 1800, settle_ms: 200})]};
+  const newer = {id: 2, mode: 'Indoor', bow: 'Recurvo', arrows: 'X10', shots: [shot(1000, 90, {value: 'X', draw_ms: 2800, settle_ms: 100}), shot(2000, 86, {value: '10', draw_ms: 2800, settle_ms: 100})]};
   const rows = Compare.rows(older, newer);
   const by = key => rows.find(r => r.key === key);
   assert.equal(by('arrows').d, '0');
@@ -29,7 +29,6 @@ test('summary faces score, stability, timing and gear, and the delta is the seco
   assert.equal(by('shot').b, '4,0 s');
   assert.equal(by('shot').d, '+1,0 s');
   assert.equal(by('settle').d, '-100 ms');
-  assert.equal(by('hr').d, '-20 ppm');
   assert.equal(by('gear').d, 'Igual');
   const bare = {id: 3, shots: [shot(1000, 50)]};
   assert.equal(Compare.rows(older, bare).find(r => r.key === 'score').b, '–');

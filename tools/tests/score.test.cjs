@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const Score = require('../../mobile/score.js');
 const Backup = require('../../mobile/backup.js');
 
-const arrow = (value, extra = {}) => ({aim_score: 80, draw_ms: 3000, settle_ms: 200, hr_bpm: 90, result: value == null ? undefined : {value}, ...extra});
+const arrow = (value, extra = {}) => ({aim_score: 80, draw_ms: 3000, settle_ms: 200, result: value == null ? undefined : {value}, ...extra});
 
 test('arrow values score X and 10 as ten points and can be cleared without the impact', () => {
   assert.equal(Score.points('X'), 10);
@@ -38,8 +38,8 @@ test('totals count the set and the session without old shots or candidates', () 
 });
 
 test('value groups average execution and the sentence waits for four arrows', () => {
-  const high = [0, 1, 2, 3].map(i => arrow(i < 3 ? 'X' : '10', {aim_score: 82 + i, draw_ms: 3000 + i * 100, settle_ms: 180, hr_bpm: 88}));
-  const rest = [arrow('9', {aim_score: 70, draw_ms: 5000}), arrow('7', {aim_score: 60}), arrow('M', {aim_score: 40, hr_bpm: 110})];
+  const high = [0, 1, 2, 3].map(i => arrow(i < 3 ? 'X' : '10', {aim_score: 82 + i, draw_ms: 3000 + i * 100, settle_ms: 180}));
+  const rest = [arrow('9', {aim_score: 70, draw_ms: 5000}), arrow('7', {aim_score: 60}), arrow('M', {aim_score: 40})];
   const groups = Score.groups([...high, ...rest]);
   const x10 = groups.find(g => g.id === 'x10');
   assert.equal(x10.n, 4);

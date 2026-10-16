@@ -160,7 +160,7 @@ const Score = {
     return head + ' puntos · media ' + avgText + (bits.length ? ' · ' + bits.join(' · ') : '');
   },
   groups(shots) {
-    const buckets = this.GROUPS.map(g => ({...g, n: 0, aim: [], shot_s: [], settle: [], hr: []}));
+    const buckets = this.GROUPS.map(g => ({...g, n: 0, aim: [], shot_s: [], settle: []}));
     const byId = {};
     buckets.forEach(g => { byId[g.id] = g; });
     for (const s of shots || []) {
@@ -173,15 +173,13 @@ const Score = {
       const sec = this.shotSeconds(s);
       if (sec != null) g.shot_s.push(sec);
       if (Number.isFinite(s.settle_ms)) g.settle.push(s.settle_ms);
-      if (Number.isFinite(s.hr_bpm)) g.hr.push(s.hr_bpm);
     }
     const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
     return buckets.map(g => ({
       id: g.id, label: g.label, n: g.n,
       aim: mean(g.aim), aim_n: g.aim.length, aim_min: g.aim.length ? Math.min(...g.aim) : null,
       shot_s: mean(g.shot_s), shot_n: g.shot_s.length,
-      settle: mean(g.settle), settle_n: g.settle.length,
-      hr: mean(g.hr), hr_n: g.hr.length
+      settle: mean(g.settle), settle_n: g.settle.length
     }));
   },
   groupLine(g) {
@@ -190,7 +188,6 @@ const Score = {
     if (g.aim_n) bits.push('estabilidad ' + Math.round(g.aim));
     if (g.shot_n) bits.push('tiro ' + g.shot_s.toFixed(1).replace('.', ',') + ' s');
     if (g.settle_n) bits.push('estabilización ' + Math.round(g.settle) + ' ms');
-    if (g.hr_n) bits.push('pulso ' + Math.round(g.hr));
     return g.label + ' · ' + bits.join(' · ');
   },
   sentence(g) {

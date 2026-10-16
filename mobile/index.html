@@ -216,8 +216,6 @@
   .weekPills i.today:not(.run) { box-shadow:inset 0 0 0 1.5px var(--acc-line); }
   .goalBar i { display:block; height:100%; width:0; background:rgba(255,255,255,.85); border-radius:999px; }
   .goalBar.met i { background:var(--acc); box-shadow:0 0 12px var(--glow); }
-  #tLegend .hr { margin-left:auto; color:var(--txt); font-family:var(--mono); font-size:12px; }
-  #tLegend .hr svg { width:13px; height:13px; color:var(--danger); }
   #tip { display:flex; gap:10px; align-items:flex-start; background:var(--surface); border:1px solid var(--line); border-radius:12px;
          padding:11px 12px; font-size:13px; color:var(--txt-2); --icon:var(--i-info); }
   #tip::before { content:""; width:16px; height:16px; margin-top:1px; flex-shrink:0; background:var(--txt-3); -webkit-mask:var(--icon) center/contain no-repeat; mask:var(--icon) center/contain no-repeat; }
@@ -572,7 +570,6 @@
   <button id="play">Reproducir</button>
   <div class="mrow">
     <div><span class="lbl">Estabiliz.</span><b id="mSettle" class="num">–</b></div>
-    <div><span class="lbl">Pulso</span><b id="mHr" class="num">–</b></div>
     <div><span class="lbl">Impulso</span><b id="mG" class="num">–</b></div>
   </div>
   <section class="card" id="shotScore"></section>
@@ -602,7 +599,6 @@
   </section>
   <div class="mrow">
     <div><span class="lbl">Mejor</span><b class="num" id="sBest">–</b></div>
-    <div><span class="lbl">Pulso</span><b class="num" id="sHr">–</b></div>
     <div><span class="lbl">Estabiliz.</span><b class="num" id="sSettle">–</b></div>
   </div>
   <section class="card" id="sessionScore" hidden>
@@ -806,7 +802,6 @@ function statShots(shots) {
 const GAP_MS = 60000, ACOLORS = ['#FF8A1F', 'rgba(255,255,255,.9)', 'rgba(255,255,255,.62)', 'rgba(255,255,255,.4)', 'rgba(255,255,255,.24)', 'rgba(255,255,255,.16)'];
 const C = {txt:'#fff', txt2:'#9a9aa2', txt3:'#5c5c64', grid:'rgba(255,255,255,.07)', acc:'#ffffff', mark:'#FF8A1F', prev:'rgba(255,255,255,.32)', aim:'#fff', rel:'#FF8A1F', low:'#F0506E', ref:'rgba(255,255,255,.45)'};
 const FONT = "'Geist', system-ui, sans-serif", MONO = "'Barlow Condensed', sans-serif";
-const HEART = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M178,40c-20.65,0-38.73,8.88-50,23.89C116.73,48.88,98.65,40,78,40a62.07,62.07,0,0,0-62,62c0,70,103.790,126.66,108.21,129a8,8,0,0,0,7.58,0C136.21,228.66,240,172,240,102A62.07,62.07,0,0,0,178,40Z"/></svg>';
 const TRASH = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/></svg>';
 function esNum(n, digits) {
   if (!Number.isFinite(n)) return '–';
@@ -934,9 +929,9 @@ window.liveShot = ev => {
   const sess = liveSession(ev.sid || '');
   if (sess.shots.some(s => Math.abs(s.t_ms - ev.t) < 800) || (sess.removed || []).some(t => Math.abs(t - ev.t) < 800)) { persist(); return; }
   sess.shots.push({
-    t_ms: Math.round(ev.t), hr_bpm: Number.isFinite(ev.hr) && ev.hr > 0 ? Math.round(ev.hr) : null,
+    t_ms: Math.round(ev.t),
     peak_mg: Math.round(ev.peak), instab_mg: Math.round(ev.instab),
-    settle_ms: ev.settle == null || ev.settle < 0 ? null : Math.round(ev.settle), hr_bpm: ev.hr > 0 ? ev.hr : null,
+    settle_ms: ev.settle == null || ev.settle < 0 ? null : Math.round(ev.settle),
     aim_score: Math.max(0, Math.min(100, Math.round(ev.score))), tilt_x: Array.isArray(ev.tx) ? ev.tx : [], tilt_y: Array.isArray(ev.ty) ? ev.ty : [],
     yaw_c: Array.isArray(ev.yw2) ? ev.yw2 : [], pitch_deg: Array.isArray(ev.pt) ? ev.pt : [],
     pos_x: Array.isArray(ev.qx) ? ev.qx : [], pos_y: Array.isArray(ev.qy) ? ev.qy : [], pos_z: Array.isArray(ev.qz) ? ev.qz : [],
@@ -1074,12 +1069,12 @@ function render() {
   if (!data || !data.shots.length) {
     document.getElementById('title').textContent = view === 'Shot' ? 'Tiro' : (view === 'Set' ? 'Sets' : 'Sesión');
     document.getElementById('subtitle').textContent = '';
-    ['sTotal', 'sSets', 'sAvg', 'sSd', 'sShot', 'sBest', 'sHr', 'sSettle'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '–'; });
+    ['sTotal', 'sSets', 'sAvg', 'sSd', 'sShot', 'sBest', 'sSettle'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '–'; });
     document.getElementById('sAvg').style.color = '';
     const gauge = document.getElementById('stabGauge'); if (gauge) gauge.innerHTML = '';
     ['sAvgDot', 'mScoreDot'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; });
     ['trend', 'setList', 'setArrows', 'legend', 'tip', 'tLegend'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = ''; });
-    ['mScore', 'mPeak', 'mSettle', 'mInstab', 'mHr', 'mG'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '–'; });
+    ['mScore', 'mPeak', 'mSettle', 'mInstab', 'mG'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '–'; });
     syncTimeline(null);
     document.getElementById('mScore').parentElement.style.color = '';
     document.getElementById('mScore').parentElement.style.borderColor = '';
@@ -1516,8 +1511,6 @@ function renderSession(S) {
   const best = sc.length ? Math.max(...sc) : NaN;
   setMetric('sBest', Number.isFinite(best) ? Math.round(best) : '–');
   const bestEl = document.getElementById('sBest'); if (bestEl) bestEl.style.color = Number.isFinite(best) && best >= 80 ? 'var(--acc)' : 'var(--txt)';
-  const hrs = real.map(s => s.hr_bpm).filter(v => Number.isFinite(v) && v > 0);
-  setMetric('sHr', hrs.length ? Math.round(avg(hrs)) : '–');
   const settles = real.map(s => s.settle_ms).filter(Number.isFinite);
   setMetric('sSettle', settles.length ? Math.round(avg(settles)) : '–', 'ms');
   const sessionShots = real;
@@ -1558,7 +1551,6 @@ function renderShot(S, si) {
   setMetric('mPeak', at == null ? '–' : esNum(at / 1000, 1), 's');
   setMetric('mInstab', ar == null ? '–' : esNum(ar, 2), aimUnit(s));
   setMetric('mSettle', s.settle_ms == null ? '–' : s.settle_ms, 'ms');
-  setMetric('mHr', s.hr_bpm > 0 ? Math.round(s.hr_bpm) : '–');
   setMetric('mG', Number.isFinite(s.peak_mg) ? esNum(s.peak_mg / 1000, 1) : '–', 'g');
   const legend = document.getElementById('tLegend'); if (legend) legend.innerHTML = '';
   document.getElementById('tip').textContent = tips(s).join(' · ');

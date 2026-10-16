@@ -338,7 +338,7 @@ test('history compares two sessions with the score pad metrics and degree traces
   const p = page();
   const now = Date.now(), older = now - 3 * 864e5;
   p.run(`const yaw=(base)=>[10,12,14,16,18].map(v=>v+base);
-    const shot=(t,aim,value,set_id,base)=>({t_ms:t,set_id,aim_score:aim,draw_ms:2000,settle_ms:180,hr_bpm:80,candidate:false,result:{value},yaw_c:yaw(base),pitch_deg:[0,1,0,1,0],trace_t:[-400,-300,-200,-100,-40]});
+    const shot=(t,aim,value,set_id,base)=>({t_ms:t,set_id,aim_score:aim,draw_ms:2000,settle_ms:180,candidate:false,result:{value},yaw_c:yaw(base),pitch_deg:[0,1,0,1,0],trace_t:[-400,-300,-200,-100,-40]});
     store.save([
       {id:${older},mode:'Indoor',bow:'Recurvo',arrows:'X10',shots:[shot(1000,70,'8',1,0),shot(4000,60,'7',2,0)]},
       {id:${now},mode:'Indoor',bow:'Recurvo',arrows:'ACE',shots:[shot(1000,90,'X',1,5),shot(2000,88,'10',1,5),shot(5000,84,'9',2,5)]}
@@ -397,7 +397,7 @@ test('progress shows the current week bar and keeps the goal in atGoals', () => 
 
 test('scoring the set stores the value and a repeated sensor event leaves it', () => {
   const p = page();
-  p.run(`fixture.draw_ms=3000;fixture.settle_ms=180;fixture.hr_bpm=90;fixture.set_id=1;
+  p.run(`fixture.draw_ms=3000;fixture.settle_ms=180;fixture.set_id=1;
     const second={...fixture,t_ms:2000,aim_score:70,draw_ms:2800};const third={...fixture,t_ms:3000,aim_score:60,draw_ms:5000};
     curSess.sensorId='test';curSess.lastEvent=1;curSess.shots=[fixture,second,third];data={shots:curSess.shots};store.save([curSess]);
     scoreArrow(1000,'X');scoreArrow(2000,'9');scoreArrow(3000,'M');view='Set';cur=0;render()`);

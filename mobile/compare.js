@@ -33,7 +33,6 @@ const Compare = {
       aim: this.mean(shots.map(s => s.aim_score)),
       shot: this.mean(shots.map(s => ScoreApi.shotSeconds(s))),
       settle: this.mean(shots.map(s => s.settle_ms)),
-      hr: this.mean(shots.map(s => s.hr_bpm)),
       gear: gear || 'Sin equipo'
     };
   },
@@ -48,7 +47,6 @@ const Compare = {
       {key: 'aim', label: 'Estabilidad', a: cell(A.aim, 0), b: cell(B.aim, 0), d: diff(A.aim, B.aim, 0)},
       {key: 'shot', label: 'Tiro', a: cell(A.shot, 1, ' s'), b: cell(B.shot, 1, ' s'), d: diff(A.shot, B.shot, 1, ' s')},
       {key: 'settle', label: 'Settle', a: cell(A.settle, 0, ' ms'), b: cell(B.settle, 0, ' ms'), d: diff(A.settle, B.settle, 0, ' ms')},
-      {key: 'hr', label: 'Pulso', a: cell(A.hr, 0, ' ppm'), b: cell(B.hr, 0, ' ppm'), d: diff(A.hr, B.hr, 0, ' ppm')},
       {key: 'gear', label: 'Material', a: A.gear, b: B.gear, d: A.gear === B.gear ? 'Igual' : '–'}
     ];
   },
