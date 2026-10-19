@@ -57,7 +57,7 @@ test('Worker chat uses MiMo with validated context, conversational history and p
   const env={OPENROUTER_API_KEY:'server-secret',ACCESS_HASHES:hash,MEMBER_RATE:{limit:async()=>({success:true})},GROUP_RATE:{limit:async()=>({success:true})}};
   const s=session({id:Date.now()}),input={version:1,question:'¿Hacia dónde fallo?',messages:[{role:'user',content:'Analiza mi sesión'},{role:'assistant',content:'He revisado tus impactos.'}],context:Coach.context([s],s,s)};
   const request=body=>new Request('https://coach.example/chat',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body||input)});
-  let calls=0;const transport=async(url,options)=>{calls++;const p=JSON.parse(options.body);assert.equal(p.model,'xiaomi/mimo-v2.6-flash');assert.equal(p.response_format,undefined);assert.equal(p.reasoning.enabled,false);assert.equal(p.provider.zdr,true);assert.equal(p.messages.at(-1).content,input.question);assert.doesNotMatch(p.messages[1].content,/Equipo privado|Mi nombre|BLE-SECRETO/);assert.match(p.messages[1].content,/arrows/);return Response.json({choices:[{finish_reason:'stop',message:{content:'Los 12 impactos están por debajo del centro.'}}]});};
+  let calls=0;const transport=async(url,options)=>{calls++;const p=JSON.parse(options.body);assert.equal(p.model,'xiaomi/mimo-v2.6-flash');assert.equal(p.response_format,undefined);assert.equal(p.reasoning.enabled,true);assert.equal(p.reasoning.exclude,true);assert.equal(p.provider.zdr,true);assert.equal(p.messages.at(-1).content,input.question);assert.doesNotMatch(p.messages[1].content,/Equipo privado|Mi nombre|BLE-SECRETO/);assert.match(p.messages[1].content,/arrows/);return Response.json({choices:[{finish_reason:'stop',message:{content:'Los 12 impactos están por debajo del centro.'}}]});};
   const r=await handle(request(),env,transport);assert.equal(r.status,200);assert.equal((await r.json()).answer,'Los 12 impactos están por debajo del centro.');assert.equal(calls,1);
   assert.equal((await handle(request({...input,messages:[{role:'system',content:'evil'}]}),env,transport)).status,400);assert.equal(calls,1);
   assert.equal((await handle(request(),env,async()=>Response.json({choices:[{finish_reason:'stop',message:{content:''}}]}))).status,502);
@@ -71,7 +71,7 @@ test('Worker protects credentials, enforces privacy and validates the model resp
   let calls=0;
   const transport=async(url,options)=>{calls++;const b=JSON.parse(options.body);
     assert.equal(url,'https://openrouter.ai/api/v1/chat/completions');assert.equal(options.headers.Authorization,'Bearer server-secret');
-    assert.deepEqual(b.provider,{require_parameters:true,data_collection:'deny',zdr:true});assert.equal(b.max_tokens,2200);
+    assert.deepEqual(b.provider,{require_parameters:true,data_collection:'deny',zdr:true});assert.equal(b.max_tokens,10000);
     assert.doesNotMatch(b.messages[1].content,/privado|nombre|BLE|t_ms|sensorId|arrows/);
     return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(report('sample'))}}]});
   };

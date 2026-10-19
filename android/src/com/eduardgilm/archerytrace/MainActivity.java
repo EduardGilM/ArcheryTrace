@@ -81,6 +81,7 @@ public class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         SensorService.ui = this;
+        if (pageReady) push("if(typeof CoachUI!=='undefined')CoachUI.resume()");
         if (pageReady) drain();  // sin página cargada, el drain se pierde: espera a onPageFinished
         if (pageReady) push("liveStatus(" + org.json.JSONObject.quote(SensorService.STATUS) + ")");
         // el FGS connectedDevice exige los permisos de Bluetooth concedidos

@@ -34,12 +34,12 @@ final class CoachClient {
             String result="",error="";
             try {
                 HttpURLConnection c=(HttpURLConnection)new URI(ENDPOINT).toURL().openConnection();connection=c;
-                c.setInstanceFollowRedirects(false);c.setConnectTimeout(15000);c.setReadTimeout(70000);c.setRequestMethod("POST");c.setDoOutput(true);
+                c.setInstanceFollowRedirects(false);c.setConnectTimeout(15000);c.setReadTimeout(330000);c.setRequestMethod("POST");c.setDoOutput(true);
                 c.setRequestProperty("Authorization","Bearer "+token);c.setRequestProperty("Content-Type","application/json");
                 byte[] bytes=body.getBytes(StandardCharsets.UTF_8);c.setFixedLengthStreamingMode(bytes.length);try(java.io.OutputStream out=c.getOutputStream()){out.write(bytes);}
                 int status=c.getResponseCode();java.io.InputStream stream=status==200?c.getInputStream():c.getErrorStream();if(stream==null)throw new java.io.IOException();
                 try(java.io.InputStream in=stream;java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream()){
-                    byte[] buffer=new byte[4096];int n;while((n=in.read(buffer))!=-1){if(out.size()+n>100000)throw new java.io.IOException();out.write(buffer,0,n);}result=out.toString("UTF-8");
+                    byte[] buffer=new byte[4096];int n;while((n=in.read(buffer))!=-1){if(out.size()+n>2000000)throw new java.io.IOException();out.write(buffer,0,n);}result=out.toString("UTF-8");
                 }
                 if(status!=200){error=new JSONObject(result).optString("error","No se pudo responder a la pregunta.");result="";}
             }catch(Exception ignored){error="No se pudo conectar con el entrenador. Comprueba tu conexión e inténtalo de nuevo.";}

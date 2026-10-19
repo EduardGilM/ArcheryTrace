@@ -5,7 +5,7 @@
     "dev": "wrangler dev",
     "check": "wrangler deploy --dry-run --outdir ../output/coach/build",
     "deploy": "wrangler deploy",
-    "test": "node --test ../tools/tests/coach.test.cjs ../tools/tests/coach-ui.test.cjs ../tools/tests/coach-agent.test.cjs"
+    "test": "node --test ../tools/tests/coach.test.cjs ../tools/tests/coach-ui.test.cjs ../tools/tests/coach-agent.test.cjs ../tools/tests/coach-context.test.cjs"
   },
   "devDependencies": { "wrangler": "4.151.0" }
 }

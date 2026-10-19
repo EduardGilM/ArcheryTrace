@@ -8,7 +8,7 @@ BT="${ANDROID_BUILD_TOOLS:-$ROOT/tools/android/android-15}"
 JAR="${ANDROID_JAR:-$ROOT/tools/android/android-34-ext12/android.jar}"
 KS="$ROOT/tools/android/archerytrace.keystore"
 cd "$ROOT"
-node --test tools/tests/coach.test.cjs tools/tests/coach-ui.test.cjs tools/tests/coach-agent.test.cjs
+node --test tools/tests/coach.test.cjs tools/tests/coach-ui.test.cjs tools/tests/coach-agent.test.cjs tools/tests/coach-context.test.cjs
 node --test tools/tests/mobile-playback.test.cjs tools/tests/session-model.test.cjs tools/tests/trace-geom.test.cjs tools/tests/backup.test.cjs tools/tests/score.test.cjs tools/tests/compare.test.cjs tools/tests/goals.test.cjs >/dev/null 2>&1 || echo "AVISO: hay tests JS fallidos (heredados); se compila igualmente"
 rm -rf android/build && mkdir -p android/build/gen android/build/classes android/build/assets
 cp mobile/*.js mobile/index.html mobile/icon-192.png mobile/icon-512.png mobile/manifest.json android/build/assets/ && cp -r mobile/fonts mobile/photos android/build/assets/

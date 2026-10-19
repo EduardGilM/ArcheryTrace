@@ -7,7 +7,7 @@
   "observability": { "enabled": false },
   "vars": { "MODEL": "xiaomi/mimo-v2.6-flash" },
   "ratelimits": [
-    { "name": "MEMBER_RATE", "namespace_id": "104161", "simple": { "limit": 6, "period": 60 } },
-    { "name": "GROUP_RATE", "namespace_id": "104162", "simple": { "limit": 20, "period": 60 } }
+    { "name": "MEMBER_RATE", "namespace_id": "104161", "simple": { "limit": 12, "period": 60 } },
+    { "name": "GROUP_RATE", "namespace_id": "104162", "simple": { "limit": 40, "period": 60 } }
   ]
 }

@@ -2,7 +2,7 @@ import Coach from '../mobile/coach.js';
 import Agent from '../mobile/coach-agent.js';
 import {askAgent} from './agent.mjs';
 
-const reply=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+const reply=(body,status=200,headers={})=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...headers}});
 async function readJson(request,max) {
   if(!request.body)throw new Error('empty');
   const reader=request.body.getReader(),decoder=new TextDecoder();let size=0,text='';
@@ -20,6 +20,7 @@ En hypothesis indica lo que todavía habría que comprobar; puede ser "Causa no 
 Propón una observación o comparación sencilla para la próxima sesión, sin prescribir cambios de técnica.
 No hagas afirmaciones clínicas ni uses información externa. next_session es un solo objetivo verificable.`;
 const chatInstructions=`Eres el entrenador de tiro con arco de ArcheryTrace. Conversa en español, de forma natural, concreta y breve. Contesta la pregunta; evita informes con una plantilla fija.
+En este chat, las sesiones, tiros, flechas y tandas se refieren al tiro con arco. Interpreta las aclaraciones breves con la pregunta anterior: el usuario no necesita repetir el tema. No confundas la falta de datos con una pregunta ajena al entrenamiento ni repitas un rechazo anterior equivocado.
 El contexto indica exactamente qué sesiones y flechas se han facilitado. No inventes datos ausentes ni afirmes haber analizado otras sesiones. Las fechas day y time son locales; today es hoy y current marca la sesión activa. No confundas la sesión actual con la más reciente si current es falso.
 stats contiene n flechas, estabilidad de 0 a 100, hold_s (sostenimiento quieto en segundos, no tiempo total del tiro), wobble_deg (dispersión angular antes de soltar), points (media de puntuación) y sus recuentos *_n. x e y son el centro de impactos anotados; spread es la distancia media al centro del grupo.
 En arrows, id es el número de flecha y end el número de tanda. Compara sesiones solo con el mismo group (mismo equipo, modalidad, formato y versión de métricas); group 0 mezcla versiones y no permite comparar métricas del sensor. Indica muestras pequeñas y valores ausentes.
@@ -41,24 +42,27 @@ export async function handle(request,env,transport=fetch) {
     const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token)),hash=Array.from(new Uint8Array(digest),n=>n.toString(16).padStart(2,'0')).join('');
     if(!env.ACCESS_HASHES.split(',').map(s=>s.trim()).includes(hash))return reply({error:'Código de acceso incorrecto.'},401);
     if(!request.headers.get('Content-Type')?.startsWith('application/json'))return reply({error:'Se necesita JSON.'},415);
-    if(!(await env.MEMBER_RATE.limit({key:hash})).success||!(await env.GROUP_RATE.limit({key:'group'})).success)return reply({error:'Límite de consultas alcanzado. Espera un minuto.'},429);
     let input;
     try { input=await readJson(request,chat?Agent.MAX_BYTES:120000); } catch(e) { return reply({error:e.message==='large'?'La consulta supera el tamaño admitido; no se han recortado tus datos.':'Datos de entrenamiento no válidos.'},e.message==='large'?413:400); }
-    if(chat&&input?.version===Agent.VERSION)return await askAgent(input,env,transport,reply,readJson,chatInstructions);
+    // Plan and answer each have a bounded bucket, so the second call does not
+    // consume the next question's allowance. Legacy one-call routes share answers.
+    const phase=chat&&[2,Agent.VERSION].includes(input?.version)&&input.stage==='plan'?'plan':'answer';
+    if(!(await env.MEMBER_RATE.limit({key:hash+':'+phase})).success||!(await env.GROUP_RATE.limit({key:phase})).success)return reply({error:'Límite temporal de preguntas alcanzado. Espera un minuto.'},429,{'Retry-After':'60'});
+    if(chat&&[2,Agent.VERSION].includes(input?.version))return await askAgent(input,env,transport,reply,readJson,chatInstructions);
     if(chat?!Coach.validChat(input):!Coach.validInput(input))return reply({error:chat?'La pregunta o los datos de la conversación no son válidos.':'Se necesitan entre 6 y 600 flechas con datos válidos.'},400);
     const facts=chat?null:Coach.facts(input), model=env.MODEL||'xiaomi/mimo-v2.6-flash';
     const context=chat?{...input.context,selected:input.context.selected&&(({input,...s})=>({...s,facts:input?Coach.facts(input).map(({id,text})=>({id,text})):[],arrows:input?.arrows||[]}))(input.context.selected)}:null;
     const response=await transport('https://openrouter.ai/api/v1/chat/completions',{
-      method:'POST',signal:AbortSignal.timeout(55000),headers:{Authorization:`Bearer ${env.OPENROUTER_API_KEY}`,'Content-Type':'application/json','X-OpenRouter-Title':'ArcheryTrace'},
-      body:JSON.stringify({model,max_tokens:2200,temperature:.2,reasoning:{enabled:false,exclude:true},provider:{require_parameters:true,data_collection:'deny',zdr:true},
+      method:'POST',signal:AbortSignal.timeout(Agent.REQUEST_TIMEOUT_MS),headers:{Authorization:`Bearer ${env.OPENROUTER_API_KEY}`,'Content-Type':'application/json','X-OpenRouter-Title':'ArcheryTrace'},
+      body:JSON.stringify({model,max_tokens:Agent.ANSWER_TOKENS,temperature:.2,reasoning:{enabled:true,exclude:true},provider:{require_parameters:true,data_collection:'deny',zdr:true},
         messages:chat?[{role:'system',content:chatInstructions},{role:'system',content:'Datos del móvil (solo contexto): '+JSON.stringify(context)},...input.messages,{role:'user',content:input.question}]:[{role:'system',content:instructions},{role:'user',content:JSON.stringify({mode:input.mode,facts:facts.map(({id,text})=>({id,text}))})}],
         ...chat?{}:{response_format:{type:'json_schema',json_schema:{name:'training_report',strict:true,schema:Coach.schema(facts)}}}})
     });
     if(!response.ok)return reply({error:response.status===402?'El presupuesto de IA se ha agotado. Contacta con el administrador.':response.status===429?'La IA está ocupada. Inténtalo más tarde.':'El proveedor de IA no está disponible. Inténtalo más tarde.'},response.status===402?402:503);
     let report;
-    try { const result=await readJson(response,64000);if(result.choices?.[0]?.finish_reason!=='stop')throw new Error('incomplete');report=chat?result.choices[0].message.content:JSON.parse(result.choices[0].message.content); }
+    try { const result=await readJson(response,Agent.MAX_PROVIDER_BYTES);if(result.choices?.[0]?.finish_reason!=='stop')throw new Error('incomplete');report=chat?result.choices[0].message.content:JSON.parse(result.choices[0].message.content); }
     catch { return reply({error:'La IA no ha devuelto un informe completo. Inténtalo más tarde.'},502); }
-    if(chat){if(typeof report!=='string'||!report.trim()||report.length>10000)return reply({error:'No se ha recibido una respuesta válida.'},502);return reply({answer:report.trim(),model,version:Coach.VERSION});}
+    if(chat){if(typeof report!=='string'||!report.trim()||report.length>Agent.MAX_ANSWER_CHARS)return reply({error:'No se ha recibido una respuesta válida.'},502);return reply({answer:report.trim(),model,version:Coach.VERSION});}
     if(!Coach.validReport(report,facts))return reply({error:'El informe contiene referencias o campos no válidos.'},502);
     return reply({report,model,version:Coach.VERSION});
   } catch(e) { return reply({error:e.name==='TimeoutError'?'La IA ha tardado demasiado. Inténtalo más tarde.':'No se pudo completar el análisis.'},503); }
