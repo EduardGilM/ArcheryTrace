@@ -649,6 +649,7 @@ function studioMount() {
         e.preventDefault();
         e.stopPropagation();
         if (bulk.dataset.bulk === 'done') { studioClearPick(); studioSync(); return; }
+        if (bulk.dataset.bulk === 'delete') { studioDeletePick(); return; }
         studioApplyPick(bulk.dataset.bulk);
         return;
       }
@@ -957,6 +958,66 @@ function studioSync() {
   studioSyncShare();
 }
 
+function studioPickInfo() {
+  const session = typeof displayedSession === 'function' ? displayedSession() : null;
+  const shots = (session && session.shots || []).filter(Boolean);
+  const ids = new Set([...Studio.picks].map(String));
+  const times = new Set([...Studio.arrows].map(Number));
+  const groups = [];
+  shots.forEach(s => {
+    const id = String(s.set_id);
+    if (!groups.length || groups[groups.length - 1].id !== id) groups.push({id, shots: []});
+    groups[groups.length - 1].shots.push(s);
+  });
+  let ordinal = 0;
+  const named = groups.map(g => {
+    const calibration = g.shots.every(s => s.candidate);
+    if (!calibration) ordinal++;
+    return {id: g.id, name: calibration ? 'Calibración' : 'Set ' + ordinal};
+  });
+  const pickedSets = named.filter(g => ids.has(g.id));
+  const chosen = shots.filter(s => ids.has(String(s.set_id)) || (Number.isFinite(Number(s.t_ms)) && times.has(Number(s.t_ms))));
+  const n = chosen.length, ns = pickedSets.length;
+  const flechas = k => k === 1 ? 'flecha' : 'flechas';
+  let title = 'Selección';
+  if (n) {
+    if (Studio.dayIds.size) title = 'Día · ' + studioPickCount() + ' flechas';
+    else if (ns === 1) title = pickedSets[0].name + ' · ' + n + ' ' + flechas(n);
+    else if (ns > 1) title = ns + ' sets · ' + n + ' ' + flechas(n);
+    else title = n + ' ' + flechas(n);
+  }
+  return {title, deleteLabel: ns > 1 ? 'Eliminar sets' : ns === 1 ? 'Eliminar set' : 'Eliminar flechas', n, sets: ns, setName: ns === 1 ? pickedSets[0].name : '', chosen};
+}
+
+async function studioDeletePick() {
+  const info = studioPickInfo();
+  if (!info.n || !info.chosen.length) return;
+  const flechas = info.n === 1 ? 'flecha' : 'flechas';
+  const msg = info.sets === 1 ? `¿Eliminar ${info.setName} (${info.n} ${flechas})?`
+    : info.sets > 1 ? `¿Eliminar ${info.sets} sets (${info.n} ${flechas})?`
+    : `¿Eliminar ${info.n} ${flechas}?`;
+  if (typeof askConfirm === 'function' && !(await askConfirm(msg))) return;
+  const session = typeof displayedSession === 'function' ? displayedSession() : null;
+  if (!session) return;
+  const removed = new Set(info.chosen.map(s => Number(s.t_ms)));
+  session.shots = (session.shots || []).filter(s => s && !removed.has(Number(s.t_ms)));
+  if (session.live || session.sensorId) session.removed = [...new Set([...(session.removed || []), ...removed])];
+  if (typeof store !== 'undefined' && store.list && store.save) {
+    store.save(store.list().map(s => s && s.id === session.id ? session : s).filter(s => s && ((s.shots || []).length || s.live || s.sensorId)));
+  }
+  if (typeof curSess !== 'undefined' && curSess && curSess.id === session.id) curSess = session;
+  if (typeof data !== 'undefined') data = {shots: session.shots};
+  if (typeof cur !== 'undefined') cur = Math.max(0, Math.min(cur, session.shots.length - 1));
+  studioClearPick();
+  if (!session.shots.length && typeof historyMode !== 'undefined' && historyMode) {
+    if (typeof backToCurrent === 'function') backToCurrent();
+    if (typeof show === 'function') show('History');
+    return;
+  }
+  if (typeof render === 'function') render();
+  if (typeof notice === 'function') notice(info.sets ? (info.sets > 1 ? 'Sets eliminados' : 'Set eliminado') : (info.n > 1 ? 'Flechas eliminadas' : 'Flecha eliminada'));
+}
+
 function studioModes() {
   const bar = document.getElementById('pickBar');
   if (!bar) return;
@@ -965,7 +1026,9 @@ function studioModes() {
   const show = hasShots && Studio.picking && (typeof view === 'undefined' || view === 'Session');
   if (!show) { bar.classList.remove('on'); if (!hasShots) bar.hidden = true; return; }
   if (!bar.querySelector('.pickBarOn')) {
-    bar.innerHTML = '<div class="pickBarOn"><div class="setModesTop"><span id="pickCount"></span><button type="button" data-bulk="done">Hecho</button></div><div class="pickScope"><button type="button" data-scope="session">Sesión</button><button type="button" data-scope="day">Día</button></div><span class="modeSeg"><button type="button" data-bulk="warm">Calentamiento</button><button type="button" data-bulk="score">Puntuable</button><button type="button" data-bulk="">Libre</button></span></div>';
+    bar.innerHTML = '<div class="pickBarOn"><div class="pickHead"><span class="pickTitle" id="pickCount"></span><button type="button" class="pickDone" data-bulk="done">Hecho</button></div>'+
+      '<div class="pickGroup"><span class="pickLbl">Marcar como</span><div class="modeSeg"><button type="button" data-bulk="warm">Calentamiento</button><button type="button" data-bulk="score">Puntuable</button><button type="button" data-bulk="">Libre</button></div></div>'+
+      '<div class="pickFoot"><div class="pickGroup"><span class="pickLbl">Seleccionar</span><div class="pickScope"><button type="button" data-scope="session">Sesión</button><button type="button" data-scope="day">Día</button></div></div><button type="button" class="pickDelete" data-bulk="delete">Eliminar set</button></div></div>';
   }
   const header = document.querySelector('header');
   if (header) bar.style.top = Math.round(header.getBoundingClientRect().bottom) + 'px';
@@ -975,11 +1038,10 @@ function studioModes() {
     bar.classList.add('on');
   }
   const count = document.getElementById('pickCount');
-  const n = studioPickCount();
-  if (count) {
-    const noun = n === 1 ? 'flecha' : 'flechas';
-    count.textContent = '';
-  }
+  const info = studioPickInfo();
+  if (count) count.textContent = info.title;
+  const del = bar.querySelector('.pickDelete');
+  if (del) { del.textContent = info.deleteLabel; del.hidden = !info.n || Studio.dayIds.size > 0; }
   const others = studioSameDay(session);
   const full = studioSessionFull(session);
   const dayOn = full && others.every(s => Studio.dayIds.has(s.id)) && Studio.dayIds.size === others.length;
