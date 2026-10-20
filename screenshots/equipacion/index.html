@@ -55,6 +55,7 @@
     }
     .params b { color: var(--acc); font-weight: 600; }
     main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 64px; display: grid; gap: 36px; }
+    main a { color: var(--acc); }
     section h2 {
       margin: 0 0 12px; font-size: 15px; font-weight: 600;
       color: var(--txt-2); text-transform: uppercase; letter-spacing: .06em;
@@ -114,22 +115,23 @@
     <h1>Selección de material (equipación)</h1>
     <p class="sub">
       La equipación pasó de cuatro desplegables en la tarjeta de sesión a una única pregunta
-      al iniciar, una fila compacta editable y la posibilidad de cambiar a mitad de sesión.
-      Las flechas sellan la equipación con la que se tiraron, así que cada set puede mostrar
-      su propio arco y flechas.
+      al iniciar y una fila compacta. Cada flecha sella el material con el que se tiró, y cambiar
+      de material con flechas ya tiradas ya no mezcla: cierra la sesión y empieza otra
+      (ver <a href="../sesiones/">la galería de sesiones</a>).
     </p>
     <ul class="params">
       <li>pregunta · <b>1 sola vez</b></li>
-      <li>fila compacta · <b>3 chips</b></li>
-      <li>cambio en caliente · <b>sellado por flecha</b></li>
-      <li>equipación por <b>set</b></li>
+      <li>fila · <b>chips + estado</b></li>
+      <li>hoja · <b>una sola</b></li>
+      <li>cambio de material · <b>sesión nueva</b></li>
+      <li>sets antiguos · <b>etiqueta por set</b></li>
       <li>Training.key · <b>arco · v métrica</b></li>
     </ul>
   </header>
   <main>
     <section>
       <h2>Vista Sesión · antes / después</h2>
-      <p class="note">Izquierda: los cuatro desplegables (Modo, Formato, Arco, Flechas) que ocupaban la tarjeta. Derecha: una sola fila «Equipación» con arco, flechas y modo en chips.</p>
+      <p class="note">Izquierda: los cuatro desplegables (Modo, Formato, Arco, Flechas) que ocupaban la tarjeta. Derecha: una sola fila «Sesión» con el material, el modo y el estado en chips.</p>
       <div class="full">
         <figure>
           <img src="03-sesion-antes-vs-despues.png" alt="Comparativa de la tarjeta de sesión antes y después">
@@ -140,73 +142,73 @@
 
     <section>
       <h2>Arranque · una sola pregunta</h2>
-      <p class="note">Al entrar con sesión en vivo y sin flechas, la hoja «¿Con qué tiras hoy?» se abre una única vez. Después, la equipación vive en la fila compacta.</p>
+      <p class="note">Al entrar con una sesión en vivo y sin material, la hoja «¿Con qué tiras hoy?» se abre una única vez. Después, la equipación vive en la fila compacta: material elegido, modo y estado (Preparada, En vivo con sus flechas…).</p>
       <div class="side">
         <figure>
           <img src="04-despues-pregunta-inicio.png" alt="Hoja de pregunta de equipación al iniciar la sesión">
-          <figcaption><strong>«¿Con qué tiras hoy?»</strong><span class="badge">Arranque</span></figcaption>
+          <figcaption><strong>«¿Con qué tiras hoy?»</strong><span class="badge">Al arrancar</span></figcaption>
         </figure>
         <figure>
-          <img src="02-despues-sesion.png" alt="Fila compacta de equipación en la tarjeta de sesión">
-          <figcaption><strong>Fila compacta</strong><span class="badge">En sesión</span></figcaption>
+          <img src="02-despues-sesion.png" alt="Fila compacta de sesión con material y estado">
+          <figcaption><strong>La fila lo resume todo</strong><span class="badge">En sesión</span></figcaption>
         </figure>
       </div>
     </section>
 
     <section>
-      <h2>Cambio a mitad de sesión</h2>
-      <p class="note">Tocar la fila reabre la hoja en modo edición («Listo»). Las flechas anteriores conservan su equipación; las nuevas ya se sellan con la nueva.</p>
+      <h2>Cambiar de material · sesión nueva</h2>
+      <p class="note">Tocar la fila reabre la hoja en modo edición. Si la sesión ya tenía flechas, elegir otro material la cierra y empieza una nueva con ese material: el aviso lo confirma y el sensor la adopta con el siguiente tiro. Lo anterior conserva su material, flecha a flecha.</p>
       <div class="side">
         <figure>
-          <img src="08-despues-cambiar-mitad-sesion.png" alt="Hoja de equipación abierta a mitad de sesión">
-          <figcaption><strong>Cambiar con la sesión en marcha</strong><span class="badge">Hoja · Listo</span></figcaption>
+          <img src="08-despues-hoja-material.png" alt="Hoja de sesión abierta en modo edición con el material en uso">
+          <figcaption><strong>La hoja, con la sesión en marcha</strong><span class="badge">Edición</span></figcaption>
         </figure>
         <figure>
-          <img src="09-despues-tras-el-cambio.png" alt="Sesión después de cambiar la equipación">
-          <figcaption><strong>Aplicado desde esa flecha</strong><span class="badge">Después</span></figcaption>
+          <img src="09-despues-sesion-nueva.png" alt="Aviso de sesión nueva con el material elegido y la fila en estado Preparada">
+          <figcaption><strong>La anterior se cierra, la nueva espera</strong><span class="badge">Aviso + Preparada</span></figcaption>
         </figure>
       </div>
     </section>
 
     <section>
       <h2>Vista Set · equipación del set</h2>
-      <p class="note">Izquierda: el set no decía con qué material se tiró. Derecha: cada set muestra su arco y sus flechas.</p>
+      <p class="note">Izquierda: el set no decía con qué material se tiró. Derecha: la fila «Equipación del set» muestra el arco y las flechas de la flecha seleccionada.</p>
       <div class="full">
         <figure>
           <img src="07-set-antes-vs-despues.png" alt="Vista de sets antes y después con la equipación del set">
-          <figcaption><strong>Set con su propia equipación</strong><span class="badge">Antes / Después</span></figcaption>
+          <figcaption><strong>Set con su propio material</strong><span class="badge">780×1688 c/u</span></figcaption>
         </figure>
       </div>
     </section>
 
     <section>
-      <h2>Equipación por set en el listado</h2>
-      <p class="note">Cuando una sesión mezcla material, el listado de sets añade la etiqueta bajo la cabecera de cada set.</p>
+      <h2>Sesiones antiguas · etiqueta por set</h2>
+      <p class="note">Las sesiones grabadas antes de separar por material siguen mostrando la equipación set a set: bajo la cabecera de cada set aparece el arco y las flechas con que se tiró. Las sesiones nuevas ya no mezclan —cada material empieza su propia sesión—.</p>
       <div class="side">
         <figure>
-          <img src="10-despues-equipacion-por-set.png" alt="Listado de sets con la etiqueta de equipación por set">
-          <figcaption><strong>Recurvo · X10 / Compuesto · ACE</strong><span class="badge">Sets 1-4</span></figcaption>
+          <img src="11-despues-resumen-con-etiquetas.png" alt="Listado de sets con la etiqueta de equipación bajo cada cabecera">
+          <figcaption><strong>Recurvo · X10 / Compuesto · ACE</strong><span class="badge">Sets 1-3</span></figcaption>
         </figure>
         <figure>
-          <img src="11-despues-resumen-con-etiquetas.png" alt="Resumen de sesión con etiquetas de equipación por set">
-          <figcaption><strong>Resumen con etiquetas</strong><span class="badge">Sesión completa</span></figcaption>
+          <img src="10-despues-equipacion-por-set.png" alt="Detalle de los sets finales y sus acciones">
+          <figcaption><strong>Detalle y acciones</strong><span class="badge">Sets 3-4</span></figcaption>
         </figure>
       </div>
     </section>
 
     <section>
       <h2>Flujo completo · vídeo</h2>
-      <p class="note">22 s: pregunta al arrancar → elegir Compuesto/ACE → tres flechas → cambiar a Recurvo/X10 → la vista de sets muestra una equipación por set → vuelta a la sesión.</p>
+      <p class="note">21 s: pregunta al arrancar → elegir Compuesto/ACE → tres flechas → cambiar a Recurvo/X10 → aviso de sesión nueva → el sensor la adopta → historial con una sesión por arco → vuelta a la sesión.</p>
       <div class="video">
         <figure class="vwrap">
           <video src="equipacion.mp4" controls playsinline preload="metadata" poster="04-despues-pregunta-inicio.png"></video>
-          <figcaption><strong>equipacion.mp4</strong><span class="badge">780×1688 · 22 s</span></figcaption>
+          <figcaption><strong>equipacion.mp4</strong><span class="badge">780×1688 · 21 s</span></figcaption>
         </figure>
       </div>
     </section>
   </main>
   <footer>
-    Capturas y vídeo generados localmente con datos sintéticos · <code>tools/tests/session-model.test.cjs</code> cubre el sellado por flecha · solo visualización
+    Capturas y vídeo generados localmente con datos sintéticos · <code>tools/tests/sessions.test.cjs</code> cubre el sellado por flecha y el corte de sesiones · solo visualización
   </footer>
 </body>
 </html>
