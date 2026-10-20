@@ -109,64 +109,23 @@
 <body>
   <header>
     <a class="brand" href="../"><i></i> ArcheryTrace · Capturas</a>
-    <h1>Sesiones múltiples al día</h1>
+    <h1>Sesiones múltiples con una sola fila</h1>
     <p class="sub">
-      Antes solo había una sesión por día: si tirabas por la mañana con el recurvo y por la
-      tarde con el compuesto, todo acababa mezclado en la misma sesión (o perdido). Ahora cada
-      sesión se crea, se cierra y se guarda por separado, cada una con su equipación, y el sensor
-      sabe a cuál de ellas va cada flecha aunque siga emitiendo con el mismo identificador.
+      Antes solo había una sesión por día: lo que tirabas con arcos distintos acababa mezclado.
+      Ahora cada arco tiene su sesión —crear, cerrar y enrutar los tiros del sensor aunque siga
+      con el mismo identificador—, y la gestión cabe en una sola fila y una sola hoja: no piensas
+      en sesiones, piensas en material.
     </p>
     <ul class="params">
       <li>sesiones al día · <b>las que quieras</b></li>
-      <li>fila · <b>Sesión</b></li>
-      <li>hoja · <b>Sesiones de hoy</b></li>
-      <li>+ Nueva sesión · <b>y Cerrar</b></li>
+      <li>fila · <b>material + estado</b></li>
+      <li>hojas · <b>una</b></li>
+      <li>cambiar de arco · <b>2 toques</b></li>
       <li>sensor · <b>enrutado por corte</b></li>
       <li>reenvíos · <b>descartados</b></li>
     </ul>
   </header>
   <main>
-    <section>
-      <h2>Antes / después · la vista de sesión</h2>
-      <p class="note">Izquierda: una única sesión de 18 flechas mezclando dos arcos, sin forma de separarlas. Derecha: cada arco tiene su sesión; la fila «Sesión» resume cuál está activa.</p>
-      <div class="full">
-        <figure>
-          <img src="08-comparativa-sesion.png" alt="Comparativa de la vista de sesión antes y después">
-          <figcaption><strong>Una sesión mezclada frente a sesiones separadas</strong><span class="badge">780×1688 c/u</span></figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section>
-      <h2>La hoja «Sesiones de hoy»</h2>
-      <p class="note">La fila «Sesión» abre la hoja: lista las sesiones del día con su arco, flechas y estado, y permite crear una nueva o cerrar la actual. Las flechas del sensor se enrutan a la sesión preparada aunque el identificador del sensor no cambie.</p>
-      <div class="side">
-        <figure>
-          <img src="04-despues-sheet-sesiones.png" alt="Hoja de sesiones de hoy con la sesión en vivo seleccionada">
-          <figcaption><strong>Lista del día + Nueva/Cerrar</strong><span class="badge">Hoja</span></figcaption>
-        </figure>
-        <figure>
-          <img src="07-despues-dos-sesiones-hoy.png" alt="Hoja de sesiones tras tirar con el segundo arco">
-          <figcaption><strong>Dos arcos, dos sesiones hoy</strong><span class="badge">Después</span></figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section>
-      <h2>Flujo · de una sesión a dos</h2>
-      <p class="note">«Nueva sesión» sella la actual, pregunta el material y enruta los próximos tiros del sensor a la sesión nueva. La sesión anterior queda cerrada con su equipación.</p>
-      <div class="side">
-        <figure>
-          <img src="05-despues-pregunta-nueva.png" alt="Pregunta de equipación al crear una nueva sesión">
-          <figcaption><strong>«¿Con qué tiras hoy?»</strong><span class="badge">Nueva sesión</span></figcaption>
-        </figure>
-        <figure>
-          <img src="06-despues-tras-nueva.png" alt="Vista de sesión tras crear la nueva sesión y tirar">
-          <figcaption><strong>Tiras con el nuevo arco</strong><span class="badge">Sensor</span></figcaption>
-        </figure>
-      </div>
-    </section>
-
     <section>
       <h2>El problema de partida</h2>
       <p class="note">Sin gestión de sesiones, cambiar de arco a mitad de día solo podía reflejarse etiquetando la equipación por set dentro de la única sesión.</p>
@@ -178,6 +137,73 @@
         <figure>
           <img src="02-antes-sets-mezclados.png" alt="Vista de sets con equipación distinta por set">
           <figcaption><strong>Equipación por set</strong><span class="badge old">Antes</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>La versión intermedia · dos filas y dos hojas</h2>
+      <p class="note">La primera solución separaba las sesiones, pero añadía una fila «Equipación» junto a la fila «Sesión», y «+ Nueva sesión» abría una segunda hoja para elegir el material: cambiar de arco costaba cuatro toques y cruzaba una hoja por otra.</p>
+      <div class="side">
+        <figure>
+          <img src="03-antes-fila-doble.png" alt="Vista de sesión con dos filas, Equipación y Sesión">
+          <figcaption><strong>Dos filas con el mismo formato</strong><span class="badge old">Antes</span></figcaption>
+        </figure>
+        <figure>
+          <img src="04-antes-hoja-sesiones.png" alt="Hoja con la lista de sesiones del día">
+          <figcaption><strong>Hoja de lista + botones</strong><span class="badge old">Antes</span></figcaption>
+        </figure>
+        <figure>
+          <img src="05-antes-cuatro-tapas.png" alt="Segunda hoja para elegir el material de la sesión nueva">
+          <figcaption><strong>«Nueva sesión» encadenaba otra hoja</strong><span class="badge old">Toque 3 de 4</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Ahora · una sola fila</h2>
+      <p class="note">La fila «Sesión» lo resume todo: el material elegido, el modo y el estado (Preparada, En vivo con sus flechas o Sin sesión). Desaparece la fila «Equipación».</p>
+      <div class="full">
+        <figure>
+          <img src="12-comparativa-filas.png" alt="Comparativa: antes dos filas, después una sola fila">
+          <figcaption><strong>De dos filas a una</strong><span class="badge">780×1688 c/u</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Ahora · una sola hoja</h2>
+      <p class="note">La hoja responde a una sola pregunta: ¿con qué tiras? Equipación, modo, formato y «Cerrar sesión» en el mismo sitio. Se eliminaron «+ Nueva sesión» y la lista del día —para mirar o cambiar de sesión está el Historial—.</p>
+      <div class="full">
+        <figure>
+          <img src="13-comparativa-hojas.png" alt="Comparativa: antes la lista de sesiones, después una sola hoja con el material">
+          <figcaption><strong>De la lista de sesiones al material</strong><span class="badge">780×1688 c/u</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Cambiar de arco · dos toques</h2>
+      <p class="note">Tocas la fila y tocas el material. Si no había sesión (o estaba cerrada) se prepara una con ese material; si la actual aún no tenía flechas, se cambia en el sitio; y si ya había flechas con otro arco, la sesión se cierra sola y empieza la nueva. Los próximos tiros del sensor caen en ella aunque el identificador no cambie.</p>
+      <div class="side">
+        <figure>
+          <img src="08-despues-dos-tapas.png" alt="Tras tocar otro material: aviso de sesión nueva y fila en estado Preparada">
+          <figcaption><strong>La anterior se cierra, la nueva espera</strong><span class="badge">Sesión nueva</span></figcaption>
+        </figure>
+        <figure>
+          <img src="09-despues-tras-tirar.png" alt="Fila de sesión con el nuevo material y estado En vivo tras recibir tiros del sensor">
+          <figcaption><strong>El sensor la adopta y sigue en vivo</strong><span class="badge">Sensor</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Cada arco, su sesión</h2>
+      <p class="note">El mismo día en el historial: por la mañana recurvo, por la tarde compuesto, y ahora también el tramo nuevo con el recurvo. Cada sesión guarda su material, su puntuación y sus flechas por separado.</p>
+      <div class="full">
+        <figure>
+          <img src="11-comparativa-mezcla.png" alt="Comparativa: antes una sesión mezclada, después el historial con una sesión por arco">
+          <figcaption><strong>Una sesión mezclada frente a una sesión por arco</strong><span class="badge">780×1688 c/u</span></figcaption>
         </figure>
       </div>
     </section>
