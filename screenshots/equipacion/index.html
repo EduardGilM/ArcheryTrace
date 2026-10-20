@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>ArcheryTrace · Equipación</title>
+  <style>
+    :root {
+      --bg: #0b0b0e;
+      --surface: #141418;
+      --line: rgba(255,255,255,.08);
+      --txt: #f2f2f5;
+      --txt-2: #9a9aa3;
+      --acc: #FF8A1F;
+      --acc-soft: rgba(255,138,31,.14);
+      --acc-line: rgba(255,138,31,.45);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 15px/1.5 Geist, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--txt);
+      min-height: 100dvh;
+    }
+    header {
+      padding: 28px 20px 8px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      color: var(--acc); font-weight: 600; letter-spacing: .04em;
+      font-size: 13px; text-transform: uppercase;
+      text-decoration: none;
+    }
+    .brand:hover { text-decoration: underline; }
+    .brand i {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--acc);
+      box-shadow: 0 0 12px rgba(255,138,31,.7);
+    }
+    h1 { margin: 10px 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -.02em; }
+    .sub { margin: 0; color: var(--txt-2); max-width: 62ch; }
+    .params {
+      margin: 16px 0 0; padding: 0; list-style: none;
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .params li {
+      font-size: 12.5px; color: var(--txt-2);
+      background: var(--surface); border: 1px solid var(--line);
+      padding: 6px 12px; border-radius: 999px;
+      font-family: ui-monospace, Geist Mono, monospace;
+    }
+    .params b { color: var(--acc); font-weight: 600; }
+    main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 64px; display: grid; gap: 36px; }
+    section h2 {
+      margin: 0 0 12px; font-size: 15px; font-weight: 600;
+      color: var(--txt-2); text-transform: uppercase; letter-spacing: .06em;
+    }
+    section p.note { margin: -4px 0 14px; color: var(--txt-2); font-size: 13.5px; max-width: 70ch; }
+    .side {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .side figure, .full figure, .video figure {
+      margin: 0;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .side img, .full img {
+      display: block; width: 100%; height: auto;
+      background: #000;
+    }
+    figcaption {
+      padding: 10px 14px 12px;
+      font-size: 13px;
+      color: var(--txt-2);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    figcaption strong { color: var(--txt); font-weight: 600; }
+    .badge {
+      font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--acc); background: var(--acc-soft);
+      border: 1px solid var(--acc-line);
+      padding: 3px 9px; border-radius: 999px;
+      align-self: center;
+      white-space: nowrap;
+    }
+    .badge.old { color: #f0506e; background: rgba(240,80,110,.12); border-color: rgba(240,80,110,.4); }
+    .full img { max-height: 900px; object-fit: contain; }
+    video { display: block; width: 100%; height: auto; background: #000; }
+    .vwrap { max-width: 430px; margin: 0 auto; }
+    footer {
+      max-width: 1100px; margin: 0 auto; padding: 0 20px 40px;
+      color: var(--txt-2); font-size: 12.5px;
+    }
+    code { font-family: ui-monospace, Geist Mono, monospace; font-size: 12px; color: var(--txt-2); }
+    @media (max-width: 720px) {
+      .side { grid-template-columns: 1fr; }
+      h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="../"><i></i> ArcheryTrace · Capturas</a>
+    <h1>Selección de material (equipación)</h1>
+    <p class="sub">
+      La equipación pasó de cuatro desplegables en la tarjeta de sesión a una única pregunta
+      al iniciar, una fila compacta editable y la posibilidad de cambiar a mitad de sesión.
+      Las flechas sellan la equipación con la que se tiraron, así que cada set puede mostrar
+      su propio arco y flechas.
+    </p>
+    <ul class="params">
+      <li>pregunta · <b>1 sola vez</b></li>
+      <li>fila compacta · <b>3 chips</b></li>
+      <li>cambio en caliente · <b>sellado por flecha</b></li>
+      <li>equipación por <b>set</b></li>
+      <li>Training.key · <b>arco · v métrica</b></li>
+    </ul>
+  </header>
+  <main>
+    <section>
+      <h2>Vista Sesión · antes / después</h2>
+      <p class="note">Izquierda: los cuatro desplegables (Modo, Formato, Arco, Flechas) que ocupaban la tarjeta. Derecha: una sola fila «Equipación» con arco, flechas y modo en chips.</p>
+      <div class="full">
+        <figure>
+          <img src="03-sesion-antes-vs-despues.png" alt="Comparativa de la tarjeta de sesión antes y después">
+          <figcaption><strong>Misma sesión, dos maneras de elegir material</strong><span class="badge">780×1688 c/u</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Arranque · una sola pregunta</h2>
+      <p class="note">Al entrar con sesión en vivo y sin flechas, la hoja «¿Con qué tiras hoy?» se abre una única vez. Después, la equipación vive en la fila compacta.</p>
+      <div class="side">
+        <figure>
+          <img src="04-despues-pregunta-inicio.png" alt="Hoja de pregunta de equipación al iniciar la sesión">
+          <figcaption><strong>«¿Con qué tiras hoy?»</strong><span class="badge">Arranque</span></figcaption>
+        </figure>
+        <figure>
+          <img src="02-despues-sesion.png" alt="Fila compacta de equipación en la tarjeta de sesión">
+          <figcaption><strong>Fila compacta</strong><span class="badge">En sesión</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Cambio a mitad de sesión</h2>
+      <p class="note">Tocar la fila reabre la hoja en modo edición («Listo»). Las flechas anteriores conservan su equipación; las nuevas ya se sellan con la nueva.</p>
+      <div class="side">
+        <figure>
+          <img src="08-despues-cambiar-mitad-sesion.png" alt="Hoja de equipación abierta a mitad de sesión">
+          <figcaption><strong>Cambiar con la sesión en marcha</strong><span class="badge">Hoja · Listo</span></figcaption>
+        </figure>
+        <figure>
+          <img src="09-despues-tras-el-cambio.png" alt="Sesión después de cambiar la equipación">
+          <figcaption><strong>Aplicado desde esa flecha</strong><span class="badge">Después</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Vista Set · equipación del set</h2>
+      <p class="note">Izquierda: el set no decía con qué material se tiró. Derecha: cada set muestra su arco y sus flechas.</p>
+      <div class="full">
+        <figure>
+          <img src="07-set-antes-vs-despues.png" alt="Vista de sets antes y después con la equipación del set">
+          <figcaption><strong>Set con su propia equipación</strong><span class="badge">Antes / Después</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Equipación por set en el listado</h2>
+      <p class="note">Cuando una sesión mezcla material, el listado de sets añade la etiqueta bajo la cabecera de cada set.</p>
+      <div class="side">
+        <figure>
+          <img src="10-despues-equipacion-por-set.png" alt="Listado de sets con la etiqueta de equipación por set">
+          <figcaption><strong>Recurvo · X10 / Compuesto · ACE</strong><span class="badge">Sets 1-4</span></figcaption>
+        </figure>
+        <figure>
+          <img src="11-despues-resumen-con-etiquetas.png" alt="Resumen de sesión con etiquetas de equipación por set">
+          <figcaption><strong>Resumen con etiquetas</strong><span class="badge">Sesión completa</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Flujo completo · vídeo</h2>
+      <p class="note">22 s: pregunta al arrancar → elegir Compuesto/ACE → tres flechas → cambiar a Recurvo/X10 → la vista de sets muestra una equipación por set → vuelta a la sesión.</p>
+      <div class="video">
+        <figure class="vwrap">
+          <video src="equipacion.mp4" controls playsinline preload="metadata" poster="04-despues-pregunta-inicio.png"></video>
+          <figcaption><strong>equipacion.mp4</strong><span class="badge">780×1688 · 22 s</span></figcaption>
+        </figure>
+      </div>
+    </section>
+  </main>
+  <footer>
+    Capturas y vídeo generados localmente con datos sintéticos · <code>tools/tests/session-model.test.cjs</code> cubre el sellado por flecha · solo visualización
+  </footer>
+</body>
+</html>
