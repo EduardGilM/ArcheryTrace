@@ -60,10 +60,8 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .gsForm input::placeholder{color:var(--txt-3)}
 .gsSave{min-height:44px;border:1px solid transparent;border-radius:12px;background:var(--acc-soft);color:var(--acc);font:inherit;font-size:13.5px;font-weight:600}
 .gsFoot{display:grid;gap:8px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
-.gsConfirm{display:grid;grid-template-columns:auto 1fr;gap:8px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
+.gsConfirm{display:grid;gap:8px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
 .gsConfirm button{min-height:48px}
-.gsConfirm .gsGhost{padding:0 18px;white-space:nowrap}
-.gsConfirm .gsGo{width:auto;font-size:14px;padding:0 14px}
 .gsGo{width:100%;min-height:48px;border:0;border-radius:999px;background:#fff;color:#111;font:inherit;font-size:15px;font-weight:600}
 .gsGo.acc{background:var(--acc);color:#151006}
 .gsGhost{width:100%;min-height:44px;border:1px solid var(--line);border-radius:999px;background:none;color:var(--txt-2);font:inherit;font-size:14px}
@@ -103,7 +101,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="notice" role="status" hid
 <button type="button" class="gsSave" id="gearSave">Guardar y usar</button>
 </div>
 </div>
-<div class="gsConfirm" id="gearConfirm" hidden><button type="button" class="gsGhost" id="gearConfirmNo">Cancelar</button><button type="button" class="gsGo acc" id="gearConfirmYes">Empezar</button></div>
+<div class="gsConfirm" id="gearConfirm" hidden><button type="button" class="gsGo acc" id="gearConfirmYes">Empezar</button></div>
 <div class="gsFoot" id="gsFoot"><button type="button" class="gsGo" id="gearGo">Listo</button><button type="button" class="gsGhost" id="sessEnd" hidden>Cerrar sesión</button></div>
 </div></div>`);
 const gear={get:()=>{try{const g=JSON.parse(localStorage.getItem('atGear'));return {bows:Array.isArray(g?.bows)?g.bows:[],arrows:Array.isArray(g?.arrows)?g.arrows:[],setups:Array.isArray(g?.setups)?g.setups.filter(x=>x&&typeof x==='object'):null,last:g?.last&&typeof g.last==='object'?g.last:null};}catch(e){return {bows:[],arrows:[],setups:null,last:null};}},
@@ -334,7 +332,6 @@ $('gearBtn').onclick=()=>{if(historyMode)return;openGear(displayedSession()?'edi
 $('setGearBtn').onclick=()=>{if(historyMode)return;openGear('edit');};
 $('gearClose').onclick=closeGear;
 $('gearGo').onclick=gearGo;
-$('gearConfirmNo').onclick=cancelGearConfirm;
 $('gearConfirmYes').onclick=()=>{
   const p=pendingSetup;if(!p)return;
   cancelGearConfirm();
