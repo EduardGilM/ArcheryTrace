@@ -1,63 +1,252 @@
 // Equipo y calibracion del sensor desde el movil.
 const $ = id => document.getElementById(id), escapeText = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const FMT_NAMES={wa:'World Archery',vegas:'Vegas',lancaster:'Lancaster'};
 document.head.insertAdjacentHTML('beforeend',`<style>
 .training{display:grid;gap:10px;font-size:13px;color:var(--txt-2);line-height:1.5}
 .training.card{padding:14px}
 .training label{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--txt);font-size:14px;font-weight:600}
 .training b{color:var(--txt)}
-#trainingPanel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 14px 4px}
+#trainingPanel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 14px 6px}
 #trainingStatus{font-size:15px;font-weight:600;color:var(--txt);margin-bottom:4px}
-.picker+.picker{border-top:1px solid var(--line)}
-.pickRow{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:none;color:var(--txt-2);padding:12px 0;font-size:14px;min-height:48px}
-.pickRow b{color:var(--txt);font-weight:500;display:flex;align-items:center;gap:6px}
-.pickRow b::after{content:'';width:12px;height:12px;background:var(--txt-3);-webkit-mask:var(--i-caret) center/contain no-repeat;mask:var(--i-caret) center/contain no-repeat;transform:rotate(90deg)}
-.sheet{display:flex;flex-direction:column;gap:6px;padding:0 0 12px}
-.sheet[hidden]{display:none}
-.sheet button{display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);color:var(--txt);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;min-height:46px;text-align:left}
-.sheet button span{color:var(--txt-3);font-size:12.5px}
-.sheet button.on{border-color:var(--acc-line);background:var(--acc-soft);color:var(--acc);font-weight:600}
-#bowList,#arrowList{display:flex;flex-direction:column;gap:6px}
-.gearRow{display:flex;gap:6px}.gearRow>[data-n]{flex:1;min-width:0}.sheet .deleteGear{flex:none;width:46px;justify-content:center;color:var(--danger)}.deleteGear svg{width:18px;height:18px}.sheet .deleteGear.confirm{width:auto;padding:0 14px;background:var(--danger);color:#fff;font-size:13px;font-weight:600}
-.addItem{display:flex;gap:6px}
-.addItem input{flex:1;min-width:0;background:var(--surface-2);color:var(--txt);border:1px solid var(--line-2);border-radius:12px;padding:10px 12px;min-height:44px}
-.addItem input::placeholder{color:var(--txt-3)}
-.addItem button{background:var(--acc-soft);color:var(--acc);border:1px solid var(--acc-line);border-radius:12px;padding:10px 16px;font-weight:600;min-height:44px}
+.gearBtn{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);color:var(--txt-2);padding:12px 0;min-height:56px;text-align:left;font:inherit}
+.gearBtn .col{flex:1;min-width:0;display:grid;gap:6px}
+.gearBtn .lbl{font-size:11.5px;letter-spacing:.03em;color:var(--txt-3)}
+.gearBtn .chips{display:flex;flex-wrap:wrap;gap:6px}
+.gearBtn .chip{max-width:100%;font-family:var(--font);font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gearBtn .chip.mode{background:var(--acc-soft);border-color:var(--acc-line);color:var(--acc)}
+.gearBtn .chip.empty{color:var(--acc);border-color:var(--acc-line);background:var(--acc-soft)}
+.gearBtn .r{flex:none;display:flex}
+.gearBtn .r::after{content:'';width:13px;height:13px;background:var(--txt-3);-webkit-mask:var(--i-caret) center/contain no-repeat;mask:var(--i-caret) center/contain no-repeat}
+.gearBtn.ro{cursor:default}
+.gearBtn.ro .r::after{display:none}
+#setGearCard .gearBtn{border-top:none;padding-top:0}
+#setGearCard #setState{font-size:12.5px;color:var(--txt-3);padding-top:2px}
+#gearSheet:not([hidden]){display:flex;position:fixed;inset:0;z-index:65;background:rgba(6,7,9,.74);align-items:flex-end;justify-content:center;padding:16px}
+#gearSheet .gsPanel{display:flex;flex-direction:column;width:100%;max-width:460px;max-height:calc(100dvh - 48px);background:var(--surface);border:1px solid var(--line-2);border-radius:20px;overflow:hidden;animation:gsIn .2s ease-out}
+@keyframes gsIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){#gearSheet .gsPanel{animation:none}}
+.gsHead{display:flex;align-items:center;gap:10px;padding:16px 16px 4px}
+.gsHead b{font-size:16px;font-weight:600;color:var(--txt)}
+.gsX{margin-left:auto;width:34px;height:34px;border:0;border-radius:50%;background:var(--surface-2);color:var(--txt-2);display:grid;place-items:center}
+.gsX svg{width:16px;height:16px}
+.gsBody{display:flex;flex-direction:column;gap:8px;padding:8px 16px 4px;overflow:auto}
+.gsLbl{font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--txt-3);margin-top:6px}
+.gsLbl[hidden],.gsSeg[hidden]{display:none}
+.gsCards{display:grid;gap:7px}
+.gsRow{display:flex;gap:6px}
+.gsCard{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:10px 12px;color:var(--txt);min-height:56px;text-align:left;font:inherit}
+.gsCard .t{flex:1;min-width:0}
+.gsCard b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gsCard small{display:block;font-size:12.5px;color:var(--txt-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gsCard.on{border-color:var(--acc-line);background:var(--acc-soft)}
+.gsCard.on b,.gsCard.on small{color:var(--acc)}
+.gsCard .tick{flex:none;width:20px;height:20px;color:var(--acc)}
+.gsCard .tick:empty{display:none}
+.gsCard .tick svg{width:20px;height:20px}
+.gsDel{flex:none;width:44px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);color:var(--txt-3);display:grid;place-items:center}
+.gsDel svg{width:17px;height:17px}
+.gsDel:active{color:var(--danger);border-color:var(--danger)}
+.gsEmpty{margin:0;font-size:13px;color:var(--txt-3);padding:2px 0 0}
+.gsSeg{display:flex;gap:6px}
+.gsSeg button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;color:var(--txt);font:inherit;font-size:13.5px;padding:6px 4px}
+.gsSeg button small{font-size:11px;color:var(--txt-3)}
+.gsSeg button.on{border-color:var(--acc-line);background:var(--acc-soft);color:var(--acc);font-weight:600}
+.gsSeg button.on small{color:var(--acc)}
+.gsNew{width:100%;min-height:44px;border:1px dashed var(--line-2);border-radius:12px;background:none;color:var(--txt-2);font:inherit;font-size:13.5px}
+.gsForm{display:grid;gap:7px;padding-top:2px}
+.gsForm[hidden]{display:none}
+.gsForm input{width:100%;min-height:46px;background:var(--surface-2);color:var(--txt);border:1px solid var(--line-2);border-radius:12px;padding:10px 12px;font:inherit;font-size:14px}
+.gsForm input::placeholder{color:var(--txt-3)}
+.gsSave{min-height:44px;border:1px solid var(--acc-line);border-radius:12px;background:var(--acc-soft);color:var(--acc);font:inherit;font-size:13.5px;font-weight:600}
+.gsFoot{padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
+.gsGo{width:100%;min-height:48px;border:0;border-radius:999px;background:#fff;color:#111;font:inherit;font-size:15px;font-weight:600}
+.gearTag{display:block;font-size:11.5px;color:var(--txt-3);padding:8px 14px 0}
 #comparison:empty,#setState:empty,#volume:empty{display:none}
 #notice{position:fixed;bottom:84px;left:16px;right:16px;z-index:20;padding:12px 14px;background:var(--surface-3);border:1px solid var(--line-2);color:var(--txt);border-radius:12px;font-size:13px;box-shadow:0 12px 30px rgba(0,0,0,.4)}
 </style>`);
 $('sessionHero').insertAdjacentHTML('afterend',`<section class="training" id="trainingPanel"><div id="trainingStatus">Equipo</div>
-<div class="picker" id="modePicker">
-<button class="pickRow" id="modeRow"><span>Modo</span><b id="modeVal">–</b></button>
-<div class="sheet" id="modeSheet" hidden>
-<button data-v="Indoor">Indoor<span>3 flechas</span></button>
-<button data-v="Outdoor">Outdoor<span>6 flechas</span></button>
-<button data-v="Libre">Libre<span>sin tope</span></button>
-</div></div>
-<div class="picker" id="formatPicker" hidden>
-<button class="pickRow" id="formatRow"><span>Formato</span><b id="formatVal">Vegas</b></button>
-<div class="sheet" id="formatSheet" hidden>
-<button data-fmt="wa">World Archery<span>10, 9</span></button>
-<button data-fmt="vegas">Vegas<span>X, 10, 9</span></button>
-<button data-fmt="lancaster">Lancaster<span>11, 10, 9</span></button>
-</div></div>
-<div class="picker" id="bowPicker">
-<button class="pickRow" id="bowRow"><span>Arco</span><b id="bowVal">–</b></button>
-<div class="sheet" id="bowSheet" hidden><div id="bowList"></div>
-<div class="addItem"><input id="bowName" placeholder="Nombre del arco" maxlength="24"><button id="bowAdd">Añadir</button></div></div>
-</div>
-<div class="picker" id="arrowPicker">
-<button class="pickRow" id="arrowRow"><span>Flechas</span><b id="arrowVal">–</b></button>
-<div class="sheet" id="arrowSheet" hidden><div id="arrowList"></div>
-<div class="addItem"><input id="arrowName" placeholder="Nombre de las flechas" maxlength="24"><button id="arrowAdd">Añadir</button></div></div>
-</div></section>`);
-$('vSet').querySelector('.deleteAction').insertAdjacentHTML('beforebegin',`<section class="training"><div id="setState"></div></section>`);
+<button type="button" class="gearBtn" id="gearBtn"><span class="col"><span class="lbl">Equipación</span><span class="chips" id="gearChips"></span></span><span class="r"></span></button></section>`);
+$('setbar').insertAdjacentHTML('afterend',`<section class="training card" id="setGearCard" hidden>
+<button type="button" class="gearBtn" id="setGearBtn"><span class="col"><span class="lbl">Equipación del set</span><span class="chips" id="setGearChips"></span></span><span class="r"></span></button>
+<div id="setState"></div></section>`);
 $('vProgress').insertAdjacentHTML('afterbegin',`<section class="training card"><label>Equipo <select id="progressProfile" onchange="renderProgress()"></select></label><div id="volume"></div></section>`);
-document.body.insertAdjacentHTML('beforeend','<div id="notice" role="status" hidden></div>');
-const gear={get:()=>{try{const g=JSON.parse(localStorage.getItem('atGear'));return {bows:Array.isArray(g?.bows)?g.bows:[],arrows:Array.isArray(g?.arrows)?g.arrows:[]};}catch(e){return {bows:[],arrows:[]};}},
+document.body.insertAdjacentHTML('beforeend','<div id="notice" role="status" hidden></div>'+
+`<div id="gearSheet" hidden role="dialog" aria-modal="true" aria-labelledby="gearTitle">
+<div class="gsPanel">
+<div class="gsHead"><b id="gearTitle">Equipación y modo</b><button type="button" class="gsX" id="gearClose" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<div class="gsBody">
+<div class="gsLbl">Equipación</div>
+<div class="gsCards" id="gearCards"></div>
+<div class="gsLbl">Modo</div>
+<div class="gsSeg" id="gearModes">
+<button type="button" data-v="Indoor">Indoor<small>3 flechas</small></button>
+<button type="button" data-v="Outdoor">Outdoor<small>6 flechas</small></button>
+<button type="button" data-v="Libre">Libre<small>sin tope</small></button>
+</div>
+<div class="gsLbl" id="gearFmtLbl">Formato</div>
+<div class="gsSeg" id="gearFormats">
+<button type="button" data-fmt="wa">WA<small>10, 9</small></button>
+<button type="button" data-fmt="vegas">Vegas<small>X, 10, 9</small></button>
+<button type="button" data-fmt="lancaster">Lancaster<small>11, 10, 9</small></button>
+</div>
+<button type="button" class="gsNew" id="gearNew">+ Nueva equipación</button>
+<div class="gsForm" id="gearForm" hidden>
+<input id="gearBowName" placeholder="Nombre del arco" maxlength="24" aria-label="Nombre del arco">
+<input id="gearArrowName" placeholder="Nombre de las flechas" maxlength="24" aria-label="Nombre de las flechas">
+<button type="button" class="gsSave" id="gearSave">Guardar y usar</button>
+</div>
+</div>
+<div class="gsFoot"><button type="button" class="gsGo" id="gearGo">Listo</button></div>
+</div></div>`);
+const gear={get:()=>{try{const g=JSON.parse(localStorage.getItem('atGear'));return {bows:Array.isArray(g?.bows)?g.bows:[],arrows:Array.isArray(g?.arrows)?g.arrows:[],setups:Array.isArray(g?.setups)?g.setups.filter(x=>x&&typeof x==='object'):null,last:g?.last&&typeof g.last==='object'?g.last:null};}catch(e){return {bows:[],arrows:[],setups:null,last:null};}},
   save:g=>localStorage.setItem('atGear',JSON.stringify(g))};
-function closeSheets(except){['modeSheet','formatSheet','bowSheet','arrowSheet'].forEach(id=>{const n=$(id);if(n)n.hidden=id!==except;});}
-['modeRow','formatRow','bowRow','arrowRow'].forEach(id=>{const n=$(id);if(n)n.onclick=()=>{const sh=$(id.replace('Row','Sheet'));closeSheets(sh.hidden?sh.id:null);};});
-function sendCmd(action,value){const s=displayedSession();if(s?.live&&s.sensorId&&window.Native?.command){const error=Native.command(JSON.stringify({sid:s.sensorId,action,value}));if(error)notice(error);}}
+// Las equipaciones son combinaciones arco + flechas; las viejas se derivan de lo ya tirado.
+function setupList(){
+  const g=gear.get();
+  if(Array.isArray(g.setups)&&g.setups.length) return g.setups;
+  const out=[];
+  store.list().slice().sort((a,b)=>b.id-a.id).forEach(s=>{const bow=s.bow||'',arrows=s.arrows||'';if(!bow&&!arrows)return;if(!out.some(x=>x.bow===bow&&x.arrows===arrows))out.push({bow,arrows,usedAt:s.id});});
+  g.bows.forEach(b=>{if(!out.some(x=>x.bow===b))out.push({bow:b,arrows:g.arrows[0]||'',usedAt:0});});
+  if(!out.length&&g.arrows.length)out.push({bow:'',arrows:g.arrows[0],usedAt:0});
+  const saved=gear.get(); saved.setups=out.slice(0,12); gear.save(saved);
+  return saved.setups;
+}
+function rememberSetup(bow,arrows){
+  if(!bow&&!arrows)return;
+  const g=gear.get(), list=Array.isArray(g.setups)&&g.setups.length?g.setups:setupList();
+  g.setups=[{bow,arrows,usedAt:Date.now()},...list.filter(x=>!(x.bow===bow&&x.arrows===arrows))].slice(0,12);
+  if(bow&&!g.bows.includes(bow))g.bows.push(bow);
+  if(arrows&&!g.arrows.includes(arrows))g.arrows.push(arrows);
+  gear.save(g);
+}
+function gearState(){
+  const s=displayedSession(), l=gear.get().last||{};
+  if(s) return {bow:s.bow||'',arrows:s.arrows||'',mode:s.mode||l.mode||'Indoor',fmt:FMT_NAMES[s.scoreFormat]?s.scoreFormat:(l.fmt||'vegas'),session:s};
+  return {bow:l.bow||'',arrows:l.arrows||'',mode:l.mode||'Indoor',fmt:l.fmt||'vegas',session:null};
+}
+function rememberLast(){const st=gearState(),g=gear.get();g.last={bow:st.bow,arrows:st.arrows,mode:st.mode,fmt:st.fmt};gear.save(g);}
+function hydrateGear(s){
+  if(!s||s.bow||s.arrows||s.mode) return s;
+  const l=gear.get().last;
+  if(!l) return s;
+  s.bow=l.bow||null; s.arrows=l.arrows||null;
+  if(l.mode){s.mode=l.mode;s.target=l.mode==='Indoor'?3:l.mode==='Outdoor'?6:0;if(l.mode==='Indoor')s.scoreFormat=l.fmt||'vegas';}
+  return s;
+}
+function gearChips(st,withMode){
+  const bits=[];
+  if(st.bow)bits.push(st.bow);
+  if(st.arrows)bits.push(st.arrows);
+  if(withMode!==false){const m=[st.mode,st.mode==='Indoor'?FMT_NAMES[st.fmt]:''].filter(Boolean).join(' · ');if(m)bits.push(m);}
+  return bits;
+}
+function renderGear(){
+  const st=gearState(), bits=gearChips(st);
+  $('gearChips').innerHTML=bits.length?bits.map(t=>`<span class="chip${/^(Indoor|Outdoor|Libre)/.test(t)?' mode':''}">${escapeText(t)}</span>`).join(''):'<span class="chip empty">Elige tu material</span>';
+  $('gearBtn').setAttribute('aria-label',bits.length?bits.join(', ')+'. Toca para cambiar':'Elegir equipación');
+  if(!$('gearSheet').hidden)paintGear();
+}
+function applySetup(bow,arrows){
+  if(historyMode)return;
+  const s=displayedSession();
+  rememberSetup(bow,arrows);
+  if(s){s.bow=bow||null;s.arrows=arrows||null;saveSession(s);if(bow)sendCmd('profile',bow);}
+  rememberLast(); render();
+}
+function applyMode(mode){
+  if(historyMode)return false;
+  const s=displayedSession(); if(!s)return false;
+  s.mode=mode;s.tanda=false;s.roundDone=Training.roundComplete(s);s.target=mode==='Indoor'?3:mode==='Outdoor'?6:0;
+  if(mode==='Indoor'&&!['wa','vegas','lancaster'].includes(s.scoreFormat))s.scoreFormat='vegas';
+  saveSession(s);sendCmd('mode',mode);rememberLast();render();return true;
+}
+function applyFormat(fmt){
+  if(historyMode)return false;
+  const s=displayedSession(); if(!s||s.mode!=='Indoor')return false;
+  s.scoreFormat=fmt;saveSession(s);rememberLast();render();return true;
+}
+function removeSetup(i){
+  if(historyMode)return;
+  const list=setupList(), x=list[i]; if(!x)return;
+  const rest=list.filter((_,j)=>j!==i), g=gear.get();
+  const stillBow=rest.some(y=>y.bow===x.bow), stillArrows=rest.some(y=>y.arrows===x.arrows);
+  g.setups=rest;
+  if(!stillBow&&x.bow)g.bows=g.bows.filter(n=>n!==x.bow);
+  if(!stillArrows&&x.arrows)g.arrows=g.arrows.filter(n=>n!==x.arrows);
+  gear.save(g);
+  if(x.bow&&!stillBow&&window.Native?.command){
+    const s=displayedSession(), error=Native.command(JSON.stringify({sid:s?.sensorId||'',action:'deleteProfile',value:x.bow}));
+    if(error){notice('No se pudo eliminar el preset: '+error);paintGear();return;}
+  }
+  if(calibrationState()?.profile===x.bow)localStorage.removeItem('atCalibration');
+  const s=displayedSession();
+  if(s&&s.bow===x.bow&&s.arrows===x.arrows){s.bow=null;s.arrows=null;saveSession(s);}
+  paintGear(); render(); notice('Equipación quitada');
+}
+function openGear(mode){
+  const s=displayedSession();
+  window.gearAskedMode=mode||'edit';
+  if(s&&historyMode)return;
+  if(s&&!s.gearAsked){s.gearAsked=true;saveSession(s);}
+  $('gearSheet').hidden=false;
+  $('gearForm').hidden=!!setupList().length;
+  paintGear();
+}
+function closeGear(){
+  if($('gearSheet').hidden)return;
+  $('gearSheet').hidden=true;
+  const s=displayedSession();
+  if(s&&!historyMode&&!s.mode){const st=gearState();applyMode(st.mode);}
+}
+function paintGear(){
+  const st=gearState(), list=setupList();
+  $('gearCards').innerHTML=list.length?list.map((x,i)=>{
+    const on=!!st.session&&x.bow===st.bow&&x.arrows===st.arrows;
+    const name=[x.bow,x.arrows].filter(Boolean).join(' · ')||'Equipación';
+    return `<div class="gsRow"><button type="button" class="gsCard${on?' on':''}" data-i="${i}"><span class="t"><b>${escapeText(x.bow||'Sin arco')}</b><small>${escapeText(x.arrows||'Sin flechas')}</small></span><span class="tick">${on?CHECK:''}</span></button><button type="button" class="gsDel" data-del="${i}" aria-label="Quitar ${escapeText(name)}">${TRASH}</button></div>`;
+  }).join(''):'<p class="gsEmpty">Todavía no tienes ninguna equipación. Crea la primera aquí abajo.</p>';
+  $('gearModes').querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===st.mode));
+  $('gearFmtLbl').hidden=st.mode!=='Indoor';
+  $('gearFormats').hidden=st.mode!=='Indoor';
+  $('gearFormats').querySelectorAll('[data-fmt]').forEach(b=>b.classList.toggle('on',b.dataset.fmt===st.fmt));
+  const start=window.gearAskedMode==='start';
+  $('gearTitle').textContent=start?'¿Con qué tiras hoy?':'Equipación y modo';
+  $('gearGo').textContent=start?'Empezar':'Listo';
+}
+function maybeAskGear(){
+  if(historyMode||!$('gearSheet').hidden)return;
+  const s=displayedSession();
+  if(!s||!s.live||s.gearAsked||(s.shots&&s.shots.length))return;
+  if(view!=='Session')return;
+  openGear('start');
+}
+// Equipación de una flecha concreta: cambia a mitad de sesión y vale desde ese set.
+function shotGear(sh){const st=gearState();return [(sh&&sh.bow)||st.bow,(sh&&sh.arrows)||st.arrows].filter(Boolean).join(' · ');}
+function gearMulti(){return new Set((data&&data.shots||[]).map(shotGear)).size>1;}
+$('gearBtn').onclick=()=>openGear('edit');
+$('setGearBtn').onclick=()=>{if(historyMode)return;openGear('edit');};
+$('gearClose').onclick=closeGear;
+$('gearGo').onclick=closeGear;
+$('gearSheet').onclick=e=>{if(e.target.id==='gearSheet')closeGear();};
+$('gearCards').onclick=e=>{
+  const del=e.target.closest('[data-del]');
+  if(del){removeSetup(+del.dataset.del);return;}
+  const b=e.target.closest('[data-i]'); if(!b)return;
+  const x=setupList()[+b.dataset.i]; if(!x)return;
+  applySetup(x.bow,x.arrows);
+};
+$('gearModes').onclick=e=>{const b=e.target.closest('[data-v]');if(b)applyMode(b.dataset.v);};
+$('gearFormats').onclick=e=>{const b=e.target.closest('[data-fmt]');if(b)applyFormat(b.dataset.fmt);};
+$('gearNew').onclick=()=>{const f=$('gearForm');f.hidden=!f.hidden;if(!f.hidden)$('gearBowName').focus();};
+function saveNewSetup(){
+  const bow=$('gearBowName').value.trim(), arrows=$('gearArrowName').value.trim();
+  if(!bow&&!arrows){notice('Ponle nombre al arco o a las flechas');return;}
+  applySetup(bow,arrows); $('gearBowName').value=$('gearArrowName').value=''; $('gearForm').hidden=true;
+}
+$('gearSave').onclick=saveNewSetup;
+['gearBowName','gearArrowName'].forEach(id=>$(id).onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();saveNewSetup();}});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gearSheet').hidden)closeGear();});
 let calibrationConfirming = false, calibrationShotKey = '';
 function validCalibrationShot(s) { return !!s && !s.manual && Number.isFinite(s.peak_mg) && s.peak_mg > 150 && s.peak_mg <= 100000; }
 function calibrationState() {
@@ -81,42 +270,7 @@ function renderCalibration(s) {
   } else if (bows.includes(keep)) select.value = keep;
 }
 function saveSession(s){const L=store.list();const i=L.findIndex(x=>x.id===s.id);if(i>=0)L[i]=s;else L.push(s);store.save(L);if(curSess?.id===s.id)curSess=s;}
-$('modeSheet').onclick=e=>{const b=e.target.closest('[data-v]');if(!b)return;const s=displayedSession();if(!s||historyMode)return;
-  const mode=['Indoor','Outdoor','Libre'].includes(b.dataset.v)?b.dataset.v:'Libre', tanda=false;
-  s.mode=mode;s.tanda=tanda;s.roundDone=Training.roundComplete(s);s.target=mode==='Indoor'?3:mode==='Outdoor'?6:0;
-  if(mode==='Indoor' && !['wa','vegas','lancaster'].includes(s.scoreFormat)) s.scoreFormat='vegas';
-  saveSession(s);sendCmd('mode',mode);closeSheets(null);render();};
-$('formatSheet').onclick=e=>{const b=e.target.closest('[data-fmt]');if(!b)return;const s=displayedSession();if(!s||historyMode||s.mode!=='Indoor')return;
-  s.scoreFormat=b.dataset.fmt;saveSession(s);closeSheets(null);render();};
-function gearSheet(listId,sheetId,field,cmd){
-  $(sheetId).onclick=e=>{const remove=e.target.closest('.deleteGear');if(remove){if(remove.dataset.deleteBow!=null)deleteBow(remove.dataset.deleteBow);else deleteArrow(remove.dataset.deleteArrow);return;}const b=e.target.closest('[data-n]');if(!b)return;const s=displayedSession();if(!s||historyMode)return;
-    s[field]=b.dataset.n;saveSession(s);if(cmd)sendCmd(cmd,s[field]);closeSheets(null);render();};
-}
-function deleteBow(name){
-  const g=gear.get();if(!g.bows.includes(name))return;
-  const s=displayedSession(), error=window.Native?.command?.(JSON.stringify({sid:s?.sensorId||'',action:'deleteProfile',value:name}));
-  if(error){notice('No se pudo eliminar el preset: '+error);return;}
-  g.bows=g.bows.filter(n=>n!==name);gear.save(g);
-  if(s?.live&&!historyMode&&(s.bow===name||s.profile===name)){s.bow=null;s.profile='Recurvo';saveSession(s);}
-  if(calibrationState()?.profile===name)localStorage.removeItem('atCalibration');
-  render();notice(error===undefined?'Preset eliminado del móvil':'Preset eliminado; borrado del sensor pendiente de sincronización');
-}
-function deleteArrow(name){
-  const g=gear.get();if(!g.arrows.includes(name))return;
-  g.arrows=g.arrows.filter(n=>n!==name);gear.save(g);
-  const s=displayedSession();if(s&&!historyMode&&s.arrows===name){s.arrows=null;saveSession(s);}
-  render();notice('Flechas eliminadas');
-}
-gearSheet('bowList','bowSheet','bow','profile');
-gearSheet('arrowList','arrowSheet','arrows',null);
-function addGear(inputId,btnId,listName,field){
-  $(btnId).onclick=()=>{const n=$(inputId).value.trim();if(!n)return;
-    const g=gear.get();if(!g[listName].includes(n)){g[listName].push(n);gear.save(g);}
-    const s=displayedSession();if(s&&!historyMode){s[field]=n;saveSession(s);if(field==='bow')sendCmd('profile',n);}
-    $(inputId).value='';render();};
-}
-addGear('bowName','bowAdd','bows','bow');
-addGear('arrowName','arrowAdd','arrows','arrows');
+function sendCmd(action,value){const s=displayedSession();if(s?.live&&s.sensorId&&window.Native?.command){const error=Native.command(JSON.stringify({sid:s.sensorId,action,value}));if(error)notice(error);}}
 let noticeTimer;
 function notice(message) { $('notice').textContent=message;$('notice').hidden=false;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('notice').hidden=true,6000); }
 function displayedSession() { return store.list().find(s=>s.id===(historyMode?histId:curSess?.id)); }
@@ -131,7 +285,7 @@ window.liveEvent = e => {
     }
   }
   const L=store.list();let i=L.findIndex(s=>s.sensorId===e.sid);
-  if(i<0) { const epoch=Number(e.sid.split('-')[0])*1000;L.push(Training.create(e,Number.isFinite(epoch)&&epoch>1e12?epoch:Math.max(Date.now(),...L.map(s=>s.id+1))));i=L.length-1; }
+  if(i<0) { const epoch=Number(e.sid.split('-')[0])*1000;L.push(hydrateGear(Training.create(e,Number.isFinite(epoch)&&epoch>1e12?epoch:Math.max(Date.now(),...L.map(s=>s.id+1)))));i=L.length-1; }
   if(e.eid<=(L[i].lastEvent??-1))return;
   const openEnds=new Set((L[i].ends||[]).map(x=>x.id)), beforeDone=!!L[i].roundDone;
   if(e.kind==='start')L.forEach((s,j)=>{if(i!==j)s.live=false;});
@@ -204,23 +358,18 @@ render=function() {
     if(view==='Session' && data?.shots?.length) $('sSets').textContent=`${n}/${goal}`;
   } else $('trainingStatus').textContent=s?`${s.mode?s.mode+' · ':''}${s.paused?'Pausa':s.resting?'Descanso':'Set '+setNumber} · ${s.shots.filter(x=>x.set_id===(s.currentSet??1)).length}${s.target?'/'+s.target:''}`:'Equipo';
   if(!historyMode && s?.calibrating)$('trainingStatus').textContent=`Calibración · ${s.calibrationCount||0}`;
-  ['modePicker','bowPicker','arrowPicker'].forEach(id=>$(id).hidden=historyMode);
-  $('modeVal').textContent=s?.mode||'–';
-  const indoor=!!(s&&s.mode==='Indoor');
-  $('formatPicker').hidden=!indoor||!!historyMode;
-  if(indoor){
-    if(!historyMode && !['wa','vegas','lancaster'].includes(s.scoreFormat)){s.scoreFormat='vegas';saveSession(s);}
-    const fmt=Score.formatOf(s);
-    $('formatVal').textContent=Score.FORMATS[fmt]?.name||'Vegas';
-    $('formatSheet').querySelectorAll('[data-fmt]').forEach(b=>b.classList.toggle('on',b.dataset.fmt===fmt));
+  if(s&&s.mode==='Indoor'&&!['wa','vegas','lancaster'].includes(s.scoreFormat)&&!historyMode){s.scoreFormat='vegas';saveSession(s);}
+  renderGear();
+  const card=$('setGearCard');
+  if(card){
+    card.hidden=!shot;
+    if(shot){
+      const st=gearState(), bits=gearChips({bow:shot.bow||st.bow,arrows:shot.arrows||st.arrows},false);
+      $('setGearChips').innerHTML=bits.length?bits.map(t=>`<span class="chip">${escapeText(t)}</span>`).join(''):'<span class="chip empty">Elige tu material</span>';
+      $('setGearBtn').classList.toggle('ro',!!historyMode);
+      $('setGearBtn').setAttribute('aria-label',bits.length?bits.join(', ')+'. Toca para cambiar':'Elegir equipación');
+    }
   }
-  $('bowVal').textContent=s?.bow||s?.profile||'–';
-  $('arrowVal').textContent=s?.arrows||'–';
-  const modeKey=s?.mode||'';
-  $('modeSheet').querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===modeKey));
-  const g=gear.get();
-  $('bowList').innerHTML=g.bows.map(n=>`<div class="gearRow"><button data-n="${escapeText(n)}"${n===(s?.bow||s?.profile)?' class="on"':''}>${escapeText(n)}<span>‹</span></button><button class="deleteGear" data-delete-bow="${escapeText(n)}" aria-label="Eliminar preset ${escapeText(n)}">${TRASH}</button></div>`).join('');
-  $('arrowList').innerHTML=g.arrows.map(n=>`<div class="gearRow"><button data-n="${escapeText(n)}"${n===s?.arrows?' class="on"':''}>${escapeText(n)}<span>‹</span></button><button class="deleteGear" data-delete-arrow="${escapeText(n)}" aria-label="Eliminar flechas ${escapeText(n)}">${TRASH}</button></div>`).join('')||'';
   if(shot) {
     $('setState').textContent=(s?.ends||[]).some(e=>e.id===shot.set_id)?'Cerrado':'Abierto';
     const group=sets(data.shots).find(g=>g.includes(cur));
@@ -236,14 +385,16 @@ render=function() {
     }}
   }
   ['sAvg','sSd'].forEach(id=>{if($(''+id).textContent==='NaN')$(id).textContent='–';});
+  maybeAskGear();
 };
 const PROFILE_LABELS={'Recurvo':'Arco recurvo','Compuesto':'Arco compuesto','Recurvo / arco':'Recurvo (brazo de arco)','Compuesto / arco':'Compuesto (brazo de arco)','Recurvo / cuerda':'Recurvo (brazo de cuerda)','Compuesto / cuerda':'Compuesto (brazo de cuerda)'};
+const gearKey=(a,s)=>Training.key({bow:a.bow||s.bow,profile:a.profile||s.profile,metric:a.metric||s.metric});
 const originalProgress=renderProgress;
 renderProgress=function() {
-  const L=store.list(), keys=[...new Set(L.flatMap(s=>s.shots.map(a=>Training.key({profile:a.profile||s.profile,metric:a.metric||s.metric}))))], select=$('progressProfile'), old=select.value;
+  const L=store.list(), keys=[...new Set(L.flatMap(s=>s.shots.map(a=>gearKey(a,s))))], select=$('progressProfile'), old=select.value;
   const bases=keys.map(k=>k.replace(/ · v\d+$/,'')), label=(k,i)=>PROFILE_LABELS[k]||(bases.indexOf(bases[i])!==bases.lastIndexOf(bases[i])?k:PROFILE_LABELS[bases[i]]||bases[i]);
   select.innerHTML=keys.map((k,i)=>`<option value="${escapeText(k)}">${escapeText(label(k,i))}</option>`).join('');if(keys.includes(old))select.value=old;
-  const filtered=L.map(s=>({...s,shots:s.shots.filter(a=>Training.key({profile:a.profile||s.profile,metric:a.metric||s.metric})===select.value)}));
+  const filtered=L.map(s=>({...s,shots:s.shots.filter(a=>gearKey(a,s)===select.value)}));
   const week=filtered.filter(s=>s.id>=Date.now()-7*864e5).reduce((n,s)=>n+s.shots.filter(a=>!a.candidate).length,0), total=filtered.reduce((n,s)=>n+s.shots.filter(a=>!a.candidate).length,0);
   $('volume').textContent=`${week} flechas · 7 días · ${total} total`;
   const list=store.list;try {store.list=()=>filtered.map(s=>({...s,shots:s.shots.filter(a=>Number.isFinite(a.aim_score))}));originalProgress();}finally{store.list=list;}

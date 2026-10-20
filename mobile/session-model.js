@@ -9,7 +9,7 @@ const Training = {
       const a = v => Array.isArray(v) ? v.filter(Number.isFinite) : [];
       const pre=a(e.mp),post=a(e.mq);
       const dt = Number.isFinite(e.dt) && e.dt > 0 ? e.dt : 50;
-      s.shots.push({t_ms:Math.round(e.t),set_id:e.set,manual:!!e.manual,candidate:!!e.candidate,pose:a(e.pose),metric:e.metric||2,profile:e.profile||s.profile,
+      s.shots.push({t_ms:Math.round(e.t),set_id:e.set,manual:!!e.manual,candidate:!!e.candidate,pose:a(e.pose),metric:e.metric||2,profile:e.profile||s.profile,bow:s.bow||null,arrows:s.arrows||null,
         ...Object.fromEntries(['aim_sd_deg','aim_dx_deg','aim_dy_deg','hr_bpm'].map(k=>[k,!e.manual&&!e.candidate&&Number.isFinite(e[k])?e[k]:null])),
         aim_score:e.manual||e.candidate ? null : Math.round(e.score),peak_mg:e.manual ? null : e.peak,instab_mg:e.manual ? null : e.instab,
         settle_ms:e.settle >= 0 ? Math.round(e.settle) : null,tilt_x:a(e.tx),tilt_y:a(e.ty),yaw_deg:a(e.yw),yaw_c:a(e.yw2),pitch_deg:a(e.pt),mag_b:a(e.bm),pos_x:a(e.qx),pos_y:a(e.qy),pos_z:a(e.qz),posp_x:a(e.qx2),posp_y:a(e.qy2),posp_z:a(e.qz2),post_yaw:a(e.pyw),post_pitch:a(e.ppt),draw_ms:e.drawms>=0?Math.round(e.drawms):null,rmssd:Number.isFinite(e.rmssd)?e.rmssd:null,traj_x:a(e.px),traj_y:a(e.py),dt,trace_t:a(e.trace_t),post_t:a(e.post_t),clock:e.clock||"estimated",rate:e.rate||null,
@@ -50,7 +50,8 @@ const Training = {
   reopen(s, id) { s.ends=(s.ends||[]).filter(e=>e.id!==id); },
   split(s, t) { const i=s.shots.findIndex(x=>x.t_ms===t); if(i<0)return; const old=s.shots[i].set_id; s.shots.slice(i).forEach(x=>{if(x.set_id===old)x.set_id=t;}); },
   merge(s, id) { const i=s.shots.findIndex(x=>x.set_id===id); if(i<=0)return; const previous=s.shots[i-1].set_id; s.shots.forEach(x=>{if(x.set_id===id)x.set_id=previous;}); s.ends=(s.ends||[]).filter(e=>e.id!==id); },
-  key(s) { return (s.profile||'Sin equipo')+' · v'+(s.metric||1); },
+  // La equipación es el arco; el perfil hereda del montaje del sensor y solo queda de respaldo.
+  key(s) { return (s.bow||s.profile||'Sin equipo')+' · v'+(s.metric||1); },
   roundGoal(s) {
     if (!s || !s.tanda) return 0;
     if (s.mode === 'Indoor') return 10;

@@ -1377,7 +1377,7 @@ function studioProgressSessions() {
   const select = document.getElementById('progressProfile');
   const key = select && select.value;
   return studioSessions().map(s => ({id: s.id, shots: (s.shots || []).filter(a => a && !a.candidate &&
-    !(key && typeof Training !== 'undefined' && Training.key && Training.key({profile: a.profile || s.profile, metric: a.metric || s.metric}) !== key))}))
+    !(key && typeof Training !== 'undefined' && Training.key && Training.key({bow: a.bow || s.bow, profile: a.profile || s.profile, metric: a.metric || s.metric}) !== key))}))
     .filter(s => s.shots.length);
 }
 
@@ -3032,18 +3032,30 @@ function studioPaintGlass(ctx, view, theme, tilt, photo) {
   ctx.fillRect(0, 0, W, H);
   if (shot) {
     ctx.save();
-    ctx.filter = 'blur(42px)';
-    ctx.globalAlpha = 0.6;
-    ctx.drawImage(studioPhotoCanvas(shot, view.photo, 540, 675, {focus: view.focus, bright: 0.62, duo}), -90, -90, W + 180, H + 180);
+    ctx.filter = 'blur(46px)';
+    ctx.globalAlpha = 0.48;
+    ctx.drawImage(studioPhotoCanvas(shot, view.photo, 540, 675, {focus: view.focus, bright: 0.52, duo}), -90, -90, W + 180, H + 180);
     ctx.restore();
   }
-  [[W * 0.1, H * 0.94, 760, 0.3], [W * 0.96, H * 0.04, 600, 0.14]].forEach(b => {
+  // Atmósfera tipo Nothing (difuminado): nubes neutras muy suaves fuera del lienzo y un solo
+  // rescoldo del acento, casi apagado. Sin focos saturados en las esquinas.
+  const accRgb = studioRgb(acc).join(',');
+  [[W * 0.0, H * 0.08, W * 0.8, '230,230,234', 0.15],
+   [W * 1.0, H * 0.92, W * 0.74, '128,130,136', 0.12],
+   [W * 0.48, H * 0.55, W * 1.0, '64,66,72', 0.07],
+   [W * 0.92, H * 0.04, W * 0.3, accRgb, 0.05]].forEach(b => {
     const g = ctx.createRadialGradient(b[0], b[1], 0, b[0], b[1], b[2]);
-    g.addColorStop(0, studioRgba(acc, b[3]));
-    g.addColorStop(1, studioRgba(acc, 0));
+    g.addColorStop(0, `rgba(${b[3]},${b[4]})`);
+    g.addColorStop(0.35, `rgba(${b[3]},${(b[4] * 0.5).toFixed(3)})`);
+    g.addColorStop(1, `rgba(${b[3]},0)`);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
   });
+  const vig = ctx.createRadialGradient(W * 0.5, H * 0.42, Math.min(W, H) * 0.2, W * 0.5, H * 0.5, Math.max(W, H) * 0.72);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.52)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
   const cx = 60, cy = 60, cw = 960, ch = 1230, r = 52;
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,.75)';
@@ -3063,7 +3075,7 @@ function studioPaintGlass(ctx, view, theme, tilt, photo) {
   ctx.fillRect(cx, cy, cw, ch);
   if (shot) ctx.drawImage(studioPhotoCanvas(shot, view.photo, cw, top - 28, {focus: view.focus, bright: 0.72, fade: 0.4, duo}), cx, cy);
   const warm = ctx.createRadialGradient(cx, cy + ch, 0, cx, cy + ch, 720);
-  warm.addColorStop(0, studioRgba(acc, 0.13));
+  warm.addColorStop(0, studioRgba(acc, 0.07));
   warm.addColorStop(1, studioRgba(acc, 0));
   ctx.fillStyle = warm;
   ctx.fillRect(cx, cy, cw, ch);

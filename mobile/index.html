@@ -878,7 +878,7 @@ function liveSession(sid = '') {
     if (curSess?.sensorId === sid) return curSess;
     const L = store.list();
     curSess = L.find(s => s.sensorId === sid);
-    if (!curSess) { curSess = {id:Math.max(now,...L.map(s=>s.id+1)),sensorId:sid,live:true,lastWt:now,shots:[]}; L.push(curSess); store.save(L); }
+    if (!curSess) { curSess = {id:Math.max(now,...L.map(s=>s.id+1)),sensorId:sid,live:true,lastWt:now,shots:[]}; hydrateGear(curSess); L.push(curSess); store.save(L); }
     return curSess;
   }
   if (curSess) {
@@ -886,8 +886,8 @@ function liveSession(sid = '') {
     curSess.live = false; persist(); curSess = null;
   }
   const L = store.list();
-  curSess = L.find(x => x.live && now - x.lastWt < 600000)  // restaurar tras recargar
-        || (L.push({ id: now, live: true, lastWt: now, shots: [] }), L[L.length - 1]);
+  curSess = L.find(x => x.live && now - x.lastWt < 600000);  // restaurar tras recargar
+  if (!curSess) { curSess = { id: now, live: true, lastWt: now, shots: [] }; hydrateGear(curSess); L.push(curSess); }
   store.save(L);
   return curSess;
 }
@@ -963,7 +963,7 @@ window.liveShot = ev => {
   const sess = liveSession(ev.sid || '');
   if (sess.shots.some(s => Math.abs(s.t_ms - ev.t) < 800) || (sess.removed || []).some(t => Math.abs(t - ev.t) < 800)) { persist(); return; }
   sess.shots.push({
-    t_ms: Math.round(ev.t),
+    t_ms: Math.round(ev.t), bow: sess.bow || null, arrows: sess.arrows || null,
     peak_mg: Math.round(ev.peak), instab_mg: Math.round(ev.instab),
     settle_ms: ev.settle == null || ev.settle < 0 ? null : Math.round(ev.settle),
     aim_score: Math.max(0, Math.min(100, Math.round(ev.score))), tilt_x: Array.isArray(ev.tx) ? ev.tx : [], tilt_y: Array.isArray(ev.ty) ? ev.ty : [],
@@ -2417,6 +2417,7 @@ function drawTrend(S) {
       `<span class="trendLabel">${j + 1}${scoreBit}${phaseBit}</span><span class="trendBar" aria-hidden="true"><span style="width:${valid?Math.max(0,Math.min(100,v/max*100)):0}%"></span></span><span class="trendMeta">${meta}</span><span class="trendValue">${valid?Math.round(v):'–'}</span></button>`;
   }).join('');});
   if (c) c.innerHTML=rows.join('');
+  const multi=typeof gearMulti==='function'&&gearMulti();
   list.innerHTML=S.map((g,i)=>{
     const sa=Math.round(avg(g.map(j=>data.shots[j].aim_score))), key=(historyMode?histId:curSess?.id)+'_'+encodeURIComponent(data.shots[g[0]].set_id);
     const setShots=g.map(j => data.shots[j]);
@@ -2424,7 +2425,8 @@ function drawTrend(S) {
     const points=`<span class="setPts${pts.scored?' on':''}"><b>${formatScore(pts, setShots)}</b><small>pts</small></span>`;
     const mini=g.map(j=>{const v=data.shots[j].aim_score;const h=Number.isFinite(v)?Math.max(3,(Math.min(100,v)-40)/60*22):3;return `<i style="height:${h}px;background:${barOf(v)}"></i>`;}).join('');
     const sid = escapeText(String(data.shots[g[0]].set_id));
-    return `<details data-set="${key}" data-sid="${sid}" ${opened.has(key)?'open':''}><summary class="setline"><b>${setLabel(S,i)}</b><span class="mini">${mini}</span>${points}<span class="setVal" style="color:${numOf(sa)}">${Number.isFinite(sa)?sa:'–'}</span><span class="r"></span></summary>${rows[i]}</details>`;
+    const tag=multi&&typeof shotGear==='function'?`<div class="gearTag">${escapeText(shotGear(data.shots[g[0]]))}</div>`:'';
+    return `<details data-set="${key}" data-sid="${sid}" ${opened.has(key)?'open':''}><summary class="setline"><b>${setLabel(S,i)}</b><span class="mini">${mini}</span>${points}<span class="setVal" style="color:${numOf(sa)}">${Number.isFinite(sa)?sa:'–'}</span><span class="r"></span></summary>${tag}${rows[i]}</details>`;
   }).join('');
   c.onclick=list.onclick=e=>{if(typeof Studio!=='undefined'&&Studio.onSetClick&&Studio.onSetClick(e))return;const i=e.target.closest('[data-shot]')?.dataset.shot;if(i!=null){cur=+i;show('Shot');}};
 }
