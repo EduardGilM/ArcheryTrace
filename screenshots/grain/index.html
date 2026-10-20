@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>ArcheryTrace · Grano en tarjetas</title>
+  <style>
+    :root {
+      --bg: #0b0b0e;
+      --surface: #141418;
+      --line: rgba(255,255,255,.08);
+      --txt: #f2f2f5;
+      --txt-2: #9a9aa3;
+      --acc: #FF8A1F;
+      --acc-soft: rgba(255,138,31,.14);
+      --acc-line: rgba(255,138,31,.45);
+      --bad: #f0506e;
+      --bad-soft: rgba(240,80,110,.12);
+      --bad-line: rgba(240,80,110,.4);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 15px/1.5 Geist, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--txt);
+      min-height: 100dvh;
+    }
+    header {
+      padding: 28px 20px 8px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      color: var(--acc); font-weight: 600; letter-spacing: .04em;
+      font-size: 13px; text-transform: uppercase;
+      text-decoration: none;
+    }
+    .brand:hover { text-decoration: underline; }
+    .brand i {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--acc);
+      box-shadow: 0 0 12px rgba(255,138,31,.7);
+    }
+    h1 { margin: 10px 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -.02em; }
+    .sub { margin: 0; color: var(--txt-2); max-width: 62ch; }
+    .params {
+      margin: 16px 0 0; padding: 0; list-style: none;
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .params li {
+      font-size: 12.5px; color: var(--txt-2);
+      background: var(--surface); border: 1px solid var(--line);
+      padding: 6px 12px; border-radius: 999px;
+      font-family: ui-monospace, Geist Mono, monospace;
+    }
+    .params b { color: var(--acc); font-weight: 600; }
+    nav.finishes {
+      max-width: 1100px; margin: 20px auto 0; padding: 0 20px;
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    nav.finishes a {
+      font-size: 13px; font-weight: 600; text-decoration: none;
+      color: var(--txt-2); background: var(--surface);
+      border: 1px solid var(--line); border-radius: 999px;
+      padding: 7px 14px;
+    }
+    nav.finishes a:hover, nav.finishes a.on {
+      color: var(--acc); border-color: var(--acc-line); background: var(--acc-soft);
+    }
+    main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 64px; display: grid; gap: 40px; }
+    section.finish {
+      scroll-margin-top: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 22px 18px 18px;
+    }
+    section.finish > h2 {
+      margin: 0 0 4px; font-size: 20px; font-weight: 650; letter-spacing: -.01em;
+    }
+    section.finish > .note {
+      margin: 0 0 16px; color: var(--txt-2); font-size: 13.5px;
+    }
+    h3 {
+      margin: 22px 0 10px; font-size: 12px; font-weight: 600;
+      color: var(--txt-2); text-transform: uppercase; letter-spacing: .08em;
+    }
+    h3:first-of-type { margin-top: 0; }
+    .side {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    figure {
+      margin: 0;
+      background: #0e0e12;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    figure img {
+      display: block; width: 100%; height: auto;
+      background: #000;
+    }
+    figcaption {
+      padding: 9px 12px 11px;
+      font-size: 12.5px;
+      color: var(--txt-2);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    figcaption strong { color: var(--txt); font-weight: 600; }
+    .badge {
+      font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--acc); background: var(--acc-soft);
+      border: 1px solid var(--acc-line);
+      padding: 3px 8px; border-radius: 999px;
+      align-self: center;
+      white-space: nowrap;
+    }
+    .badge.old { color: var(--bad); background: var(--bad-soft); border-color: var(--bad-line); }
+    .full { margin-top: 12px; }
+    .full img { max-height: 780px; object-fit: contain; margin: 0 auto; }
+    footer {
+      max-width: 1100px; margin: 0 auto; padding: 0 20px 40px;
+      color: var(--txt-2); font-size: 12.5px;
+    }
+    @media (max-width: 720px) {
+      .side { grid-template-columns: 1fr; }
+      h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="../"><i></i> ArcheryTrace · Capturas</a>
+    <h1>Grano en las tarjetas de compartir</h1>
+    <p class="sub">
+      El efecto de grano estaba demasiado agresivo. Se rebajó la intensidad global
+      y la densidad de motas en los tres acabados, manteniéndolo visible en la vista
+      previa y en el PNG exportado.
+    </p>
+    <ul class="params">
+      <li>globalAlpha · <b>2.6→1.5</b></li>
+      <li>techo · <b>0.35→0.18</b></li>
+      <li>alfa mota · <b>1.15→0.95</b></li>
+      <li>umbral salto · <b>0.08→0.14</b></li>
+      <li>cristal · <b>0.18→0.10</b></li>
+      <li>editorial · <b>0.16→0.09</b></li>
+      <li>obsidiana · <b>0.13→0.075</b></li>
+    </ul>
+  </header>
+
+  <nav class="finishes" aria-label="Acabados">
+    <a href="#cristal" class="on">Cristal</a>
+    <a href="#editorial">Editorial</a>
+    <a href="#obsidiana">Obsidiana</a>
+  </nav>
+
+  <main>
+    <section class="finish" id="cristal">
+      <h2>Cristal</h2>
+      <p class="note">Acabado por defecto. La tarjeta va sobre fondo oscuro con widgets de cristal.</p>
+      <h3>Detalle 1:1 del grano</h3>
+      <div class="side">
+        <figure>
+          <img src="cristal-antes-detalle.png" alt="Recorte del grano en Cristal, antes">
+          <figcaption><strong>Antes</strong><span class="badge old">Agresivo</span></figcaption>
+        </figure>
+        <figure>
+          <img src="cristal-despues-detalle.png" alt="Recorte del grano en Cristal, después">
+          <figcaption><strong>Después</strong><span class="badge">Moderado</span></figcaption>
+        </figure>
+      </div>
+      <h3>Lado a lado</h3>
+      <figure>
+        <img src="cristal-comparativa-detalle.png" alt="Cristal antes y después, detalle lado a lado">
+        <figcaption><strong>Mismo recorte</strong><span class="badge">Comparativa</span></figcaption>
+      </figure>
+      <h3>Tarjeta completa</h3>
+      <div class="side">
+        <figure>
+          <img src="cristal-antes.png" alt="Tarjeta Cristal con grano agresivo">
+          <figcaption><strong>Antes</strong><span class="badge old">α 0.18</span></figcaption>
+        </figure>
+        <figure>
+          <img src="cristal-despues.png" alt="Tarjeta Cristal con grano moderado">
+          <figcaption><strong>Después</strong><span class="badge">α 0.10</span></figcaption>
+        </figure>
+      </div>
+      <figure class="full">
+        <img src="cristal-comparativa.png" alt="Tarjeta Cristal antes y después, lado a lado">
+        <figcaption><strong>Escenario sesión · 1080×1350</strong><span class="badge">Comparativa</span></figcaption>
+      </figure>
+    </section>
+
+    <section class="finish" id="editorial">
+      <h2>Editorial</h2>
+      <p class="note">Acabado claro, tipo revista. El grano se nota más sobre el fondo luminoso.</p>
+      <h3>Detalle 1:1 del grano</h3>
+      <div class="side">
+        <figure>
+          <img src="editorial-antes-detalle.png" alt="Recorte del grano en Editorial, antes">
+          <figcaption><strong>Antes</strong><span class="badge old">Agresivo</span></figcaption>
+        </figure>
+        <figure>
+          <img src="editorial-despues-detalle.png" alt="Recorte del grano en Editorial, después">
+          <figcaption><strong>Después</strong><span class="badge">Moderado</span></figcaption>
+        </figure>
+      </div>
+      <h3>Lado a lado</h3>
+      <figure>
+        <img src="editorial-comparativa-detalle.png" alt="Editorial antes y después, detalle lado a lado">
+        <figcaption><strong>Mismo recorte</strong><span class="badge">Comparativa</span></figcaption>
+      </figure>
+      <h3>Tarjeta completa</h3>
+      <div class="side">
+        <figure>
+          <img src="editorial-antes.png" alt="Tarjeta Editorial con grano agresivo">
+          <figcaption><strong>Antes</strong><span class="badge old">α 0.16</span></figcaption>
+        </figure>
+        <figure>
+          <img src="editorial-despues.png" alt="Tarjeta Editorial con grano moderado">
+          <figcaption><strong>Después</strong><span class="badge">α 0.09</span></figcaption>
+        </figure>
+      </div>
+      <figure class="full">
+        <img src="editorial-comparativa.png" alt="Tarjeta Editorial antes y después, lado a lado">
+        <figcaption><strong>Escenario sesión · 1080×1350</strong><span class="badge">Comparativa</span></figcaption>
+      </figure>
+    </section>
+
+    <section class="finish" id="obsidiana">
+      <h2>Obsidiana</h2>
+      <p class="note">Acabado piedra oscura con textura propia. El grano se suma a las vetas minerales.</p>
+      <h3>Detalle 1:1 del grano</h3>
+      <div class="side">
+        <figure>
+          <img src="obsidiana-antes-detalle.png" alt="Recorte del grano en Obsidiana, antes">
+          <figcaption><strong>Antes</strong><span class="badge old">Agresivo</span></figcaption>
+        </figure>
+        <figure>
+          <img src="obsidiana-despues-detalle.png" alt="Recorte del grano en Obsidiana, después">
+          <figcaption><strong>Después</strong><span class="badge">Moderado</span></figcaption>
+        </figure>
+      </div>
+      <h3>Lado a lado</h3>
+      <figure>
+        <img src="obsidiana-comparativa-detalle.png" alt="Obsidiana antes y después, detalle lado a lado">
+        <figcaption><strong>Mismo recorte</strong><span class="badge">Comparativa</span></figcaption>
+      </figure>
+      <h3>Tarjeta completa</h3>
+      <div class="side">
+        <figure>
+          <img src="obsidiana-antes.png" alt="Tarjeta Obsidiana con grano agresivo">
+          <figcaption><strong>Antes</strong><span class="badge old">α 0.13</span></figcaption>
+        </figure>
+        <figure>
+          <img src="obsidiana-despues.png" alt="Tarjeta Obsidiana con grano moderado">
+          <figcaption><strong>Después</strong><span class="badge">α 0.075</span></figcaption>
+        </figure>
+      </div>
+      <figure class="full">
+        <img src="obsidiana-comparativa.png" alt="Tarjeta Obsidiana antes y después, lado a lado">
+        <figcaption><strong>Escenario sesión · 1080×1350</strong><span class="badge">Comparativa</span></figcaption>
+      </figure>
+    </section>
+
+    <section class="finish" id="todos">
+      <h2>Los tres acabados · detalle</h2>
+      <p class="note">Comparativa del grano 1:1 en Cristal, Editorial y Obsidiana (antes a la izquierda, después a la derecha en cada fila).</p>
+      <figure>
+        <img src="todos-comparativa-detalle.png" alt="Detalle del grano en los tres acabados, antes y después">
+        <figcaption><strong>Cristal · Editorial · Obsidiana</strong><span class="badge">Resumen</span></figcaption>
+      </figure>
+    </section>
+  </main>
+  <footer>
+    Generado con <code>tools/grain-shot.cjs</code> sobre datos sintéticos · solo visualización
+  </footer>
+</body>
+</html>

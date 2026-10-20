@@ -23,3 +23,6 @@ __pycache__/
 Thumbs.db
 keytest.jsh
 mobile/shots.json
+
+# capturas desplegadas (regenerables con tools/grain-shot.cjs)
+screenshots/**/*.png

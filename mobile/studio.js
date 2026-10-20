@@ -2986,8 +2986,8 @@ function studioGrain(ctx, x, y, w, h, alpha) {
     const g = t.getContext('2d');
     const rnd = studioRandom(9157);
     for (let yy = 0; yy < N; yy++) for (let xx = 0; xx < N; xx++) {
-      const v = rnd() * 2 - 1, a = Math.min(1, Math.abs(v) * 1.15);
-      if (a < 0.08) continue;
+      const v = rnd() * 2 - 1, a = Math.min(0.85, Math.abs(v) * 0.95);
+      if (a < 0.14) continue;
       g.fillStyle = v > 0 ? `rgba(255,255,255,${a.toFixed(3)})` : `rgba(0,0,0,${a.toFixed(3)})`;
       g.fillRect(xx * cell, yy * cell, cell, cell);
     }
@@ -2995,7 +2995,7 @@ function studioGrain(ctx, x, y, w, h, alpha) {
   }
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
-  ctx.globalAlpha = Math.min(0.35, alpha * 2.6);
+  ctx.globalAlpha = Math.min(0.18, alpha * 1.5);
   ctx.fillStyle = ctx.createPattern(Studio.card.grain, 'repeat');
   ctx.fillRect(x, y, w, h);
   ctx.restore();
