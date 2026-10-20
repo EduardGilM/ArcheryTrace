@@ -21,7 +21,7 @@ const Training = {
       s.shots = s.shots.filter(x=>!times.includes(x.t_ms));
     }
     if (e.kind === 'layout') { const layout=new Map(e.layout);s.shots.forEach(x=>{if(layout.has(x.t_ms))x.set_id=layout.get(x.t_ms);}); }
-    if (e.kind === 'end') { s.live=false; s.finished=true; }
+    if (e.kind === 'end') { s.live=false; s.finished=true; s.awaiting = s.sensorId ? {sid: s.sensorId, eid: Number.isFinite(s.lastEvent) ? s.lastEvent : -1} : null; }
     if (e.kind === 'label') { s.labels ||= []; s.labels.push({from_ms:e.from,t_ms:e.t,label:e.label,peak:e.peak}); }
     if (e.kind === 'calibration') { s.calibration=e.result; }
     if (e.kind === 'start') { s.build=e.build||null; if(e.recovery)s.recovery=e.recovery; }
@@ -47,6 +47,39 @@ const Training = {
     return s;
   },
   close(s, id, reason='manual') { s.ends ||= []; if (!s.ends.some(e=>e.id===id)) s.ends.push({id,reason}); },
+  // Sesión "preparada": queda viva sin sensor y el primer tiro o start del siguiente tramo la adopta.
+  newSession(list, id = Date.now()) {
+    return {id: Math.max(id, ...list.map(x => x.id + 1)), sensorId: null, live: true, prepared: true,
+      shots: [], ends: [], removed: [], lastEvent: -1, lastWt: Date.now(), target: 3, profile: 'Recurvo · arco', metric: 2};
+  },
+  // Cerrar: se archiva y deja de recibir tiros; awaiting recuerda por qué sid seguía el sensor
+  // para que los reenvíos viejos de esa sesión no se cuelen en la nueva.
+  seal(s) {
+    s.live = false; s.finished = true; s.prepared = false;
+    s.awaiting = s.sensorId ? {sid: s.sensorId, eid: Number.isFinite(s.lastEvent) ? s.lastEvent : -1} : null;
+    return s;
+  },
+  // Dónde aterriza un evento del sensor: la sesión abierta de ese sid; una preparada (solo si el
+  // evento es nuevo para ese sid); el reenvío viejo de un tramo cerrado (para que apply lo descarte);
+  // el eco end/remove de ese sid; o -1 para crear.
+  route(list, e) {
+    const open = list.findIndex(s => s && s.sensorId === e.sid && !s.finished);
+    if (open >= 0) return open;
+    if (e.kind === 'shot' || e.kind === 'start') {
+      for (let i = list.length - 1; i >= 0; i--) {
+        const s = list[i]; if (!s || !s.prepared) continue;
+        const a = s.awaiting;
+        if (!a || e.sid !== a.sid || (Number.isFinite(e.eid) && e.eid > a.eid)) return i;
+      }
+      for (let i = list.length - 1; i >= 0; i--) {  // reenvío de un tramo cerrado
+        const s = list[i];
+        if (s && s.sensorId === e.sid && s.awaiting && Number.isFinite(e.eid) && e.eid <= s.awaiting.eid) return i;
+      }
+      return -1;
+    }
+    for (let i = list.length - 1; i >= 0; i--) if (list[i] && list[i].sensorId === e.sid) return i;
+    return -1;
+  },
   reopen(s, id) { s.ends=(s.ends||[]).filter(e=>e.id!==id); },
   split(s, t) { const i=s.shots.findIndex(x=>x.t_ms===t); if(i<0)return; const old=s.shots[i].set_id; s.shots.slice(i).forEach(x=>{if(x.set_id===old)x.set_id=t;}); },
   merge(s, id) { const i=s.shots.findIndex(x=>x.set_id===id); if(i<=0)return; const previous=s.shots[i-1].set_id; s.shots.forEach(x=>{if(x.set_id===id)x.set_id=previous;}); s.ends=(s.ends||[]).filter(e=>e.id!==id); },

@@ -877,7 +877,7 @@ function liveSession(sid = '') {
   if (sid) {
     if (curSess?.sensorId === sid) return curSess;
     const L = store.list();
-    curSess = L.find(s => s.sensorId === sid);
+    curSess = L.find(s => s.sensorId === sid && !s.finished);
     if (!curSess) { curSess = {id:Math.max(now,...L.map(s=>s.id+1)),sensorId:sid,live:true,lastWt:now,shots:[]}; hydrateGear(curSess); L.push(curSess); store.save(L); }
     return curSess;
   }

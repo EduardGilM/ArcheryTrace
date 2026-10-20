@@ -22,8 +22,8 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .gearBtn.ro .r::after{display:none}
 #setGearCard .gearBtn{border-top:none;padding-top:0}
 #setGearCard #setState{font-size:12.5px;color:var(--txt-3);padding-top:2px}
-#gearSheet:not([hidden]){display:flex;position:fixed;inset:0;z-index:65;background:rgba(6,7,9,.74);align-items:flex-end;justify-content:center;padding:16px}
-#gearSheet .gsPanel{display:flex;flex-direction:column;width:100%;max-width:460px;max-height:calc(100dvh - 48px);background:var(--surface);border:1px solid var(--line-2);border-radius:20px;overflow:hidden;animation:gsIn .2s ease-out}
+#gearSheet:not([hidden]),#sessSheet:not([hidden]){display:flex;position:fixed;inset:0;z-index:65;background:rgba(6,7,9,.74);align-items:flex-end;justify-content:center;padding:16px}
+.gsPanel{display:flex;flex-direction:column;width:100%;max-width:460px;max-height:calc(100dvh - 48px);background:var(--surface);border:1px solid var(--line-2);border-radius:20px;overflow:hidden;animation:gsIn .2s ease-out}
 @keyframes gsIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){#gearSheet .gsPanel{animation:none}}
 .gsHead{display:flex;align-items:center;gap:10px;padding:16px 16px 4px}
@@ -59,14 +59,17 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .gsForm input{width:100%;min-height:46px;background:var(--surface-2);color:var(--txt);border:1px solid var(--line-2);border-radius:12px;padding:10px 12px;font:inherit;font-size:14px}
 .gsForm input::placeholder{color:var(--txt-3)}
 .gsSave{min-height:44px;border:1px solid var(--acc-line);border-radius:12px;background:var(--acc-soft);color:var(--acc);font:inherit;font-size:13.5px;font-weight:600}
-.gsFoot{padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
+.gsFoot{display:grid;gap:8px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
 .gsGo{width:100%;min-height:48px;border:0;border-radius:999px;background:#fff;color:#111;font:inherit;font-size:15px;font-weight:600}
+.gsGo.acc{background:var(--acc);color:#151006}
+.gsGhost{width:100%;min-height:44px;border:1px solid var(--line);border-radius:999px;background:none;color:var(--txt-2);font:inherit;font-size:14px}
 .gearTag{display:block;font-size:11.5px;color:var(--txt-3);padding:8px 14px 0}
 #comparison:empty,#setState:empty,#volume:empty{display:none}
 #notice{position:fixed;bottom:84px;left:16px;right:16px;z-index:20;padding:12px 14px;background:var(--surface-3);border:1px solid var(--line-2);color:var(--txt);border-radius:12px;font-size:13px;box-shadow:0 12px 30px rgba(0,0,0,.4)}
 </style>`);
 $('sessionHero').insertAdjacentHTML('afterend',`<section class="training" id="trainingPanel"><div id="trainingStatus">Equipo</div>
-<button type="button" class="gearBtn" id="gearBtn"><span class="col"><span class="lbl">Equipación</span><span class="chips" id="gearChips"></span></span><span class="r"></span></button></section>`);
+<button type="button" class="gearBtn" id="gearBtn"><span class="col"><span class="lbl">Equipación</span><span class="chips" id="gearChips"></span></span><span class="r"></span></button>
+<button type="button" class="gearBtn" id="sessBtn"><span class="col"><span class="lbl">Sesión</span><span class="chips" id="sessChips"></span></span><span class="r"></span></button></section>`);
 $('setbar').insertAdjacentHTML('afterend',`<section class="training card" id="setGearCard" hidden>
 <button type="button" class="gearBtn" id="setGearBtn"><span class="col"><span class="lbl">Equipación del set</span><span class="chips" id="setGearChips"></span></span><span class="r"></span></button>
 <div id="setState"></div></section>`);
@@ -98,6 +101,17 @@ document.body.insertAdjacentHTML('beforeend','<div id="notice" role="status" hid
 </div>
 </div>
 <div class="gsFoot"><button type="button" class="gsGo" id="gearGo">Listo</button></div>
+</div></div>`+
+`<div id="sessSheet" hidden role="dialog" aria-modal="true" aria-labelledby="sessTitle">
+<div class="gsPanel">
+<div class="gsHead"><b id="sessTitle">Sesiones de hoy</b><button type="button" class="gsX" id="sessClose" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<div class="gsBody">
+<div class="gsCards" id="sessCards"></div>
+</div>
+<div class="gsFoot">
+<button type="button" class="gsGo acc" id="sessNew">+ Nueva sesión</button>
+<button type="button" class="gsGhost" id="sessEnd">Cerrar sesión</button>
+</div>
 </div></div>`);
 const gear={get:()=>{try{const g=JSON.parse(localStorage.getItem('atGear'));return {bows:Array.isArray(g?.bows)?g.bows:[],arrows:Array.isArray(g?.arrows)?g.arrows:[],setups:Array.isArray(g?.setups)?g.setups.filter(x=>x&&typeof x==='object'):null,last:g?.last&&typeof g.last==='object'?g.last:null};}catch(e){return {bows:[],arrows:[],setups:null,last:null};}},
   save:g=>localStorage.setItem('atGear',JSON.stringify(g))};
@@ -221,6 +235,96 @@ function maybeAskGear(){
   if(view!=='Session')return;
   openGear('start');
 }
+// ----- sesiones: varias al día, cada una con su equipación -----
+function endSensor(sid){  // silencioso: el sensor puede no estar conectado
+  if(!sid||!window.Native?.command)return;
+  try{Native.command(JSON.stringify({sid,action:'end'}));}catch(e){}
+}
+function sealAndPrune(s){  // cerrar y, si no quedó nada, olvidarla
+  Training.seal(s); saveSession(s);
+  const L=store.list().filter(x=>x.id!==s.id||x.shots?.length);
+  store.save(L);
+}
+function newSession(){
+  const prev=displayedSession();
+  if(prev&&!prev.finished){
+    if(prev.prepared){  // ya hay una esperando: no duplicar
+      closeSess(); if(view!=='Session')show('Session'); notice('Ya tienes una sesión preparada'); return;
+    }
+    endSensor(prev.sensorId);
+    sealAndPrune(prev);
+  }
+  const l=gear.get().last||{};
+  const s=Training.newSession(store.list());
+  s.mode=l.mode||'Indoor';
+  s.target=s.mode==='Indoor'?3:s.mode==='Outdoor'?6:0;
+  if(s.mode==='Indoor')s.scoreFormat=FMT_NAMES[l.fmt]?l.fmt:'vegas';
+  s.arrows=l.arrows||null; s.bow=null;  // el arco se elige al empezar
+  if(prev?.awaiting)s.awaiting=prev.awaiting;  // no coger reenvíos del tramo anterior
+  const NL=store.list(); NL.push(s); store.save(NL);
+  curSess=s; data={shots:[]}; live=true; cur=0;
+  historyMode=false; histId=0;
+  closeSess();
+  if(view!=='Session')show('Session'); else render();
+  // maybeAskGear() abre el selector de arco: la sesión es nueva y todavía no tiene material
+}
+function closeCurrentSession(){
+  const s=displayedSession();
+  if(!s||s.finished)return;
+  endSensor(s.sensorId);
+  sealAndPrune(s);
+  curSess=null; data={shots:[]}; live=false; cur=0;
+  closeSess(); liveStatus('');
+  render();
+  notice(s.shots?.length?'Sesión cerrada y guardada':'Sesión vacía descartada');
+}
+function openSession(id){
+  const s=store.list().find(x=>x.id===id);
+  closeSess();
+  if(!s)return;
+  if(!s.finished&&s.live){
+    curSess=s; data={shots:s.shots}; live=true; historyMode=false; histId=0;
+    cur=Math.max(0,s.shots.length-1); show('Session'); return;
+  }
+  data={shots:s.shots}; cur=0; live=false; historyMode=true; histId=s.id;
+  document.getElementById('live').style.display='none';
+  show('Session');
+}
+function renderSess(){
+  const s=displayedSession(), bits=[];
+  if(!s)bits.push('Nueva sesión');
+  else{
+    bits.push(fmtDate(s.id).replace(/,.*$/,'').replace('Hoy','Hoy'));
+    bits.push(s.prepared?'Preparada':!s.finished&&s.live?'En vivo':'Cerrada');
+    const n=(s.shots||[]).filter(x=>!x.candidate).length;
+    bits.push(n+(n===1?' flecha':' flechas'));
+  }
+  $('sessChips').innerHTML=bits.map((t,i)=>{
+    const live=/^(En vivo|Preparada)$/.test(t), empty=t==='Nueva sesión';
+    return `<span class="chip${live?' mode':''}${empty?' empty':''}">${escapeText(t)}</span>`;
+  }).join('');
+  $('sessBtn').setAttribute('aria-label',bits.join(', ')+'. Toca para gestionar las sesiones');
+  if(!$('sessSheet').hidden)paintSess();
+}
+function paintSess(){
+  const cur=displayedSession();
+  const list=store.list().filter(s=>(s.shots||[]).length||s.live||s.prepared).sort((a,b)=>b.id-a.id).slice(0,8);
+  $('sessCards').innerHTML=list.length?list.map(s=>{
+    const on=!!cur&&s.id===cur.id;
+    const n=(s.shots||[]).filter(x=>!x.candidate).length;
+    const state=s.prepared?'Preparada':!s.finished&&s.live?'En vivo':'Cerrada';
+    const gear=[s.bow,s.arrows].filter(Boolean).join(' · ');
+    return `<div class="gsRow"><button type="button" class="gsCard${on?' on':''}" data-sess="${s.id}"><span class="t"><b>${escapeText(fmtDate(s.id)+' · '+state)}</b><small>${escapeText([gear,n+(n===1?' flecha':' flechas')].filter(Boolean).join(' · ')||'Sin flechas todavía')}</small></span><span class="tick">${on?CHECK:''}</span></button></div>`;
+  }).join(''):'<p class="gsEmpty">Todavía no hay sesiones. Crea la primera con el botón de abajo.</p>';
+  $('sessEnd').hidden=!cur||!!cur.prepared||!!cur.finished;
+}
+function openSess(){
+  if(historyMode)return;
+  closeGear();
+  $('sessSheet').hidden=false;
+  paintSess();
+}
+function closeSess(){ if(!$('sessSheet').hidden)$('sessSheet').hidden=true; }
 // Equipación de una flecha concreta: cambia a mitad de sesión y vale desde ese set.
 function shotGear(sh){const st=gearState();return [(sh&&sh.bow)||st.bow,(sh&&sh.arrows)||st.arrows].filter(Boolean).join(' · ');}
 function gearMulti(){return new Set((data&&data.shots||[]).map(shotGear)).size>1;}
@@ -229,6 +333,15 @@ $('setGearBtn').onclick=()=>{if(historyMode)return;openGear('edit');};
 $('gearClose').onclick=closeGear;
 $('gearGo').onclick=closeGear;
 $('gearSheet').onclick=e=>{if(e.target.id==='gearSheet')closeGear();};
+$('sessBtn').onclick=openSess;
+$('sessClose').onclick=closeSess;
+$('sessSheet').onclick=e=>{if(e.target.id==='sessSheet')closeSess();};
+$('sessNew').onclick=newSession;
+$('sessEnd').onclick=closeCurrentSession;
+$('sessCards').onclick=e=>{
+  const b=e.target.closest('[data-sess]'); if(!b)return;
+  openSession(+b.dataset.sess);
+};
 $('gearCards').onclick=e=>{
   const del=e.target.closest('[data-del]');
   if(del){removeSetup(+del.dataset.del);return;}
@@ -246,7 +359,7 @@ function saveNewSetup(){
 }
 $('gearSave').onclick=saveNewSetup;
 ['gearBowName','gearArrowName'].forEach(id=>$(id).onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();saveNewSetup();}});
-addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gearSheet').hidden)closeGear();});
+addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('gearSheet').hidden)closeGear();else if(!$('sessSheet').hidden)closeSess();}});
 let calibrationConfirming = false, calibrationShotKey = '';
 function validCalibrationShot(s) { return !!s && !s.manual && Number.isFinite(s.peak_mg) && s.peak_mg > 150 && s.peak_mg <= 100000; }
 function calibrationState() {
@@ -284,8 +397,18 @@ window.liveEvent = e => {
       notice(e.result || (e.applied ? 'Calibración aplicada' : 'Calibración no aplicada'));
     }
   }
-  const L=store.list();let i=L.findIndex(s=>s.sensorId===e.sid);
-  if(i<0) { const epoch=Number(e.sid.split('-')[0])*1000;L.push(hydrateGear(Training.create(e,Number.isFinite(epoch)&&epoch>1e12?epoch:Math.max(Date.now(),...L.map(s=>s.id+1)))));i=L.length-1; }
+  const L=store.list();
+  let i=Training.route(L,e);
+  if(i<0) {
+    if(e.kind!=='shot'&&e.kind!=='start')return;  // eco suelto (end/remove viejo): no inventar sesión
+    if(L.some(s=>s.awaiting&&s.awaiting.sid===e.sid&&Number.isFinite(e.eid)&&e.eid<=s.awaiting.eid))return;  // reenvío de un tramo cerrado
+    const epoch=Number(e.sid.split('-')[0])*1000;
+    L.push(hydrateGear(Training.create(e,Number.isFinite(epoch)&&epoch>1e12?epoch:Math.max(Date.now(),...L.map(s=>s.id+1)))));i=L.length-1;
+  }
+  else if(L[i].prepared){  // adopta el sensor al primer evento
+    L[i].sensorId=e.sid; L[i].awaiting=null; delete L[i].prepared;
+    if(L[i].bow&&window.Native?.command)try{Native.command(JSON.stringify({sid:e.sid,action:'profile',value:L[i].bow}));}catch(err){}
+  }
   if(e.eid<=(L[i].lastEvent??-1))return;
   const openEnds=new Set((L[i].ends||[]).map(x=>x.id)), beforeDone=!!L[i].roundDone;
   if(e.kind==='start')L.forEach((s,j)=>{if(i!==j)s.live=false;});
@@ -360,6 +483,7 @@ render=function() {
   if(!historyMode && s?.calibrating)$('trainingStatus').textContent=`Calibración · ${s.calibrationCount||0}`;
   if(s&&s.mode==='Indoor'&&!['wa','vegas','lancaster'].includes(s.scoreFormat)&&!historyMode){s.scoreFormat='vegas';saveSession(s);}
   renderGear();
+  renderSess();
   const card=$('setGearCard');
   if(card){
     card.hidden=!shot;
