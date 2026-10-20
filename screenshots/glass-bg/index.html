@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>ArcheryTrace · Fondo Cristal estilo Nothing</title>
+  <style>
+    :root {
+      --bg: #0b0b0e;
+      --surface: #141418;
+      --line: rgba(255,255,255,.08);
+      --txt: #f2f2f5;
+      --txt-2: #9a9aa3;
+      --acc: #FF8A1F;
+      --acc-soft: rgba(255,138,31,.14);
+      --acc-line: rgba(255,138,31,.45);
+      --bad: #f0506e;
+      --bad-soft: rgba(240,80,110,.12);
+      --bad-line: rgba(240,80,110,.4);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 15px/1.5 Geist, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--txt);
+      min-height: 100dvh;
+    }
+    header {
+      padding: 28px 20px 8px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      color: var(--acc); font-weight: 600; letter-spacing: .04em;
+      font-size: 13px; text-transform: uppercase;
+      text-decoration: none;
+    }
+    .brand:hover { text-decoration: underline; }
+    .brand i {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--acc);
+      box-shadow: 0 0 12px rgba(255,138,31,.7);
+    }
+    h1 { margin: 10px 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -.02em; }
+    .sub { margin: 0; color: var(--txt-2); max-width: 62ch; }
+    .params {
+      margin: 16px 0 0; padding: 0; list-style: none;
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .params li {
+      font-size: 12.5px; color: var(--txt-2);
+      background: var(--surface); border: 1px solid var(--line);
+      padding: 6px 12px; border-radius: 999px;
+      font-family: ui-monospace, Geist Mono, monospace;
+    }
+    .params b { color: var(--acc); font-weight: 600; }
+    main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 64px; display: grid; gap: 36px; }
+    section h2 {
+      margin: 0 0 12px; font-size: 15px; font-weight: 600;
+      color: var(--txt-2); text-transform: uppercase; letter-spacing: .06em;
+    }
+    .side {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    figure {
+      margin: 0;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    figure img {
+      display: block; width: 100%; height: auto;
+      background: #000;
+    }
+    figcaption {
+      padding: 10px 14px 12px;
+      font-size: 13px;
+      color: var(--txt-2);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    figcaption strong { color: var(--txt); font-weight: 600; }
+    .badge {
+      font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--acc); background: var(--acc-soft);
+      border: 1px solid var(--acc-line);
+      padding: 3px 9px; border-radius: 999px;
+      align-self: center;
+      white-space: nowrap;
+    }
+    .badge.old { color: var(--bad); background: var(--bad-soft); border-color: var(--bad-line); }
+    .full img { max-height: 820px; object-fit: contain; }
+    footer {
+      max-width: 1100px; margin: 0 auto; padding: 0 20px 40px;
+      color: var(--txt-2); font-size: 12.5px;
+    }
+    @media (max-width: 720px) {
+      .side { grid-template-columns: 1fr; }
+      h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="../"><i></i> ArcheryTrace · Capturas</a>
+    <h1>Fondo del modo Cristal · estilo Nothing</h1>
+    <p class="sub">
+      El fondo del acabado Cristal tenía dos focos del color del acento en la esquina
+      superior derecha y la inferior izquierda. Se sustituyeron por nubes neutras muy
+      difuminadas (blanco glyph / gris frío), un rescoldo del acento casi apagado y una
+      viñeta suave, al estilo del modo difuminado de Nothing.
+    </p>
+    <ul class="params">
+      <li>antes · <b>focos acc 0.30 / 0.14</b></li>
+      <li>ahora · <b>nubes neutras 0.15 / 0.12</b></li>
+      <li>rescoldo acc · <b>0.05</b></li>
+      <li>viñeta · <b>0→0.52</b></li>
+      <li>foto difuminada · <b>α 0.60→0.48</b></li>
+      <li>glow interno · <b>0.13→0.07</b></li>
+    </ul>
+  </header>
+  <main>
+    <section>
+      <h2>Tarjeta completa</h2>
+      <div class="full">
+        <figure>
+          <img src="comparativa.png" alt="Tarjeta Cristal con fondo viejo y nuevo, lado a lado">
+          <figcaption><strong>Antes / Después</strong><span class="badge">1080×1350</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Esquina superior derecha</h2>
+      <figure>
+        <img src="comparativa-esquina-tr.png" alt="Detalle esquina superior derecha antes y después">
+        <figcaption>
+          <strong>Antes: foco del acento · Después: nube neutra</strong>
+          <span class="badge">Detalle</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Esquina inferior izquierda</h2>
+      <figure>
+        <img src="comparativa-esquina-bi.png" alt="Detalle esquina inferior izquierda antes y después">
+        <figcaption>
+          <strong>Antes: foco del acento · Después: nube neutra</strong>
+          <span class="badge">Detalle</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Suelto</h2>
+      <div class="side">
+        <figure>
+          <img src="antes.png" alt="Tarjeta Cristal con el fondo viejo">
+          <figcaption><strong>Antes</strong><span class="badge old">Focos de acento</span></figcaption>
+        </figure>
+        <figure>
+          <img src="despues.png" alt="Tarjeta Cristal con el fondo estilo Nothing">
+          <figcaption><strong>Después</strong><span class="badge">Nothing · difuminado</span></figcaption>
+        </figure>
+      </div>
+    </section>
+  </main>
+  <footer>
+    Generado con <code>tools/glass-bg-shot.cjs</code> sobre datos sintéticos · solo visualización
+  </footer>
+</body>
+</html>
