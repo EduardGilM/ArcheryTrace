@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>ArcheryTrace · Descargar</title>
+  <style>
+    :root {
+      --bg: #0b0b0e;
+      --surface: #141418;
+      --surface-2: #1c1c22;
+      --line: rgba(255,255,255,.08);
+      --txt: #f2f2f5;
+      --txt-2: #9a9aa3;
+      --acc: #FF8A1F;
+      --acc-soft: rgba(255,138,31,.14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font: 15px/1.5 Geist, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--txt);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--acc);
+      font-weight: 600;
+      letter-spacing: .04em;
+      font-size: 13px;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+    .brand i {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--acc);
+      box-shadow: 0 0 12px rgba(255,138,31,.7);
+    }
+    main {
+      width: min(520px, 100%);
+      padding: 28px;
+      border-radius: 24px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+    }
+    h1 { margin: 14px 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -.02em; }
+    .sub { margin: 0; color: var(--txt-2); }
+    .dl {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 24px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: var(--acc);
+      color: #151006;
+      text-decoration: none;
+      font-weight: 650;
+      transition: filter .15s;
+    }
+    .dl:hover { filter: brightness(1.06); }
+    .dl svg { width: 26px; height: 26px; flex: none; }
+    .dl span { min-width: 0; }
+    .dl b { display: block; font-size: 16px; }
+    .dl small { display: block; font-size: 12.5px; font-weight: 500; color: rgba(21,16,6,.72); }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .meta span {
+      font-size: 12px;
+      color: var(--txt-2);
+      background: var(--surface-2);
+      border-radius: 999px;
+      padding: 5px 11px;
+    }
+    .note { margin: 18px 0 0; color: var(--txt-2); font-size: 13px; }
+    .back {
+      display: inline-block;
+      margin-top: 22px;
+      color: var(--txt-2);
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .back:hover { color: var(--txt); }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="brand" href="../"><i></i> ArcheryTrace</a>
+    <h1>Descargar la app</h1>
+    <p class="sub">APK firmado para Android, sin tienda.</p>
+    <a class="dl" href="ArcheryTrace.apk" download="ArcheryTrace-0.4.4.apk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/>
+      </svg>
+      <span><b>Descargar APK</b><small>versión 0.4.4 · 1 MB</small></span>
+    </a>
+    <div class="meta">
+      <span>Android 8+</span>
+      <span>Bluetooth LE</span>
+      <span>Sin Google Play</span>
+    </div>
+    <p class="note">Si Android lo pide, permite instalar apps desde esta fuente. Los datos se quedan en el móvil.</p>
+    <a class="back" href="../">Volver a capturas</a>
+  </main>
+</body>
+</html>

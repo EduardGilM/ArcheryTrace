@@ -67,6 +67,14 @@
       border-radius: 12px;
       background: #000;
     }
+    a.card .ph {
+      width: 140px; height: 92px;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      background: var(--surface-2);
+      color: var(--acc);
+    }
+    a.card .ph svg { width: 30px; height: 30px; }
     .meta h2 { margin: 0 0 4px; font-size: 17px; font-weight: 600; }
     .meta p { margin: 0; color: var(--txt-2); font-size: 13.5px; }
     .tag {
@@ -83,6 +91,7 @@
     @media (max-width: 560px) {
       a.card { grid-template-columns: 88px 1fr; }
       a.card img { width: 88px; height: 66px; }
+      a.card .ph { width: 88px; height: 66px; }
       .tag { display: none; }
     }
   </style>
@@ -91,9 +100,17 @@
   <header>
     <div class="brand"><i></i> ArcheryTrace</div>
     <h1>Capturas</h1>
-    <p class="sub">Comparativas visuales de la app. Solo consulta en el navegador, sin descargas.</p>
+    <p class="sub">Comparativas visuales de la app y descarga del APK.</p>
   </header>
   <main>
+    <a class="card" href="downloads/">
+      <span class="ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg></span>
+      <div class="meta">
+        <h2>Descargar ArcheryTrace</h2>
+        <p>APK firmado para Android 8+, sin tienda. Versión 0.4.4.</p>
+      </div>
+      <span class="tag">App · APK</span>
+    </a>
     <a class="card" href="sesiones/">
       <img src="sesiones/12-comparativa-filas.png" alt="">
       <div class="meta">
