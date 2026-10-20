@@ -14,8 +14,8 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .gearBtn .lbl{font-size:11.5px;letter-spacing:.03em;color:var(--txt-3)}
 .gearBtn .chips{display:flex;flex-wrap:wrap;gap:6px}
 .gearBtn .chip{max-width:100%;font-family:var(--font);font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gearBtn .chip.mode{background:var(--acc-soft);border-color:var(--acc-line);color:var(--acc)}
-.gearBtn .chip.empty{color:var(--acc);border-color:var(--acc-line);background:var(--acc-soft)}
+.gearBtn .chip.mode{background:var(--acc-soft);border-color:transparent;color:var(--acc)}
+.gearBtn .chip.empty{color:var(--acc);border-color:transparent;background:var(--acc-soft)}
 .gearBtn .r{flex:none;display:flex}
 .gearBtn .r::after{content:'';width:13px;height:13px;background:var(--txt-3);-webkit-mask:var(--i-caret) center/contain no-repeat;mask:var(--i-caret) center/contain no-repeat}
 .gearBtn.ro{cursor:default}
@@ -39,7 +39,7 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .gsCard .t{flex:1;min-width:0}
 .gsCard b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gsCard small{display:block;font-size:12.5px;color:var(--txt-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gsCard.on{border-color:var(--acc-line);background:var(--acc-soft)}
+.gsCard.on{border-color:transparent;background:var(--acc-soft)}
 .gsCard.on b,.gsCard.on small{color:var(--acc)}
 .gsCard .tick{flex:none;width:20px;height:20px;color:var(--acc)}
 .gsCard .tick:empty{display:none}
@@ -51,15 +51,19 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .gsSeg{display:flex;gap:6px}
 .gsSeg button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;color:var(--txt);font:inherit;font-size:13.5px;padding:6px 4px}
 .gsSeg button small{font-size:11px;color:var(--txt-3)}
-.gsSeg button.on{border-color:var(--acc-line);background:var(--acc-soft);color:var(--acc);font-weight:600}
+.gsSeg button.on{border-color:transparent;background:var(--acc-soft);color:var(--acc);font-weight:600}
 .gsSeg button.on small{color:var(--acc)}
 .gsNew{width:100%;min-height:44px;border:1px dashed var(--line-2);border-radius:12px;background:none;color:var(--txt-2);font:inherit;font-size:13.5px}
 .gsForm{display:grid;gap:7px;padding-top:2px}
 .gsForm[hidden]{display:none}
 .gsForm input{width:100%;min-height:46px;background:var(--surface-2);color:var(--txt);border:1px solid var(--line-2);border-radius:12px;padding:10px 12px;font:inherit;font-size:14px}
 .gsForm input::placeholder{color:var(--txt-3)}
-.gsSave{min-height:44px;border:1px solid var(--acc-line);border-radius:12px;background:var(--acc-soft);color:var(--acc);font:inherit;font-size:13.5px;font-weight:600}
+.gsSave{min-height:44px;border:1px solid transparent;border-radius:12px;background:var(--acc-soft);color:var(--acc);font:inherit;font-size:13.5px;font-weight:600}
 .gsFoot{display:grid;gap:8px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
+.gsConfirm{display:grid;grid-template-columns:auto 1fr;gap:8px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
+.gsConfirm button{min-height:48px}
+.gsConfirm .gsGhost{padding:0 18px;white-space:nowrap}
+.gsConfirm .gsGo{width:auto;font-size:14px;padding:0 14px}
 .gsGo{width:100%;min-height:48px;border:0;border-radius:999px;background:#fff;color:#111;font:inherit;font-size:15px;font-weight:600}
 .gsGo.acc{background:var(--acc);color:#151006}
 .gsGhost{width:100%;min-height:44px;border:1px solid var(--line);border-radius:999px;background:none;color:var(--txt-2);font:inherit;font-size:14px}
@@ -99,7 +103,8 @@ document.body.insertAdjacentHTML('beforeend','<div id="notice" role="status" hid
 <button type="button" class="gsSave" id="gearSave">Guardar y usar</button>
 </div>
 </div>
-<div class="gsFoot"><button type="button" class="gsGo" id="gearGo">Listo</button><button type="button" class="gsGhost" id="sessEnd" hidden>Cerrar sesión</button></div>
+<div class="gsConfirm" id="gearConfirm" hidden><button type="button" class="gsGhost" id="gearConfirmNo">Cancelar</button><button type="button" class="gsGo acc" id="gearConfirmYes">Empezar</button></div>
+<div class="gsFoot" id="gsFoot"><button type="button" class="gsGo" id="gearGo">Listo</button><button type="button" class="gsGhost" id="sessEnd" hidden>Cerrar sesión</button></div>
 </div></div>`);
 const gear={get:()=>{try{const g=JSON.parse(localStorage.getItem('atGear'));return {bows:Array.isArray(g?.bows)?g.bows:[],arrows:Array.isArray(g?.arrows)?g.arrows:[],setups:Array.isArray(g?.setups)?g.setups.filter(x=>x&&typeof x==='object'):null,last:g?.last&&typeof g.last==='object'?g.last:null};}catch(e){return {bows:[],arrows:[],setups:null,last:null};}},
   save:g=>localStorage.setItem('atGear',JSON.stringify(g))};
@@ -160,11 +165,21 @@ function renderGear(){
   if(!$('gearSheet').hidden)paintGear();
 }
 // Tocar un material: si no hay sesión (o está cerrada) se prepara una con él; si hay una en vivo
-// con flechas y el material cambia, se cierra la actual y empieza otra.
+// con flechas y el material cambia, primero se confirma: la actual se cierra y empieza otra.
+let pendingSetup=null;
 function applySetup(bow,arrows){
   if(historyMode)return;
-  rememberSetup(bow,arrows);
   const s=displayedSession();
+  if((s?.shots||[]).length&&!s.finished&&!s.prepared&&((s.bow||'')!==(bow||'')||(s.arrows||'')!==(arrows||''))){
+    rememberSetup(bow,arrows);  // la equipación queda guardada aunque se cancele
+    pendingSetup={bow,arrows};
+    paintGearConfirm();
+    return;
+  }
+  applySetupNow(bow,arrows,s);
+}
+function applySetupNow(bow,arrows,s){
+  rememberSetup(bow,arrows);
   let fresh=false;
   if(!s||s.finished){
     startSession(bow,arrows,s&&s.finished?s:null);
@@ -184,6 +199,16 @@ function applySetup(bow,arrows){
   closeGear();
   if(fresh&&view!=='Session')show('Session');
   else render();
+}
+function paintGearConfirm(){
+  const p=pendingSetup;if(!p)return;
+  const name=[p.bow,p.arrows].filter(Boolean).join(' · ');
+  $('gearConfirmYes').textContent=name?'Empezar con '+name:'Empezar';
+  $('gearConfirm').hidden=false;$('gsFoot').hidden=true;
+}
+function cancelGearConfirm(){
+  pendingSetup=null;
+  $('gearConfirm').hidden=true;$('gsFoot').hidden=false;
 }
 function applyMode(mode){
   if(historyMode)return false;
@@ -213,6 +238,7 @@ function removeSetup(i){
   if(calibrationState()?.profile===x.bow)localStorage.removeItem('atCalibration');
   const s=displayedSession();
   if(s&&s.bow===x.bow&&s.arrows===x.arrows){s.bow=null;s.arrows=null;saveSession(s);}
+  if(pendingSetup&&pendingSetup.bow===x.bow&&pendingSetup.arrows===x.arrows)cancelGearConfirm();
   paintGear(); render(); notice('Equipación quitada');
 }
 function openGear(mode){
@@ -220,12 +246,14 @@ function openGear(mode){
   window.gearAskedMode=mode||'edit';
   if(s&&historyMode)return;
   if(s&&!s.gearAsked){s.gearAsked=true;saveSession(s);}
+  cancelGearConfirm();
   $('gearSheet').hidden=false;
   $('gearForm').hidden=!!setupList().length;
   paintGear();
 }
 function closeGear(){
   if($('gearSheet').hidden)return;
+  cancelGearConfirm();
   $('gearSheet').hidden=true;
   const s=displayedSession();
   if(s&&!historyMode&&!s.mode){const st=gearState();applyMode(st.mode);}
@@ -306,6 +334,12 @@ $('gearBtn').onclick=()=>{if(historyMode)return;openGear(displayedSession()?'edi
 $('setGearBtn').onclick=()=>{if(historyMode)return;openGear('edit');};
 $('gearClose').onclick=closeGear;
 $('gearGo').onclick=gearGo;
+$('gearConfirmNo').onclick=cancelGearConfirm;
+$('gearConfirmYes').onclick=()=>{
+  const p=pendingSetup;if(!p)return;
+  cancelGearConfirm();
+  applySetupNow(p.bow,p.arrows,displayedSession());
+};
 $('gearSheet').onclick=e=>{if(e.target.id==='gearSheet')closeGear();};
 $('sessEnd').onclick=closeCurrentSession;
 $('gearCards').onclick=e=>{
@@ -325,7 +359,7 @@ function saveNewSetup(){
 }
 $('gearSave').onclick=saveNewSetup;
 ['gearBowName','gearArrowName'].forEach(id=>$(id).onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();saveNewSetup();}});
-addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gearSheet').hidden)closeGear();});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gearSheet').hidden){if(!$('gearConfirm').hidden)cancelGearConfirm();else closeGear();}});
 let calibrationConfirming = false, calibrationShotKey = '';
 function validCalibrationShot(s) { return !!s && !s.manual && Number.isFinite(s.peak_mg) && s.peak_mg > 150 && s.peak_mg <= 100000; }
 function calibrationState() {

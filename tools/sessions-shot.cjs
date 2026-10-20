@@ -154,11 +154,14 @@ function magick(...args) {
     await run(`openGear('edit')`);
     await sleep(500);
     await shot('07-despues-hoja-unica.png');
-    // Segundo toque: el material cambia → la sesión con flechas se sella y empieza otra.
+    // Tercer toque: con flechas ya tiradas, cambiar de material pide confirmación.
     const meta = await run(`(() => { const s=curSess; window.__sid=s.sensorId; window.__eid=(s.lastEvent??-1); return {sid:window.__sid, eid:window.__eid}; })()`);
     await run(`applySetup('Recurvo 68"','X10 470')`);
+    await sleep(500);
+    await shot('08-despues-confirmar.png');
+    // Al confirmar, la actual se sella y la nueva queda preparada.
+    await run(`document.getElementById('gearConfirmYes').click()`);
     await sleep(600);
-    await shot('08-despues-dos-tapas.png');
     // El sensor sigue emitiendo con el mismo identificador: los tiros caen en la sesión nueva.
     await run(`(() => {
       const sid = window.__sid, base = window.__eid;

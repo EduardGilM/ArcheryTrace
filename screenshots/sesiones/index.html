@@ -88,7 +88,7 @@
     .badge {
       font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
       color: var(--acc); background: var(--acc-soft);
-      border: 1px solid var(--acc-line);
+      border: 1px solid transparent;
       padding: 3px 9px; border-radius: 999px;
       align-self: center;
       white-space: nowrap;
@@ -120,7 +120,7 @@
       <li>sesiones al día · <b>las que quieras</b></li>
       <li>fila · <b>material + estado</b></li>
       <li>hojas · <b>una</b></li>
-      <li>cambiar de arco · <b>2 toques</b></li>
+      <li>cambiar de arco · <b>3 toques</b></li>
       <li>sensor · <b>enrutado por corte</b></li>
       <li>reenvíos · <b>descartados</b></li>
     </ul>
@@ -183,12 +183,12 @@
     </section>
 
     <section>
-      <h2>Cambiar de arco · dos toques</h2>
-      <p class="note">Tocas la fila y tocas el material. Si no había sesión (o estaba cerrada) se prepara una con ese material; si la actual aún no tenía flechas, se cambia en el sitio; y si ya había flechas con otro arco, la sesión se cierra sola y empieza la nueva. Los próximos tiros del sensor caen en ella aunque el identificador no cambie.</p>
+      <h2>Cambiar de arco · tres toques</h2>
+      <p class="note">Tocas la fila y tocas el material. Con flechas ya tiradas, la hoja pide confirmación («Empezar con…») antes de cortar: al aceptar, la sesión se cierra y empieza la nueva. Si no había sesión (o estaba cerrada) se prepara con ese material; si la actual aún no tenía flechas, se cambia en el sitio. Los próximos tiros del sensor caen en la nueva aunque el identificador no cambie.</p>
       <div class="side">
         <figure>
-          <img src="08-despues-dos-tapas.png" alt="Tras tocar otro material: aviso de sesión nueva y fila en estado Preparada">
-          <figcaption><strong>La anterior se cierra, la nueva espera</strong><span class="badge">Sesión nueva</span></figcaption>
+          <img src="08-despues-confirmar.png" alt="Pie de la hoja con Cancelar y Empezar con el nuevo material, antes de cortar la sesión">
+          <figcaption><strong>Confirmar antes de cortar</strong><span class="badge">Empezar con…</span></figcaption>
         </figure>
         <figure>
           <img src="09-despues-tras-tirar.png" alt="Fila de sesión con el nuevo material y estado En vivo tras recibir tiros del sensor">

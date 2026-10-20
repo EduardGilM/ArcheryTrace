@@ -61,7 +61,9 @@ function seed(now) {
     await step(1100, "liveEvent({sid:'demo-live',eid:51,kind:'shot',t:Date.now()+1000,set:1,score:91,peak:1650,instab:80,dt:50})");
     await step(1100, "liveEvent({sid:'demo-live',eid:52,kind:'shot',t:Date.now()+2000,set:1,score:77,peak:1900,instab:110,dt:50})");
     await step(1500, "document.getElementById('gearBtn').click()");                 // hoja en modo edición
-    await step(1400, "[...document.querySelectorAll('#gearCards .gsCard')].find(c=>c.textContent.includes('Recurvo')).click()"); // cambio a Recurvo/X10 → sesión nueva
+    await step(1400, "[...document.querySelectorAll('#gearCards .gsCard')].find(c=>c.textContent.includes('Recurvo')).click()"); // tocar Recurvo/X10 pide confirmación
+    await step(1500);                                                              // «Cancelar · Empezar con Recurvo 68 · X10 470»
+    await step(400, "document.getElementById('gearConfirmYes').click()");           // confirmar: sesión nueva
     await step(1800);                                                              // aviso «Sesión nueva con Recurvo 68 · X10 470»
     await step(900,  "liveEvent({sid:'demo-live',eid:53,kind:'shot',t:Date.now()+3000,set:1,score:88,peak:1690,instab:70,dt:50})"); // el sensor la adopta
     await step(1400);                                                              // fila «En vivo · 1 flecha»

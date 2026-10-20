@@ -138,12 +138,13 @@ function magick(...args) {
     await sleep(500);
     await shoot('06-despues-set.png');
 
-    // Cambiar con la sesión en marcha: la hoja en modo edición…
+    // Cambiar con la sesión en marcha: elegir otro material pide confirmación…
     await scenario('cambio', `openGear('edit')`);
-    await sleep(500);
-    await shoot('08-despues-hoja-material.png');
-    // …elegir otro material sella la actual y empieza una sesión nueva con el aviso.
     await run(`applySetup('Recurvo 68"', 'X10 470')`);
+    await sleep(500);
+    await shoot('08-despues-confirmar.png');
+    // …y al confirmar sella la actual y empieza una sesión nueva con el aviso.
+    await run(`document.getElementById('gearConfirmYes').click()`);
     await sleep(600);
     await shoot('09-despues-sesion-nueva.png');
 

@@ -89,7 +89,7 @@
     .badge {
       font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
       color: var(--acc); background: var(--acc-soft);
-      border: 1px solid var(--acc-line);
+      border: 1px solid transparent;
       padding: 3px 9px; border-radius: 999px;
       align-self: center;
       white-space: nowrap;
@@ -116,7 +116,7 @@
     <p class="sub">
       La equipación pasó de cuatro desplegables en la tarjeta de sesión a una única pregunta
       al iniciar y una fila compacta. Cada flecha sella el material con el que se tiró, y cambiar
-      de material con flechas ya tiradas ya no mezcla: cierra la sesión y empieza otra
+      de material con flechas ya tiradas pide confirmación: cierra la sesión y empieza otra
       (ver <a href="../sesiones/">la galería de sesiones</a>).
     </p>
     <ul class="params">
@@ -157,11 +157,11 @@
 
     <section>
       <h2>Cambiar de material · sesión nueva</h2>
-      <p class="note">Tocar la fila reabre la hoja en modo edición. Si la sesión ya tenía flechas, elegir otro material la cierra y empieza una nueva con ese material: el aviso lo confirma y el sensor la adopta con el siguiente tiro. Lo anterior conserva su material, flecha a flecha.</p>
+      <p class="note">Tocar la fila reabre la hoja en modo edición. Si la sesión ya tenía flechas, elegir otro material pide confirmación en el propio pie («Empezar con…»): al aceptar, la sesión se cierra y empieza otra. El sensor la adopta con el siguiente tiro. Lo anterior conserva su material, flecha a flecha.</p>
       <div class="side">
         <figure>
-          <img src="08-despues-hoja-material.png" alt="Hoja de sesión abierta en modo edición con el material en uso">
-          <figcaption><strong>La hoja, con la sesión en marcha</strong><span class="badge">Edición</span></figcaption>
+          <img src="08-despues-confirmar.png" alt="Pie de la hoja con Cancelar y Empezar con el material elegido">
+          <figcaption><strong>Confirmar antes de cortar</strong><span class="badge">Empezar con…</span></figcaption>
         </figure>
         <figure>
           <img src="09-despues-sesion-nueva.png" alt="Aviso de sesión nueva con el material elegido y la fila en estado Preparada">
@@ -198,11 +198,11 @@
 
     <section>
       <h2>Flujo completo · vídeo</h2>
-      <p class="note">21 s: pregunta al arrancar → elegir Compuesto/ACE → tres flechas → cambiar a Recurvo/X10 → aviso de sesión nueva → el sensor la adopta → historial con una sesión por arco → vuelta a la sesión.</p>
+      <p class="note">23 s: pregunta al arrancar → elegir Compuesto/ACE → tres flechas → cambiar a Recurvo/X10 → confirmar sesión nueva → aviso → el sensor la adopta → historial con una sesión por arco → vuelta a la sesión.</p>
       <div class="video">
         <figure class="vwrap">
           <video src="equipacion.mp4" controls playsinline preload="metadata" poster="04-despues-pregunta-inicio.png"></video>
-          <figcaption><strong>equipacion.mp4</strong><span class="badge">780×1688 · 21 s</span></figcaption>
+          <figcaption><strong>equipacion.mp4</strong><span class="badge">780×1688 · 23 s</span></figcaption>
         </figure>
       </div>
     </section>

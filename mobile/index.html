@@ -104,7 +104,7 @@
   .scoreSlots { display:flex; gap:6px; margin-bottom:8px; }
   .scoreSlots button { flex:1; min-width:0; min-height:48px; border-radius:12px; background:var(--surface-2); border:1px solid var(--line); color:var(--txt-2); font-size:11px; font-weight:500; }
   .scoreSlots button b { display:block; font-family:var(--mono); font-size:16px; color:var(--txt); font-weight:600; margin-top:1px; }
-  .scoreSlots button.on { border-color:var(--acc-line); background:var(--acc-soft); color:var(--acc); }
+  .scoreSlots button.on { border-color:transparent; background:var(--acc-soft); color:var(--acc); }
   .scoreSlots button.on b { color:var(--acc); }
   .scorepad { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:4px; }
   .scorepad button { min-height:44px; border-radius:12px; background:var(--surface-2); border:1px solid var(--line); color:var(--txt); font-family:var(--mono); font-size:16px; font-weight:600; padding:0; }
@@ -123,7 +123,7 @@
   #splitNeed { margin:0; font-size:14px; color:var(--txt-2); }
   .tracebar { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:10px; }
   .tracebar button { background:var(--surface-2); color:var(--txt-2); border:1px solid var(--line); border-radius:999px; font-size:12.5px; padding:6px 12px; }
-  .tracebar button.sel { background:var(--acc-soft); color:var(--acc); border-color:var(--acc-line); font-weight:600; }
+  .tracebar button.sel { background:var(--acc-soft); color:var(--acc); border-color:transparent; font-weight:600; }
 
   /* Botones */
   .btnPrimary, #play { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:52px;
@@ -245,7 +245,7 @@
   .setbar { display:flex; gap:6px; padding:0 0 2px; overflow-x:auto; flex-shrink:0; }
   .setbar:empty { display:none; }
   .setbar button { background:var(--surface); color:var(--txt-2); border:1px solid var(--line); border-radius:999px; font-size:13px; padding:7px 14px; white-space:nowrap; }
-  .setbar button.sel { background:var(--acc-soft); color:var(--acc); border-color:var(--acc-line); font-weight:600; }
+  .setbar button.sel { background:var(--acc-soft); color:var(--acc); border-color:transparent; font-weight:600; }
   .setHead { display:flex; align-items:center; gap:12px; flex-shrink:0; }
   .setHead { flex-direction:column; align-items:flex-end; gap:4px; margin-left:auto; }
   .setHead .setPts { font-size:26px; color:var(--txt); }
@@ -303,7 +303,7 @@
   main[data-empty="true"] > .emptyState { display:block; }
 
   input, textarea { user-select:text; }
-  .modeSeg button.on, .pickScope button.on { background:var(--acc-soft); color:var(--acc); border-color:var(--acc-line); }
+  .modeSeg button.on, .pickScope button.on { background:var(--acc-soft); color:var(--acc); border-color:transparent; }
   #openShare[hidden] { display:none !important; }
   .modeSeg { display:flex; gap:4px; grid-column:1 / -1; }
   .modeSeg button { flex:1; min-width:0; min-height:40px; padding:8px 4px; border-radius:8px; background:var(--surface-2); color:var(--txt-2); border:1px solid var(--line); font-size:13px; font-weight:600; }
@@ -454,7 +454,7 @@
   .widgetFx { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; }
   .widgetFx::-webkit-scrollbar { display:none; }
   .widgetFx button { flex:0 0 auto; height:32px; padding:0 13px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:none; color:var(--txt-2); font-size:13px; font-weight:500; }
-  .widgetFx button.on { background:var(--acc-soft); border-color:var(--acc-line); color:var(--acc); }
+  .widgetFx button.on { background:var(--acc-soft); border-color:transparent; color:var(--acc); }
   .widgetAdd { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; }
   .widgetAdd::-webkit-scrollbar { display:none; }
   .widgetAdd button { flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 13px; border:1px dashed rgba(255,255,255,.18); border-radius:999px; background:none; color:var(--txt-2); font-size:13px; font-weight:500; }
@@ -542,7 +542,7 @@
   .sheet button.on { border-color:var(--acc-line) !important; background:#1c1c1e !important; }
   .sheet .deleteGear { border-radius:999px !important; }
   .modeSeg button, .pickScope button { border-radius:999px !important; background:#1c1c1e !important; border:1px solid transparent !important; font-weight:500 !important; }
-  .modeSeg button.on, .pickScope button.on, .modeSeg button[aria-pressed="true"], .pickScope button[aria-pressed="true"] { border-color:var(--acc-line) !important; color:var(--acc) !important; }
+  .modeSeg button.on, .pickScope button.on, .modeSeg button[aria-pressed="true"], .pickScope button[aria-pressed="true"] { border-color:transparent !important; color:var(--acc) !important; }
   #calibrationProfile, .training select, .cmpPick select { background-color:#1c1c1e !important; border:none !important; border-radius:999px !important; padding-left:16px !important; font-weight:500; }
   body.coachOpen #link,body.coachOpen #live,body.coachOpen #returnCurrent { display:none !important; }
   #vCoach { overflow:hidden;padding-bottom:8px;gap:0; }
