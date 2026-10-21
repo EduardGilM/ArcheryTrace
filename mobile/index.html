@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="at-version" content="0.4.4">
+<meta name="at-version" content="0.4.8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
@@ -273,6 +273,13 @@
   .setVal { font:600 28px/1 var(--num); text-align:right; }
   .trendRow { width:100%; display:grid; grid-template-columns:minmax(52px,max-content) minmax(0,1fr) auto 44px; gap:8px; align-items:center; min-height:44px; padding:8px 14px; background:none; border:0; border-top:1px solid var(--line); text-align:left; }
   .trendRow:last-child { border-bottom:0; }
+  .rangeMark { display:flex; align-items:center; gap:8px; padding:9px 0 2px; color:var(--acc); font-size:10.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; }
+  .rangeMark::after { content:""; flex:1; height:1px; background:linear-gradient(90deg,var(--acc),rgba(255,138,31,.12)); }
+  .rangeMark.start::before { content:""; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:7px solid var(--acc); }
+  .rangeMark.end { padding:2px 0 9px; }
+  .rangeMark.end::before { content:""; flex:1; height:1px; background:linear-gradient(90deg,rgba(255,138,31,.12),var(--acc)); }
+  .rangeMark.end::after { content:""; flex:none; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-right:7px solid var(--acc); }
+  #setList .rangeMark { padding-left:14px; padding-right:14px; }
   .trendLabel { display:flex; align-items:center; gap:8px; font:500 12px/1 var(--font); color:var(--txt-3); font-variant-numeric:tabular-nums; }
   .trendLabel .trendScore { width:24px; height:24px; box-sizing:border-box; border-radius:50%; border:1px solid var(--line-2); display:grid; place-items:center; font:600 13px/1 var(--num); color:var(--txt-2); }
   .trendLabel .trendScore.hi { color:var(--acc); border-color:color-mix(in srgb, var(--acc) 45%, transparent); }
@@ -1966,6 +1973,23 @@ function fmtDate(ms) {
   return d.getDate() + ' ' + ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d.getMonth()] + ', ' + hh;
 }
 
+function rangeMarks(shots) {
+  const starts = new Map(), ends = new Map();
+  const tSel = /^t(\d+)$/.exec(statFilter);
+  const tandaNums = [...new Set((shots || []).map(s => Number.isFinite(s.tanda) ? s.tanda : null).filter(v => v != null))].sort((a, b) => a - b);
+  const tandas = tSel ? [+tSel[1]] : statFilter === 'score' ? null : (tandaNums.length ? tandaNums : null);
+  const inRange = s => tandas ? tandas.includes(s.tanda) : s.phase === 'score';
+  const labelOf = s => tandas ? `Tanda ${s.tanda}` : 'Puntuables';
+  const runs = [];
+  (shots || []).forEach((s, i) => {
+    if (!inRange(s)) return;
+    const label = labelOf(s), last = runs[runs.length - 1];
+    if (last && last.label === label && last.last === i - 1) last.last = i;
+    else runs.push({ label, first: i, last: i });
+  });
+  runs.forEach(r => { starts.set(r.first, r.label); ends.set(r.last, r.label); });
+  return { starts, ends };
+}
 function renderSet(S, si) {
   const bar = document.getElementById('setbar');
   bar.innerHTML = S.length > 1 ? S.map((g, i) => `<button class="${i === si ? 'sel' : ''}" data-set="${i}">${setLabel(S,i)}</button>`).join('') : '';
@@ -1974,12 +1998,15 @@ function renderSet(S, si) {
   paintScore('setScore', g.map(j => data.shots[j]));
   document.getElementById('legend').innerHTML = g.map((j, k) =>
     `<span><i style="background:${ACOLORS[k % 6]}"></i>${k + 1}</span>`).join('');
+  const marks = rangeMarks(data.shots);
   document.getElementById('setArrows').innerHTML = g.map((j, k) => {
     const s = data.shots[j];
     const mark = s.candidate || Score.points(s.result?.value) == null ? '' : `<span class="trendScore">${s.result.value}</span>`;
     const tone = !s.candidate && Number.isFinite(s.aim_score) && s.aim_score >= 80 ? 'var(--acc)' : 'var(--txt)';
-    return `<div class="arrowline" data-jump="${j}"><span class="chip dotChip" style="--c:${ACOLORS[k % 6]}">${k + 1}</span>` +
-      mark + `<b style="color:${tone}">${s.candidate?'Cal':s.aim_score ?? '–'}</b><span class="r">${Number.isFinite(s.peak_mg)?esNum(s.peak_mg / 1000, 1)+' g':'–'} · ${s.settle_ms ?? '–'} ms</span></div>`;
+    const start = marks.starts.has(j) ? `<div class="rangeMark start" role="separator" aria-label="Empieza ${escapeText(marks.starts.get(j))}"><span>${escapeText(marks.starts.get(j))}</span></div>` : '';
+    const end = marks.ends.has(j) ? `<div class="rangeMark end" role="separator" aria-label="Termina ${escapeText(marks.ends.get(j))}"></div>` : '';
+    return start + `<div class="arrowline" data-jump="${j}"><span class="chip dotChip" style="--c:${ACOLORS[k % 6]}">${k + 1}</span>` +
+      mark + `<b style="color:${tone}">${s.candidate?'Cal':s.aim_score ?? '–'}</b><span class="r">${Number.isFinite(s.peak_mg)?esNum(s.peak_mg / 1000, 1)+' g':'–'} · ${s.settle_ms ?? '–'} ms</span></div>` + end;
   }).join('');
   document.getElementById('setArrows').onclick = e => {
     const j = e.target.closest('[data-jump]')?.dataset.jump;
@@ -2399,6 +2426,7 @@ function drawTrend(S) {
   const c = document.getElementById('trend'), list=document.getElementById('setList');
   const opened=new Set([...list.querySelectorAll('details[open]')].map(d=>d.dataset.set));
   const candidates=data.shots.every(s=>s.candidate), values=data.shots.map(s=>candidates?s.peak_mg:s.aim_score);
+  const marks=rangeMarks(data.shots);
   const max=candidates?values.reduce((m,v)=>Number.isFinite(v)?Math.max(m,v):m,1):100;
   const anyValue=!candidates && data.shots.some(s => Score.points(s.result && s.result.value) != null);
   const barOf = v => candidates ? 'var(--acc)' : !Number.isFinite(v) ? 'rgba(255,255,255,.2)' : v >= 80 ? 'var(--acc)' : v < 70 ? 'var(--low)' : 'rgba(255,255,255,.85)';
@@ -2414,8 +2442,10 @@ function drawTrend(S) {
     const phaseBit = '';
     const tAttr = Number.isFinite(Number(s.t_ms)) ? ` data-t="${Number(s.t_ms)}"` : '';
     const aria=`${name}, ${label}${marked ? ', valor ' + marked : ''}${phaseName ? ', ' + phaseName : ''}, ${valid ? Math.round(v) + (candidates ? ' mG' : ' de estabilidad') : 'sin estabilidad'}`;
-    return `<button class="trendRow" data-shot="${i}"${tAttr} aria-current="${i===cur}" aria-label="${aria}" style="--c:${barOf(v)};--n:${numOf(v)}">`+
-      `<span class="trendLabel">${j + 1}${scoreBit}${phaseBit}</span><span class="trendBar" aria-hidden="true"><span style="width:${valid?Math.max(0,Math.min(100,v/max*100)):0}%"></span></span><span class="trendMeta">${meta}</span><span class="trendValue">${valid?Math.round(v):'–'}</span></button>`;
+    const start = marks.starts.has(i) ? `<div class="rangeMark start" role="separator" aria-label="Empieza ${escapeText(marks.starts.get(i))}"><span>${escapeText(marks.starts.get(i))}</span></div>` : '';
+    const end = marks.ends.has(i) ? `<div class="rangeMark end" role="separator" aria-label="Termina ${escapeText(marks.ends.get(i))}"></div>` : '';
+    return start + `<button class="trendRow" data-shot="${i}"${tAttr} aria-current="${i===cur}" aria-label="${aria}" style="--c:${barOf(v)};--n:${numOf(v)}">`+
+      `<span class="trendLabel">${j + 1}${scoreBit}${phaseBit}</span><span class="trendBar" aria-hidden="true"><span style="width:${valid?Math.max(0,Math.min(100,v/max*100)):0}%"></span></span><span class="trendMeta">${meta}</span><span class="trendValue">${valid?Math.round(v):'–'}</span></button>` + end;
   }).join('');});
   if (c) c.innerHTML=rows.join('');
   const multi=typeof gearMulti==='function'&&gearMulti();
