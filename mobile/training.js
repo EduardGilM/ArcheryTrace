@@ -80,8 +80,20 @@ document.body.insertAdjacentHTML('beforeend','<div id="notice" role="status" hid
 <div class="gsPanel">
 <div class="gsHead"><b id="gearTitle">Equipación y modo</b><button type="button" class="gsX" id="gearClose" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
 <div class="gsBody">
-<div class="gsLbl">Equipación</div>
-<div class="gsCards" id="gearCards"></div>
+<div class="gsLbl">Arco</div>
+<div class="gsCards" id="gearBows"></div>
+<button type="button" class="gsNew" id="gearBowNew">+ Nuevo arco</button>
+<div class="gsForm" id="gearBowForm" hidden>
+<input id="gearBowName" placeholder="Nombre del arco" maxlength="24" aria-label="Nombre del arco">
+<button type="button" class="gsSave" id="gearBowSave">Guardar y usar</button>
+</div>
+<div class="gsLbl">Flechas</div>
+<div class="gsCards" id="gearArrows"></div>
+<button type="button" class="gsNew" id="gearArrowNew">+ Nuevas flechas</button>
+<div class="gsForm" id="gearArrowForm" hidden>
+<input id="gearArrowName" placeholder="Nombre de las flechas" maxlength="24" aria-label="Nombre de las flechas">
+<button type="button" class="gsSave" id="gearArrowSave">Guardar y usar</button>
+</div>
 <div class="gsLbl">Modo</div>
 <div class="gsSeg" id="gearModes">
 <button type="button" data-v="Indoor">Indoor<small>3 flechas</small></button>
@@ -94,12 +106,6 @@ document.body.insertAdjacentHTML('beforeend','<div id="notice" role="status" hid
 <button type="button" data-fmt="vegas">Vegas<small>X, 10, 9</small></button>
 <button type="button" data-fmt="lancaster">Lancaster<small>11, 10, 9</small></button>
 </div>
-<button type="button" class="gsNew" id="gearNew">+ Nueva equipación</button>
-<div class="gsForm" id="gearForm" hidden>
-<input id="gearBowName" placeholder="Nombre del arco" maxlength="24" aria-label="Nombre del arco">
-<input id="gearArrowName" placeholder="Nombre de las flechas" maxlength="24" aria-label="Nombre de las flechas">
-<button type="button" class="gsSave" id="gearSave">Guardar y usar</button>
-</div>
 </div>
 <div class="gsConfirm" id="gearConfirm" hidden><button type="button" class="gsGo acc" id="gearConfirmYes">Empezar</button></div>
 <div class="gsFoot" id="gsFoot"><button type="button" class="gsGo" id="gearGo">Listo</button><button type="button" class="gsGhost" id="sessEnd" hidden>Cerrar sesión</button></div>
@@ -109,7 +115,7 @@ const gear={get:()=>{try{const g=JSON.parse(localStorage.getItem('atGear'));retu
 // Las equipaciones son combinaciones arco + flechas; las viejas se derivan de lo ya tirado.
 function setupList(){
   const g=gear.get();
-  if(Array.isArray(g.setups)&&g.setups.length) return g.setups;
+  if(Array.isArray(g.setups)) return g.setups;
   const out=[];
   store.list().slice().sort((a,b)=>b.id-a.id).forEach(s=>{const bow=s.bow||'',arrows=s.arrows||'';if(!bow&&!arrows)return;if(!out.some(x=>x.bow===bow&&x.arrows===arrows))out.push({bow,arrows,usedAt:s.id});});
   g.bows.forEach(b=>{if(!out.some(x=>x.bow===b))out.push({bow:b,arrows:g.arrows[0]||'',usedAt:0});});
@@ -130,6 +136,19 @@ function gearState(){
   if(s) return {bow:s.bow||'',arrows:s.arrows||'',mode:s.mode||l.mode||'Indoor',fmt:FMT_NAMES[s.scoreFormat]?s.scoreFormat:(l.fmt||'vegas'),session:s};
   return {bow:l.bow||'',arrows:l.arrows||'',mode:l.mode||'Indoor',fmt:l.fmt||'vegas',session:null};
 }
+function gearChoice(){
+  const st=gearState();
+  if(!pendingSetup)return st;
+  return {...st,bow:pendingSetup.bow||'',arrows:pendingSetup.arrows||''};
+}
+function gearNames(st){
+  const g=gear.get(), bows=[], arrows=[];
+  const add=(list,name)=>{name=String(name||'').trim();if(name&&!list.includes(name))list.push(name);};
+  setupList().forEach(x=>{add(bows,x.bow);add(arrows,x.arrows);});
+  g.bows.forEach(n=>add(bows,n)); g.arrows.forEach(n=>add(arrows,n));
+  add(bows,st.bow); add(arrows,st.arrows);
+  return {bows:bows.slice(0,12),arrows:arrows.slice(0,12)};
+}
 function rememberLast(){const st=gearState(),g=gear.get();g.last={bow:st.bow,arrows:st.arrows,mode:st.mode,fmt:st.fmt};gear.save(g);}
 function hydrateGear(s){
   if(!s||s.bow||s.arrows||s.mode) return s;
@@ -148,35 +167,34 @@ function gearChips(st,withMode){
 }
 function renderGear(){
   const st=gearState(), bits=gearChips(st), s=displayedSession();
-  let stateTxt='Sin sesión', stateCls=' empty';
+  let stateTxt='', stateCls='';
   if(s){
     const n=(s.shots||[]).filter(x=>!x.candidate).length, nd=n===1?' flecha':' flechas';
-    if(s.prepared) stateTxt='Preparada';
-    else if(!s.finished&&s.live) stateTxt='En vivo · '+n+nd;
-    else stateTxt='Cerrada · '+n+nd;
-    stateCls=/^(Preparada|En vivo)/.test(stateTxt)?' mode':'';
-  }
+    if(!s.prepared) stateTxt=s.live&&!s.finished?'En vivo · '+n+nd:'Cerrada · '+n+nd;
+    if(s.prepared||s.live) stateCls=' mode';
+  }else stateTxt='Sin sesión', stateCls=' empty';
   const material=bits.map(t=>`<span class="chip${/^(Indoor|Outdoor|Libre)/.test(t)?' mode':''}">${escapeText(t)}</span>`).join('')
     ||'<span class="chip empty">Elige tu material</span>';
-  $('gearChips').innerHTML=material+`<span class="chip${stateCls}">${escapeText(stateTxt)}</span>`;
-  $('gearBtn').setAttribute('aria-label','Sesión: '+[...bits,stateTxt].join(', ')+'. Toca para gestionar');
+  $('gearChips').innerHTML=material+(stateTxt?`<span class="chip${stateCls}">${escapeText(stateTxt)}</span>`:'');
+  $('gearBtn').setAttribute('aria-label','Sesión: '+[...bits,stateTxt].filter(Boolean).join(', ')+'. Toca para gestionar');
   if(!$('gearSheet').hidden)paintGear();
 }
 // Tocar un material: si no hay sesión (o está cerrada) se prepara una con él; si hay una en vivo
 // con flechas y el material cambia, primero se confirma: la actual se cierra y empieza otra.
 let pendingSetup=null;
-function applySetup(bow,arrows){
+function applySetup(bow,arrows,keepOpen){
   if(historyMode)return;
   const s=displayedSession();
   if((s?.shots||[]).length&&!s.finished&&!s.prepared&&((s.bow||'')!==(bow||'')||(s.arrows||'')!==(arrows||''))){
     rememberSetup(bow,arrows);  // la equipación queda guardada aunque se cancele
     pendingSetup={bow,arrows};
-    paintGearConfirm();
+    paintGearConfirm(); paintGear();
     return;
   }
-  applySetupNow(bow,arrows,s);
+  applySetupNow(bow,arrows,s,keepOpen);
 }
-function applySetupNow(bow,arrows,s){
+function applySetupNow(bow,arrows,s,keepOpen){
+  cancelGearConfirm();
   rememberSetup(bow,arrows);
   let fresh=false;
   if(!s||s.finished){
@@ -194,7 +212,7 @@ function applySetupNow(bow,arrows,s){
     if(bow)sendCmd('profile',bow);
   }
   rememberLast();
-  closeGear();
+  if(!keepOpen)closeGear();
   if(fresh&&view!=='Session')show('Session');
   else render();
 }
@@ -220,24 +238,34 @@ function applyFormat(fmt){
   const s=displayedSession(); if(!s||s.mode!=='Indoor')return false;
   s.scoreFormat=fmt;saveSession(s);rememberLast();render();return true;
 }
-function removeSetup(i){
-  if(historyMode)return;
-  const list=setupList(), x=list[i]; if(!x)return;
-  const rest=list.filter((_,j)=>j!==i), g=gear.get();
-  const stillBow=rest.some(y=>y.bow===x.bow), stillArrows=rest.some(y=>y.arrows===x.arrows);
-  g.setups=rest;
-  if(!stillBow&&x.bow)g.bows=g.bows.filter(n=>n!==x.bow);
-  if(!stillArrows&&x.arrows)g.arrows=g.arrows.filter(n=>n!==x.arrows);
-  gear.save(g);
-  if(x.bow&&!stillBow&&window.Native?.command){
-    const s=displayedSession(), error=Native.command(JSON.stringify({sid:s?.sensorId||'',action:'deleteProfile',value:x.bow}));
-    if(error){notice('No se pudo eliminar el preset: '+error);paintGear();return;}
+function removeBow(name){
+  if(historyMode||!name)return;
+  const g=gear.get();
+  if(window.Native?.command){
+    const s=displayedSession(), error=Native.command(JSON.stringify({sid:s?.sensorId||'',action:'deleteProfile',value:name}));
+    if(error){notice('No se pudo eliminar el arco: '+error);paintGear();return;}
   }
-  if(calibrationState()?.profile===x.bow)localStorage.removeItem('atCalibration');
+  if(calibrationState()?.profile===name)localStorage.removeItem('atCalibration');
+  g.bows=g.bows.filter(n=>n!==name);
+  g.setups=(Array.isArray(g.setups)?g.setups:setupList()).map(x=>x.bow===name?{...x,bow:''}:x);
+  if(g.last?.bow===name)g.last.bow='';
+  gear.save(g);
   const s=displayedSession();
-  if(s&&s.bow===x.bow&&s.arrows===x.arrows){s.bow=null;s.arrows=null;saveSession(s);}
-  if(pendingSetup&&pendingSetup.bow===x.bow&&pendingSetup.arrows===x.arrows)cancelGearConfirm();
-  paintGear(); render(); notice('Equipación quitada');
+  if(s&&s.bow===name){s.bow=null;saveSession(s);}
+  if(pendingSetup&&pendingSetup.bow===name)cancelGearConfirm();
+  paintGear(); render(); notice('Arco quitado');
+}
+function removeArrow(name){
+  if(historyMode||!name)return;
+  const g=gear.get();
+  g.arrows=g.arrows.filter(n=>n!==name);
+  g.setups=(Array.isArray(g.setups)?g.setups:setupList()).map(x=>x.arrows===name?{...x,arrows:''}:x);
+  if(g.last?.arrows===name)g.last.arrows='';
+  gear.save(g);
+  const s=displayedSession();
+  if(s&&s.arrows===name){s.arrows=null;saveSession(s);}
+  if(pendingSetup&&pendingSetup.arrows===name)cancelGearConfirm();
+  paintGear(); render(); notice('Flechas quitadas');
 }
 function openGear(mode){
   const s=displayedSession();
@@ -246,7 +274,7 @@ function openGear(mode){
   if(s&&!s.gearAsked){s.gearAsked=true;saveSession(s);}
   cancelGearConfirm();
   $('gearSheet').hidden=false;
-  $('gearForm').hidden=!!setupList().length;
+  $('gearBowForm').hidden=true; $('gearArrowForm').hidden=true;
   paintGear();
 }
 function closeGear(){
@@ -257,12 +285,13 @@ function closeGear(){
   if(s&&!historyMode&&!s.mode){const st=gearState();applyMode(st.mode);}
 }
 function paintGear(){
-  const st=gearState(), list=setupList();
-  $('gearCards').innerHTML=list.length?list.map((x,i)=>{
-    const on=x.bow===st.bow&&x.arrows===st.arrows;
-    const name=[x.bow,x.arrows].filter(Boolean).join(' · ')||'Equipación';
-    return `<div class="gsRow"><button type="button" class="gsCard${on?' on':''}" data-i="${i}"><span class="t"><b>${escapeText(x.bow||'Sin arco')}</b><small>${escapeText(x.arrows||'Sin flechas')}</small></span><span class="tick">${on?CHECK:''}</span></button><button type="button" class="gsDel" data-del="${i}" aria-label="Quitar ${escapeText(name)}">${TRASH}</button></div>`;
-  }).join(''):'<p class="gsEmpty">Todavía no tienes ninguna equipación. Crea la primera aquí abajo.</p>';
+  const st=gearChoice(), names=gearNames(st);
+  const rows=(list,kind,label)=>list.length?list.map((n,i)=>{
+    const on=n===st[kind];
+    return `<div class="gsRow"><button type="button" class="gsCard${on?' on':''}" data-${kind}="${i}"><span class="t"><b>${escapeText(n)}</b></span><span class="tick">${on?CHECK:''}</span></button><button type="button" class="gsDel" data-del-${kind}="${i}" aria-label="Quitar ${escapeText(label)} ${escapeText(n)}">${TRASH}</button></div>`;
+  }).join(''):`<p class="gsEmpty">${label==='arco'?'Sin arcos guardados.':'Sin flechas guardadas.'}</p>`;
+  $('gearBows').innerHTML=rows(names.bows,'bow','arco');
+  $('gearArrows').innerHTML=rows(names.arrows,'arrows','flechas');
   $('gearModes').querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===st.mode));
   $('gearFmtLbl').hidden=st.mode!=='Indoor';
   $('gearFormats').hidden=st.mode!=='Indoor';
@@ -339,23 +368,40 @@ $('gearConfirmYes').onclick=()=>{
 };
 $('gearSheet').onclick=e=>{if(e.target.id==='gearSheet')closeGear();};
 $('sessEnd').onclick=closeCurrentSession;
-$('gearCards').onclick=e=>{
-  const del=e.target.closest('[data-del]');
-  if(del){removeSetup(+del.dataset.del);return;}
-  const b=e.target.closest('[data-i]'); if(!b)return;
-  const x=setupList()[+b.dataset.i]; if(!x)return;
-  applySetup(x.bow,x.arrows);
+$('gearBows').onclick=e=>{
+  const del=e.target.closest('[data-del-bow]');
+  if(del){removeBow(gearNames(gearChoice()).bows[+del.dataset.delBow]);return;}
+  const b=e.target.closest('[data-bow]'); if(!b)return;
+  const name=gearNames(gearChoice()).bows[+b.dataset.bow]; if(!name)return;
+  applySetup(name,gearChoice().arrows,true);
+};
+$('gearArrows').onclick=e=>{
+  const del=e.target.closest('[data-del-arrows]');
+  if(del){removeArrow(gearNames(gearChoice()).arrows[+del.dataset.delArrows]);return;}
+  const b=e.target.closest('[data-arrows]'); if(!b)return;
+  const name=gearNames(gearChoice()).arrows[+b.dataset.arrows]; if(!name)return;
+  applySetup(gearChoice().bow,name,true);
 };
 $('gearModes').onclick=e=>{const b=e.target.closest('[data-v]');if(b)applyMode(b.dataset.v);};
 $('gearFormats').onclick=e=>{const b=e.target.closest('[data-fmt]');if(b)applyFormat(b.dataset.fmt);};
-$('gearNew').onclick=()=>{const f=$('gearForm');f.hidden=!f.hidden;if(!f.hidden)$('gearBowName').focus();};
-function saveNewSetup(){
-  const bow=$('gearBowName').value.trim(), arrows=$('gearArrowName').value.trim();
-  if(!bow&&!arrows){notice('Ponle nombre al arco o a las flechas');return;}
-  applySetup(bow,arrows); $('gearBowName').value=$('gearArrowName').value=''; $('gearForm').hidden=true;
+$('gearBowNew').onclick=()=>{const f=$('gearBowForm');f.hidden=!f.hidden;if(!f.hidden){$('gearArrowForm').hidden=true;$('gearBowName').focus();}};
+$('gearArrowNew').onclick=()=>{const f=$('gearArrowForm');f.hidden=!f.hidden;if(!f.hidden){$('gearBowForm').hidden=true;$('gearArrowName').focus();}};
+function saveNewBow(){
+  const name=$('gearBowName').value.trim();
+  if(!name){notice('Ponle nombre al arco');return;}
+  $('gearBowName').value=''; $('gearBowForm').hidden=true;
+  applySetup(name,gearChoice().arrows,true);
 }
-$('gearSave').onclick=saveNewSetup;
-['gearBowName','gearArrowName'].forEach(id=>$(id).onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();saveNewSetup();}});
+function saveNewArrows(){
+  const name=$('gearArrowName').value.trim();
+  if(!name){notice('Ponle nombre a las flechas');return;}
+  $('gearArrowName').value=''; $('gearArrowForm').hidden=true;
+  applySetup(gearChoice().bow,name,true);
+}
+$('gearBowSave').onclick=saveNewBow;
+$('gearArrowSave').onclick=saveNewArrows;
+$('gearBowName').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();saveNewBow();}};
+$('gearArrowName').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();saveNewArrows();}};
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gearSheet').hidden){if(!$('gearConfirm').hidden)cancelGearConfirm();else closeGear();}});
 let calibrationConfirming = false, calibrationShotKey = '';
 function validCalibrationShot(s) { return !!s && !s.manual && Number.isFinite(s.peak_mg) && s.peak_mg > 150 && s.peak_mg <= 100000; }

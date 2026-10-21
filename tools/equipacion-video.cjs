@@ -55,14 +55,17 @@ function seed(now) {
     const step = async (ms, expr) => { if (expr) await run(expr); await sleep(ms); };
 
     await step(2000);                                                              // «¿Con qué tiras hoy?» (se abre sola)
-    await step(1500, "document.querySelectorAll('#gearCards .gsCard')[1].click()"); // elijo Compuesto/ACE: la hoja se cierra sola
+    await step(1500, "[...document.querySelectorAll('#gearBows .gsCard')].find(c=>c.textContent.includes('Compuesto')).click()"); // elijo el arco
+    await step(1000, "[...document.querySelectorAll('#gearArrows .gsCard')].find(c=>c.textContent.includes('ACE')).click()");    // y aparte, las flechas
+    await step(900,  "document.getElementById('gearGo').click()");                 // Listo: la hoja se cierra
     await step(1200);                                                              // fila «Sesión» ya con el material
     await step(900,  "liveEvent({sid:'demo-live',eid:50,kind:'shot',t:Date.now(),set:1,score:84,peak:1720,instab:95,dt:50})");
     await step(1100, "liveEvent({sid:'demo-live',eid:51,kind:'shot',t:Date.now()+1000,set:1,score:91,peak:1650,instab:80,dt:50})");
     await step(1100, "liveEvent({sid:'demo-live',eid:52,kind:'shot',t:Date.now()+2000,set:1,score:77,peak:1900,instab:110,dt:50})");
     await step(1500, "document.getElementById('gearBtn').click()");                 // hoja en modo edición
-    await step(1400, "[...document.querySelectorAll('#gearCards .gsCard')].find(c=>c.textContent.includes('Recurvo')).click()"); // tocar Recurvo/X10 pide confirmación
-    await step(1500);                                                              // «Cancelar · Empezar con Recurvo 68 · X10 470»
+    await step(1400, "[...document.querySelectorAll('#gearBows .gsCard')].find(c=>c.textContent.includes('Recurvo')).click()"); // cambiar el arco pide confirmación
+    await step(1000, "[...document.querySelectorAll('#gearArrows .gsCard')].find(c=>c.textContent.includes('X10')).click()");   // las flechas se eligen aparte
+    await step(1500);                                                              // «Empezar con Recurvo 68 · X10 470»
     await step(400, "document.getElementById('gearConfirmYes').click()");           // confirmar: sesión nueva
     await step(1800);                                                              // aviso «Sesión nueva con Recurvo 68 · X10 470»
     await step(900,  "liveEvent({sid:'demo-live',eid:53,kind:'shot',t:Date.now()+3000,set:1,score:88,peak:1690,instab:70,dt:50})"); // el sensor la adopta
