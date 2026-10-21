@@ -169,8 +169,7 @@ function renderGear(){
   const st=gearState(), bits=gearChips(st), s=displayedSession();
   let stateTxt='', stateCls='';
   if(s){
-    const n=(s.shots||[]).filter(x=>!x.candidate).length, nd=n===1?' flecha':' flechas';
-    if(!s.prepared) stateTxt=s.live&&!s.finished?'En vivo · '+n+nd:'Cerrada · '+n+nd;
+    if(!s.prepared) stateTxt=s.live&&!s.finished?'En vivo':'Cerrada';
     if(s.prepared||s.live) stateCls=' mode';
   }else stateTxt='Sin sesión', stateCls=' empty';
   const material=bits.map(t=>`<span class="chip${/^(Indoor|Outdoor|Libre)/.test(t)?' mode':''}">${escapeText(t)}</span>`).join('')
