@@ -32,9 +32,20 @@
   $('tandaBtn').onclick=async()=>{ const s=sessRef(); if(!s) return;
     s.tandas=s.tandas||[];
     if(s.activeTanda){
+      const active=s.activeTanda;
       const goal=s.mode==='Indoor'?10:s.mode==='Outdoor'?6:0;
-      if(goal && tandaSets(s,s.activeTanda)<goal && typeof askConfirm==='function' && !(await askConfirm(`No has acabado los ${goal} sets, ¿quieres cerrar la tanda?`))) return; const t=s.tandas.find(x=>x.n===s.activeTanda); if(t) t.end=Date.now();
-      notice(`Tanda ${s.activeTanda} terminada · ${tandaStats(s,s.activeTanda)}`); try{window.Native?.command?.(JSON.stringify({action:'mark',value:'tanda_end '+s.activeTanda}));}catch(_){} s.activeTanda=0; }
+      if(goal && tandaSets(s,active)<goal && typeof askConfirm==='function' && !(await askConfirm(`No has acabado los ${goal} sets, ¿quieres cerrar la tanda?`))) return;
+      const arrows=(s.shots||[]).filter(x=>!x.candidate&&x.tanda===active).length;
+      if(arrows){
+        const t=s.tandas.find(x=>x.n===active); if(t) t.end=Date.now();
+        notice(`Tanda ${active} terminada · ${tandaStats(s,active)}`);
+      } else {
+        s.tandas=s.tandas.filter(x=>x.n!==active);
+        notice(`Tanda ${active} descartada · sin flechas`);
+      }
+      try{window.Native?.command?.(JSON.stringify({action:'mark',value:'tanda_end '+active}));}catch(_){}
+      s.activeTanda=0;
+    }
     else { const n=s.tandas.length+1; s.tandas.push({n,start:Date.now()}); s.activeTanda=n; try{window.Native?.command?.(JSON.stringify({action:'mark',value:'tanda_start '+n}));}catch(_){} notice(`Tanda ${n} empezada`); }
     persist(); render(); };
   function tandaNums(scope){
