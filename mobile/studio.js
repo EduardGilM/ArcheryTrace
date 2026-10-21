@@ -7,7 +7,6 @@ const studioGeist = "'Geist', system-ui, -apple-system, sans-serif";
 const Studio = {
   picks: new Set(),
   arrows: new Set(),
-  dayIds: new Set(),
   picking: false,
   shareOpen: false,
   shareKind: 'session',
@@ -448,7 +447,6 @@ function studioClearPick() {
   Studio.picking = false;
   Studio.picks.clear();
   Studio.arrows.clear();
-  Studio.dayIds.clear();
 }
 
 function studioHaptic(el) {
@@ -461,45 +459,13 @@ function studioHaptic(el) {
   node.classList.add('wiggle');
 }
 
-function studioSessionIds(session) {
-  const ids = [];
-  const seen = new Set();
-  (session && session.shots || []).forEach(s => {
-    if (!s || s.set_id == null) return;
-    const id = String(s.set_id);
-    if (seen.has(id)) return;
-    seen.add(id);
-    ids.push(id);
-  });
-  return ids;
-}
-
-function studioSameDay(session) {
-  if (!session || typeof store === 'undefined' || !store.list) return [];
-  const key = Studio.dayKey(session.id);
-  if (!key) return [];
-  return store.list().filter(s => s && s.id !== session.id && Studio.dayKey(s.id) === key);
-}
-
-function studioSessionFull(session) {
-  const ids = studioSessionIds(session);
-  return ids.length > 0 && ids.every(id => Studio.picks.has(id)) && Studio.arrows.size === 0;
-}
-
 function studioPickCount() {
   let n = 0;
   const session = typeof displayedSession === 'function' ? displayedSession() : null;
-  const cur = session && session.id;
   (session && session.shots || []).forEach(s => {
     if (!s) return;
     if (Studio.picks.has(String(s.set_id)) || (Number.isFinite(Number(s.t_ms)) && Studio.arrows.has(Number(s.t_ms)))) n++;
   });
-  if (typeof store !== 'undefined' && store.list && Studio.dayIds.size) {
-    store.list().forEach(s => {
-      if (!s || s.id === cur || !Studio.dayIds.has(s.id)) return;
-      (s.shots || []).forEach(a => { if (a) n++; });
-    });
-  }
   return n;
 }
 
@@ -533,29 +499,6 @@ function studioToggleArrow(t, sid) {
   else Studio.arrows.add(time);
 }
 
-function studioPickSession() {
-  const session = typeof displayedSession === 'function' ? displayedSession() : null;
-  const ids = studioSessionIds(session);
-  const full = studioSessionFull(session) && Studio.dayIds.size === 0;
-  Studio.arrows.clear();
-  Studio.dayIds.clear();
-  Studio.picks.clear();
-  if (!full) ids.forEach(id => Studio.picks.add(id));
-}
-
-function studioPickDay() {
-  const session = typeof displayedSession === 'function' ? displayedSession() : null;
-  const ids = studioSessionIds(session);
-  const others = studioSameDay(session);
-  const full = studioSessionFull(session) && others.every(s => Studio.dayIds.has(s.id)) && Studio.dayIds.size === others.length;
-  Studio.arrows.clear();
-  Studio.picks.clear();
-  Studio.dayIds.clear();
-  if (full) return;
-  ids.forEach(id => Studio.picks.add(id));
-  others.forEach(s => Studio.dayIds.add(s.id));
-}
-
 function studioApplyPick(phase) {
   if (!studioPickCount()) {
     if (typeof notice === 'function') notice('Elige al menos una flecha.');
@@ -563,7 +506,6 @@ function studioApplyPick(phase) {
   }
   const sets = [...Studio.picks];
   const times = [...Studio.arrows];
-  const days = new Set(Studio.dayIds);
   const current = typeof displayedSession === 'function' ? displayedSession() : null;
   const currentId = current && current.id;
   if (typeof store === 'undefined' || !store.list || !store.save) {
@@ -574,9 +516,8 @@ function studioApplyPick(phase) {
   }
   const L = store.list();
   L.forEach(s => {
-    if (!s) return;
-    if (s.id === currentId) Studio.tag(s, phase, {sets, times});
-    else if (days.has(s.id)) Studio.tag(s, phase, {all: true});
+    if (!s || s.id !== currentId) return;
+    Studio.tag(s, phase, {sets, times});
   });
   store.save(L);
   const fresh = L.find(s => s.id === currentId);
@@ -651,15 +592,6 @@ function studioMount() {
         if (bulk.dataset.bulk === 'done') { studioClearPick(); studioSync(); return; }
         if (bulk.dataset.bulk === 'delete') { studioDeletePick(); return; }
         studioApplyPick(bulk.dataset.bulk);
-        return;
-      }
-      const scope = e.target.closest('[data-scope]');
-      if (scope && Studio.picking) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (scope.dataset.scope === 'day') studioPickDay();
-        else studioPickSession();
-        studioSync();
         return;
       }
       if (!Studio.picking) return;
@@ -981,8 +913,7 @@ function studioPickInfo() {
   const flechas = k => k === 1 ? 'flecha' : 'flechas';
   let title = 'Selección';
   if (n) {
-    if (Studio.dayIds.size) title = 'Día · ' + studioPickCount() + ' flechas';
-    else if (ns === 1) title = pickedSets[0].name + ' · ' + n + ' ' + flechas(n);
+    if (ns === 1) title = pickedSets[0].name + ' · ' + n + ' ' + flechas(n);
     else if (ns > 1) title = ns + ' sets · ' + n + ' ' + flechas(n);
     else title = n + ' ' + flechas(n);
   }
@@ -1028,7 +959,7 @@ function studioModes() {
   if (!bar.querySelector('.pickBarOn')) {
     bar.innerHTML = '<div class="pickBarOn"><div class="pickHead"><span class="pickTitle" id="pickCount"></span><button type="button" class="pickDone" data-bulk="done">Hecho</button></div>'+
       '<div class="pickGroup"><span class="pickLbl">Marcar como</span><div class="modeSeg"><button type="button" data-bulk="warm">Calentamiento</button><button type="button" data-bulk="score">Puntuable</button><button type="button" data-bulk="">Libre</button></div></div>'+
-      '<div class="pickFoot"><div class="pickGroup"><span class="pickLbl">Seleccionar</span><div class="pickScope"><button type="button" data-scope="session">Sesión</button><button type="button" data-scope="day">Día</button></div></div><button type="button" class="pickDelete" data-bulk="delete">Eliminar set</button></div></div>';
+      '<div class="pickFoot"><button type="button" class="pickDelete" data-bulk="delete">Eliminar set</button></div></div>';
   }
   const header = document.querySelector('header');
   if (header) bar.style.top = Math.round(header.getBoundingClientRect().bottom) + 'px';
@@ -1041,16 +972,7 @@ function studioModes() {
   const info = studioPickInfo();
   if (count) count.textContent = info.title;
   const del = bar.querySelector('.pickDelete');
-  if (del) { del.textContent = info.deleteLabel; del.hidden = !info.n || Studio.dayIds.size > 0; }
-  const others = studioSameDay(session);
-  const full = studioSessionFull(session);
-  const dayOn = full && others.every(s => Studio.dayIds.has(s.id)) && Studio.dayIds.size === others.length;
-  const sessionOn = full && Studio.dayIds.size === 0;
-  bar.querySelectorAll('[data-scope]').forEach(b => {
-    const on = b.dataset.scope === 'day' ? dayOn : sessionOn;
-    b.classList.toggle('on', on);
-    b.setAttribute('aria-pressed', on ? 'true' : 'false');
-  });
+  if (del) { del.textContent = info.deleteLabel; del.hidden = !info.n; }
 }
 
 function studioSyncShare() {

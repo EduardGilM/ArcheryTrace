@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="at-version" content="0.4.10">
+<meta name="at-version" content="0.4.11">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
@@ -303,7 +303,7 @@
   main[data-empty="true"] > .emptyState { display:block; }
 
   input, textarea { user-select:text; }
-  .modeSeg button.on, .pickScope button.on { background:var(--acc-soft); color:var(--acc); border-color:transparent; }
+  .modeSeg button.on { background:var(--acc-soft); color:var(--acc); border-color:transparent; }
   #openShare[hidden] { display:none !important; }
   .modeSeg { display:flex; gap:4px; grid-column:1 / -1; }
   .modeSeg button { flex:1; min-width:0; min-height:40px; padding:8px 4px; border-radius:8px; background:var(--surface-2); color:var(--txt-2); border:1px solid var(--line); font-size:13px; font-weight:600; }
@@ -319,10 +319,8 @@
   .pickDone { flex:none; min-height:34px; padding:0 14px; border:0; border-radius:999px; background:var(--acc-soft); color:var(--acc); font:inherit; font-size:13px; font-weight:600; }
   .pickGroup { display:grid; gap:6px; }
   .pickLbl { font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--txt-3); }
-  .pickFoot { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:end; }
-  .pickDelete { min-height:40px; padding:0 14px; border-radius:999px; border:1px solid rgba(240,80,110,.35); background:rgba(240,80,110,.1); color:var(--danger); font:inherit; font-size:13px; font-weight:600; white-space:nowrap; }
-  .pickScope { display:flex; gap:6px; }
-  .pickScope button { flex:1; min-height:40px; border-radius:10px; background:var(--surface-2); color:var(--txt-2); border:1px solid var(--line); font-size:13px; font-weight:600; }
+  .pickFoot { display:block; }
+  .pickDelete { width:100%; min-height:40px; padding:0 14px; border-radius:999px; border:1px solid rgba(240,80,110,.35); background:rgba(240,80,110,.1); color:var(--danger); font:inherit; font-size:13px; font-weight:600; white-space:nowrap; }
   #setList details.picked { border-color:transparent; box-shadow:inset 0 0 0 1.5px var(--acc) !important; }
   .trendRow.picked { background:var(--acc-soft); }
   @media (prefers-reduced-motion: reduce) { #setList details.wiggle > summary, .trendRow.wiggle { animation:none; } }
@@ -515,8 +513,8 @@
   #setList details[open]::before { display:none; }
   #setList details[open] { background:var(--surface); }
   .trendRow { border-top:none; }
-  .setbar button, .tracebar button, .modeSeg button, .pickScope button, .scoreSlots button { border-radius:999px; border-color:transparent !important; background:var(--surface-2); }
-  .setbar button.sel, .tracebar button.sel, .modeSeg button.on, .pickScope button.on, .scoreSlots button.on { background:var(--acc-soft); color:var(--acc); }
+  .setbar button, .tracebar button, .modeSeg button, .scoreSlots button { border-radius:999px; border-color:transparent !important; background:var(--surface-2); }
+  .setbar button.sel, .tracebar button.sel, .modeSeg button.on, .scoreSlots button.on { background:var(--acc-soft); color:var(--acc); }
   #link, #returnCurrent { border-color:transparent; background:var(--surface-2); }
   #live { box-shadow:none; }
   #live::before { box-shadow:none; }
@@ -542,8 +540,8 @@
   .sheet button { border-radius:999px !important; background:#1c1c1e !important; border:1px solid transparent !important; padding:12px 16px !important; }
   .sheet button.on { border-color:var(--acc-line) !important; background:#1c1c1e !important; }
   .sheet .deleteGear { border-radius:999px !important; }
-  .modeSeg button, .pickScope button { border-radius:999px !important; background:#1c1c1e !important; border:1px solid transparent !important; font-weight:500 !important; }
-  .modeSeg button.on, .pickScope button.on, .modeSeg button[aria-pressed="true"], .pickScope button[aria-pressed="true"] { border-color:transparent !important; color:var(--acc) !important; }
+  .modeSeg button { border-radius:999px !important; background:#1c1c1e !important; border:1px solid transparent !important; font-weight:500 !important; }
+  .modeSeg button.on, .modeSeg button[aria-pressed="true"] { border-color:transparent !important; color:var(--acc) !important; }
   #calibrationProfile, .training select, .cmpPick select { background-color:#1c1c1e !important; border:none !important; border-radius:999px !important; padding-left:16px !important; font-weight:500; }
   body.coachOpen #link,body.coachOpen #live,body.coachOpen #returnCurrent { display:none !important; }
   #vCoach { overflow:hidden;padding-bottom:8px;gap:0; }
