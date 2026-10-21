@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="at-version" content="0.4.8">
+<meta name="at-version" content="0.4.9">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
@@ -1973,17 +1973,32 @@ function fmtDate(ms) {
   return d.getDate() + ' ' + ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d.getMonth()] + ', ' + hh;
 }
 
-function rangeMarks(shots) {
+function rangeMarks(shots, sess) {
   const starts = new Map(), ends = new Map();
-  const tSel = /^t(\d+)$/.exec(statFilter);
-  const tandaNums = [...new Set((shots || []).map(s => Number.isFinite(s.tanda) ? s.tanda : null).filter(v => v != null))].sort((a, b) => a - b);
-  const tandas = tSel ? [+tSel[1]] : statFilter === 'score' ? null : (tandaNums.length ? tandaNums : null);
-  const inRange = s => tandas ? tandas.includes(s.tanda) : s.phase === 'score';
-  const labelOf = s => tandas ? `Tanda ${s.tanda}` : 'Puntuables';
+  shots = shots || [];
+  const slotOf = s => {
+    const n = Number(s.tanda);
+    if (Number.isFinite(n) && n > 0) return n;
+    const ts = Number.isFinite(s.wt) ? s.wt : Number.isFinite(s.t_ms) ? s.t_ms : null;
+    if (ts == null || !Array.isArray(sess?.tandas)) return null;
+    let hit = null;
+    for (const t of sess.tandas) {
+      if (!t) continue;
+      const tn = Number(t.n), start = Number(t.start), end = t.end == null ? null : Number(t.end);
+      if (!Number.isFinite(tn) || !Number.isFinite(start) || ts < start) continue;
+      if (Number.isFinite(end) && ts > end) continue;
+      if (!hit || start > hit.start) hit = { n: tn, start };
+    }
+    return hit ? hit.n : null;
+  };
+  const slots = shots.map(slotOf);
+  const useTandas = slots.some(v => v != null);
+  const inRange = i => useTandas ? slots[i] != null : shots[i].phase === 'score';
+  const labelOf = i => useTandas ? `Tanda ${slots[i]}` : 'Puntuables';
   const runs = [];
-  (shots || []).forEach((s, i) => {
-    if (!inRange(s)) return;
-    const label = labelOf(s), last = runs[runs.length - 1];
+  shots.forEach((s, i) => {
+    if (!inRange(i)) return;
+    const label = labelOf(i), last = runs[runs.length - 1];
     if (last && last.label === label && last.last === i - 1) last.last = i;
     else runs.push({ label, first: i, last: i });
   });
@@ -1998,7 +2013,7 @@ function renderSet(S, si) {
   paintScore('setScore', g.map(j => data.shots[j]));
   document.getElementById('legend').innerHTML = g.map((j, k) =>
     `<span><i style="background:${ACOLORS[k % 6]}"></i>${k + 1}</span>`).join('');
-  const marks = rangeMarks(data.shots);
+  const marks = rangeMarks(data.shots, typeof displayedSession === 'function' ? displayedSession() : null);
   document.getElementById('setArrows').innerHTML = g.map((j, k) => {
     const s = data.shots[j];
     const mark = s.candidate || Score.points(s.result?.value) == null ? '' : `<span class="trendScore">${s.result.value}</span>`;
@@ -2426,7 +2441,7 @@ function drawTrend(S) {
   const c = document.getElementById('trend'), list=document.getElementById('setList');
   const opened=new Set([...list.querySelectorAll('details[open]')].map(d=>d.dataset.set));
   const candidates=data.shots.every(s=>s.candidate), values=data.shots.map(s=>candidates?s.peak_mg:s.aim_score);
-  const marks=rangeMarks(data.shots);
+  const marks=rangeMarks(data.shots, typeof displayedSession === 'function' ? displayedSession() : null);
   const max=candidates?values.reduce((m,v)=>Number.isFinite(v)?Math.max(m,v):m,1):100;
   const anyValue=!candidates && data.shots.some(s => Score.points(s.result && s.result.value) != null);
   const barOf = v => candidates ? 'var(--acc)' : !Number.isFinite(v) ? 'rgba(255,255,255,.2)' : v >= 80 ? 'var(--acc)' : v < 70 ? 'var(--low)' : 'rgba(255,255,255,.85)';

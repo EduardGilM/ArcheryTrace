@@ -1,12 +1,30 @@
 // Tandas controladas por el usuario + filtro de estadísticas.
 (function(){
   const $=id=>document.getElementById(id);
-  // Migración: sesiones antiguas en modo tanda -> flechas etiquetadas como Tanda 1
+  // Migración: tandas antiguas y flechas sin etiqueta -> se derivan de los metadatos de la sesión.
   (function migrate(){
     const L=store.list(); let ch=false;
-    L.forEach(s=>{ if(s.tanda && !s.tandas){ const sh=(s.shots||[]).filter(x=>!x.candidate);
-      sh.forEach(x=>{ if(x.tanda==null) x.tanda=1; });
-      s.tandas=[{n:1,start:sh[0]?.wt||s.id,end:sh[sh.length-1]?.wt||s.id}]; ch=true; } });
+    const tandaAt=(s,x)=>{
+      const ts=Number.isFinite(x.wt)?x.wt:Number.isFinite(x.t_ms)?x.t_ms:null;
+      if(ts==null) return null;
+      let hit=null;
+      for(const t of s.tandas||[]){
+        const n=Number(t?.n), start=Number(t?.start), end=t?.end==null?null:Number(t?.end);
+        if(!Number.isFinite(n)||!Number.isFinite(start)||ts<start) continue;
+        if(Number.isFinite(end)&&ts>end) continue;
+        if(!hit||start>hit.start) hit={n,start};
+      }
+      return hit?hit.n:null;
+    };
+    L.forEach(s=>{
+      if(s.tanda && !s.tandas){ const sh=(s.shots||[]).filter(x=>!x.candidate);
+        sh.forEach(x=>{ if(x.tanda==null) x.tanda=1; });
+        s.tandas=[{n:1,start:sh[0]?.wt||s.id,end:sh[sh.length-1]?.wt||s.id}]; ch=true; }
+      if(Array.isArray(s.tandas)&&s.tandas.length) (s.shots||[]).forEach(x=>{
+        if(!x||x.candidate||Number(x.tanda)>0) return;
+        const n=tandaAt(s,x); if(n!=null){x.tanda=n;ch=true;}
+      });
+    });
     if(ch) store.save(L);
   })();
   const css=document.createElement('style');
