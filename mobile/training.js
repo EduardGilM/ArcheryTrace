@@ -166,16 +166,11 @@ function gearChips(st,withMode){
   return bits;
 }
 function renderGear(){
-  const st=gearState(), bits=gearChips(st), s=displayedSession();
-  let stateTxt='', stateCls='';
-  if(s){
-    if(!s.prepared) stateTxt=s.live&&!s.finished?'En vivo':'Cerrada';
-    if(s.prepared||s.live) stateCls=' mode';
-  }else stateTxt='Sin sesión', stateCls=' empty';
+  const st=gearState(), bits=gearChips(st);
   const material=bits.map(t=>`<span class="chip${/^(Indoor|Outdoor|Libre)/.test(t)?' mode':''}">${escapeText(t)}</span>`).join('')
     ||'<span class="chip empty">Elige tu material</span>';
-  $('gearChips').innerHTML=material+(stateTxt?`<span class="chip${stateCls}">${escapeText(stateTxt)}</span>`:'');
-  $('gearBtn').setAttribute('aria-label','Sesión: '+[...bits,stateTxt].filter(Boolean).join(', ')+'. Toca para gestionar');
+  $('gearChips').innerHTML=material;
+  $('gearBtn').setAttribute('aria-label','Sesión: '+(bits.join(', ')||'sin material')+'. Toca para gestionar');
   if(!$('gearSheet').hidden)paintGear();
 }
 // Tocar un material: si no hay sesión (o está cerrada) se prepara una con él; si hay una en vivo
